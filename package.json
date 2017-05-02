@@ -1,0 +1,16 @@
+{
+  "name": "UnicornTranscoder2",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "cluster-node-cache": "^0.1.4",
+    "express": "~4.13.1",
+    "getenv": "^0.7.0",
+    "http-proxy": "^1.16.2",
+    "redis": "^2.7.1",
+    "request": "^2.81.0"
+  }
+}
