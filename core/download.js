@@ -2,10 +2,10 @@
  * Created by drouar_b on 27/04/2017.
  */
 
-var request = require('request');
-var config = require('../utils/config');
+let request = require('request');
+let config = require('../utils/config');
 
-var download = module.exports = {};
+let download = {};
 
 download.serve = function (req, res) {
     request(config.api_url + config.endpoints.path + req.params.id1 + '/' + req.params.id2 + '/', function (error, response, body) {
@@ -21,3 +21,5 @@ download.serve = function (req, res) {
         }
     });
 };
+
+module.exports = download;

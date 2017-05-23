@@ -4,13 +4,13 @@
  * Created by drouar_b on 27/04/2017.
  */
 
-var app = require('../app');
-var config = require('../utils/config');
-var debug = require('debug')('UnicornTranscoder2:server');
-var http = require('http');
+let app = require('../app');
+let config = require('../utils/config');
+let debug = require('debug')('UnicornTranscoder2:server');
+let http = require('http');
 
 app.set(config.port);
-var server = http.createServer(app);
+let server = http.createServer(app);
 
 server.listen(config.port);
 server.on('error', onError);
@@ -21,9 +21,9 @@ function onError(error) {
     throw error;
   }
 
-  var bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+  var bind = typeof config.port === 'string'
+    ? 'Pipe ' + config.port
+    : 'Port ' + config.port;
 
   // handle specific listen errors with friendly messages
   switch (error.code) {

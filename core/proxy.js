@@ -2,10 +2,10 @@
  * Created by drouar_b on 27/04/2017.
  */
 
-var httpProxy = require('http-proxy');
-var config = require('../utils/config');
+let httpProxy = require('http-proxy');
+let config = require('../utils/config');
 
-var proxy = httpProxy.createProxyServer({
+let proxy = httpProxy.createProxyServer({
     target: config.plex_url
 });
 
