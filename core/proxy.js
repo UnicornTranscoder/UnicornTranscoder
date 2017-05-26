@@ -10,5 +10,5 @@ let proxy = httpProxy.createProxyServer({
 });
 
 module.exports = function (req, res) {
-    proxy.web(req, res);
+    proxy.web(req, res)
 };

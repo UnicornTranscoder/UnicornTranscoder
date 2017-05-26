@@ -6,6 +6,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "body-parser": "^1.17.2",
     "cluster-node-cache": "^0.1.4",
     "express": "~4.13.1",
     "getenv": "^0.7.0",
