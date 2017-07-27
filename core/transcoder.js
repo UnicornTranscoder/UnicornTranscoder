@@ -2,7 +2,7 @@
  * Created by drouar_b on 27/04/2017.
  */
 
-let process = require('child_process');
+let child_process = require('child_process');
 let request = require('request');
 let config = require('../utils/config');
 let redis = require('../utils/redis');
@@ -14,7 +14,7 @@ class Transcoder {
         this.sessionId = sessionId;
         this.redisClient = redis.getClient();
 
-        this.timeout = setTimeout(this.PMSTimeout.bind(this), 10000);
+        this.timeout = setTimeout(this.PMSTimeout.bind(this), 20000);
 
         this.redisClient.on("message", this.transcoderStarted.bind(this));
         this.redisClient.subscribe("__keyspace@" + config.redis_db + "__:" + sessionId);
@@ -22,20 +22,32 @@ class Transcoder {
         request(config.plex_url + url)
     }
 
-    transcoderStarted(args) {
+    transcoderStarted() {
+        let sessionId = this.sessionId;
         clearTimeout(this.timeout);
         this.timeout = undefined;
+
+        this.redisClient.unsubscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId);
+        this.redisClient.get(this.sessionId, function (err, reply) {
+            //TODO 500
+            if (err)
+                return;
+
+            //TODO Mkdir
+            let args = JSON.parse(reply);
+            let env = Object.create(process.env);
+            env.LD_LIBRARY_PATH = config.ld_library_path;
+            env.FFMPEG_EXTERNAL_LIBS = config.ffmpeg_external_libs;
+            env.XDG_CACHE_HOME = config.xdg_cache_home;
+            env.XDG_DATA_HOME = config.xdg_data_home;
+            env.EAE_ROOT = config.eae_root;
+
+            this.ffmpeg = child_process.spawn(config.transcoder_path, args, {env: env, cwd: config.xdg_cache_home + sessionId + "/"});
+            //this.ffmpeg.on("exit", this.transcoderExited);
+        });
+        return;
+
         this.redisClient.quit();
-
-        let env = Object.create(process.env);
-        env.LD_LIBRARY_PATH = config.ld_library_path;
-        env.FFMPEG_EXTERNAL_LIBS = config.ffmpeg_external_libs;
-        env.XDG_CACHE_HOME = config.xdg_cache_home;
-        env.XDG_DATA_HOME = config.xdg_data_home;
-        env.EAE_ROOT = config.eae_root;
-
-        this.ffmpeg = process.spawn(config.transcoder_path, args, {env: env, cwd: config.xdg_cache_home + this.sessionId + "/"});
-        this.ffmpeg.on("exit", this.transcoderExited)
     }
 
     transcoderExited() {
@@ -43,15 +55,16 @@ class Transcoder {
     }
 
     PMSTimeout() {
+        //TODO 500
         this.timeout = undefined;
-        this.res.status(500).send('No response from PMS');
-        this.killInstance()
+        this.killInstance();
     }
 
     killInstance() {
         if (this.timeout != undefined) {
             clearTimeout(this.timeout)
         }
+        //TODO Clear Cache
         this.redisClient.quit()
     }
 
@@ -61,16 +74,19 @@ class Transcoder {
 
     getChunk(chunkId, callback) {
         let rc = redis.getClient();
+        let sessionId = this.sessionId;
         let transcoding = this.transcoding;
 
-        rc.get(this.sessionId + ":" + utils.pad(chunkId, 5), function (chunk) {
+        rc.get(sessionId + ":" + utils.pad(chunkId, 5), function (err, chunk) {
             if (chunk == null) {
                 if (transcoding) {
-                    rc.on("message", function () {
+                    rc.on("message", function (key) {
                         rc.quit();
-                        callback(chunkId)
+                        console.log("RECEIVED " + key);
+                        callback(chunkId);
+                        console.log("Notif chunk" + chunkId);
                     });
-                    rc.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + ":" + utils.pad(chunkId, 5))
+                    rc.subscribe("__keyspace@" + config.redis_db + "__:" + sessionId + ":" + utils.pad(chunkId, 5))
                 } else {
                     callback(-1)
                 }

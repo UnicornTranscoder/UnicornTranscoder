@@ -11,28 +11,29 @@ let utils = require('../utils/utils');
 let stream = {};
 
 stream.serve = function(req, res) {
-    let transcoder = new Transcoder(req.params.sessionId, req.url);
+    let transcoder = new Transcoder(req.query.session, req.url);
     req.connection.on("close", stream.connectionClosed.bind(null, transcoder));
 
     transcoder.getChunk(0, stream.serveChunk.bind(null, req, res, transcoder))
 };
 
 stream.serveChunk = function (req, res, transcoder, chunkId) {
-    let cwd = config.xdg_cache_home + req.params.sessionId + "/";
+    let cwd = config.xdg_cache_home + req.query.session + "/";
 
     function doWork() {
         if (!req.connection.destroyed) {
-            let stream = fs.createReadStream(cwd + "chunk-" + utils.pad(chunkId, 5));
-            stream.pipe(res, {end: false});
-            stream.on('end', transcoder.getChunk(chunkId + 1, stream.serveChunk.bind(null, req, res, transcoder)))
+            let fileStream = fs.createReadStream(cwd + "chunk-" + utils.pad(chunkId, 5));
+            fileStream.pipe(res, {end: false});
+            fileStream.on('end', transcoder.getChunk.bind(transcoder, chunkId + 1, stream.serveChunk.bind(null, req, res, transcoder)))
         }
     }
     if (chunkId == -1) {
         if (!req.connection.destroyed) {
             res.end()
         }
-    } else if (chunkId == 0)
-        stream.serveHeader(req, cwd, "header", doWork);
+    } else if (chunkId == 0) {
+        stream.serveHeader(req, res, cwd, doWork);
+    }
     else
         doWork()
 };
@@ -42,16 +43,17 @@ stream.serveSubtitles = function (req, res) {
 };
 
 
-stream.serveHeader = function (req, cwd, header, callback) {
+stream.serveHeader = function (req, res, cwd, callback) {
     if (!req.connection.destroyed) {
-        let stream = fs.createReadStream(cwd + header);
-        stream.pipe(res, {end: false});
-        stream.on('end', callback)
+        res.type(config.video_content_type);
+        let fileStream = fs.createReadStream(cwd + "header");
+        fileStream.pipe(res, {end: false});
+        fileStream.on('end', callback);
     }
 };
 
 stream.connectionClosed = function (transcoder) {
-    transcoder.kill()
+    transcoder.killInstance()
 };
 
 module.exports = stream;
