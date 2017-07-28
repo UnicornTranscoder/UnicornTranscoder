@@ -72,13 +72,15 @@ class Transcoder {
     }
 
     getChunk(chunkId, callback) {
-        this.redisClient.get(this.sessionId + ":" + utils.pad(chunkId, 5), (err, chunk) => {
+        let rc = redis.getClient();
+
+        rc.get(this.sessionId + ":" + utils.pad(chunkId, 5), (err, chunk) => {
             if (chunk == null) {
                 if (this.transcoding) {
-                    this.redisClient.on("message", () => {
+                    rc.on("message", () => {
                         callback(chunkId);
                     });
-                    this.redisClient.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + ":" + utils.pad(chunkId, 5))
+                    rc.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + ":" + utils.pad(chunkId, 5))
                 } else {
                     callback(-1)
                 }
