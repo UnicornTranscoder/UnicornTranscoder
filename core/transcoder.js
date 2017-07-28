@@ -37,6 +37,7 @@ class Transcoder {
         if (err)
             return;
 
+        rimraf.sync(config.xdg_cache_home + this.sessionId);
         fs.mkdirSync(config.xdg_cache_home + this.sessionId);
 
         let args = JSON.parse(reply);
@@ -79,6 +80,7 @@ class Transcoder {
                 if (this.transcoding) {
                     rc.on("message", () => {
                         callback(chunkId);
+                        rc.quit();
                     });
                     rc.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + ":" + utils.pad(chunkId, 5))
                 } else {
