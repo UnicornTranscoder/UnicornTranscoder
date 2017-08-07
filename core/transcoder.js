@@ -11,7 +11,7 @@ let redis = require('../utils/redis');
 let utils = require('../utils/utils');
 
 class Transcoder {
-    constructor(sessionId, url) {
+    constructor(sessionId, url, res) {
         this.ffmpeg = null;
         this.transcoding = true;
         this.sessionId = sessionId;
@@ -29,7 +29,11 @@ class Transcoder {
 
         this.redisClient.subscribe("__keyspace@" + config.redis_db + "__:" + sessionId);
 
-        request(config.plex_url + url)
+        request(config.plex_url + url, (error, response, body) => {
+            if (res) {
+                res.send(body)
+            }
+        })
     }
 
     transcoderStarter(err, reply) {
