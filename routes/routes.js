@@ -2,8 +2,8 @@
  * Created by drouar_b on 27/04/2017.
  */
 
-let express = require('express');
-let router = express.Router();
+const express = require('express');
+const router = express.Router();
 
 let m3u8 = require('../core/m3u8');
 let stream = require('../core/stream');

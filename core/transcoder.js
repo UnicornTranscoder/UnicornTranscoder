@@ -2,13 +2,13 @@
  * Created by drouar_b on 27/04/2017.
  */
 
-let child_process = require('child_process');
-let fs = require('fs');
-let rimraf = require('rimraf');
-let request = require('request');
-let config = require('../utils/config');
-let redis = require('../utils/redis');
-let utils = require('../utils/utils');
+const child_process = require('child_process');
+const fs = require('fs');
+const rimraf = require('rimraf');
+const request = require('request');
+const config = require('../utils/config');
+const redis = require('../utils/redis');
+const utils = require('../utils/utils');
 
 class Transcoder {
     constructor(sessionId, url, res) {

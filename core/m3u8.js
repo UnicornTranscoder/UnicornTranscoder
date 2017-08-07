@@ -2,10 +2,8 @@
  * Created by drouar_b on 27/04/2017.
  */
 
-let fs = require('fs');
-let Transcoder = require('./transcoder');
-let config = require('../utils/config');
-let utils = require('../utils/utils');
+const Transcoder = require('./transcoder');
+const config = require('../utils/config');
 
 let m3u8 = {};
 let cache = {};

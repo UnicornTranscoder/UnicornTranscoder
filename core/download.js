@@ -2,8 +2,8 @@
  * Created by drouar_b on 27/04/2017.
  */
 
-let request = require('request');
-let config = require('../utils/config');
+const request = require('request');
+const config = require('../utils/config');
 
 let download = {};
 

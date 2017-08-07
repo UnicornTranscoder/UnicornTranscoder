@@ -2,8 +2,8 @@
  * Created by drouar_b on 23/05/2017.
  */
 
-let redis = require('redis');
-let config = require('./config');
+const redis = require('redis');
+const config = require('./config');
 
 let redisMiddleware = {};
 
