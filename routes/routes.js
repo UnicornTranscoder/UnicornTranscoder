@@ -25,6 +25,7 @@ router.get('/video/:/transcode/universal/session/:sessionId/:fileType/:partId.vt
 //Universal endpoints
 router.get('/video/:/transcode/universal/stop', universal.stopTranscoder);
 router.get('/video/:/transcode/universal/ping', universal.ping);
+router.get('/:/timeline', universal.timeline);
 
 // Download files
 router.get('/library/parts/:id1/:id2/file.*', download.serve);

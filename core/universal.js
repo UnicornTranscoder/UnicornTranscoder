@@ -3,6 +3,7 @@
  */
 
 const debug = require('debug')('universal');
+const proxy = require('./proxy');
 
 let universal = {};
 universal.cache = {};
@@ -29,6 +30,24 @@ universal.ping = function (req, res) {
             universal.cache[sessionId].killInstance()
         }, 120000)
     }
+    proxy(req, res);
+};
+
+universal.timeline = function (req, res) {
+    let sessionId = req.query.session;
+
+    if (typeof universal.cache[sessionId] != 'undefined') {
+        debug('Timeline ' + sessionId);
+
+        if (universal.cache[sessionId].timeout != undefined)
+            clearTimeout(universal.cache[sessionId].timeout);
+
+        universal.cache[sessionId].timeout = setTimeout(() => {
+            debug(sessionId + ' timed out (timeline)');
+            universal.cache[sessionId].killInstance()
+        }, 120000)
+    }
+    proxy(req, res);
 };
 
 module.exports = universal;
