@@ -17,7 +17,7 @@ universal.stopTranscoder = function (req, res) {
 };
 
 universal.updateTimeout = function (sessionId) {
-    if (typeof sessionId != 'undefined' && typeof universal.cache[sessionId] != 'undefined') {
+    if (typeof sessionId != 'undefined' && typeof universal.cache[sessionId] != 'undefined' && universal.cache[sessionId].alive) {
         debug('Ping ' + sessionId);
 
         if (universal.cache[sessionId].timeout != undefined)
