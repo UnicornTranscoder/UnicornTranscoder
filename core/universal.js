@@ -8,7 +8,7 @@ let universal = {};
 universal.cache = {};
 
 universal.stopTranscoder = function (req, res) {
-    if (typeof cache[req.query.session] != 'undefined') {
+    if (typeof universal.cache[req.query.session] != 'undefined') {
         debug('Stop ' + req.query.session);
         universal.cache[req.query.session].killInstance();
     }
