@@ -18,10 +18,11 @@ class Transcoder {
         this.sessionId = sessionId;
         this.redisClient = redis.getClient();
 
-        debug('Starting transcoder session ' + this.sessionId);
+        debug('Create session ' + this.sessionId);
         this.timeout = setTimeout(this.PMSTimeout.bind(this), 20000);
 
         this.redisClient.on("message", () => {
+            debug('Callback ' + this.sessionId);
             clearTimeout(this.timeout);
             this.timeout = undefined;
 
@@ -61,23 +62,25 @@ class Transcoder {
         env.XDG_DATA_HOME = config.xdg_data_home;
         env.EAE_ROOT = config.eae_root;
 
-        debug('Starting transcoder for ' + this.sessionId);
+        debug('Spawn ' + this.sessionId);
         this.ffmpeg = child_process.spawn(config.transcoder_path, args, {env: env, cwd: config.xdg_cache_home + this.sessionId + "/"});
         this.ffmpeg.on("exit", () => {
-            debug('FFMPEG stopped for session ' + this.sessionId);
+            debug('FFMPEG stopped ' + this.sessionId);
             this.transcoding = false
         });
     }
 
     PMSTimeout() {
         //TODO 500
-        debug('Plex timed out for session ' + this.sessionId);
+        debug('Timeout ' + this.sessionId);
         this.timeout = undefined;
         this.killInstance();
     }
 
     killInstance() {
         debug('Killing ' + this.sessionId);
+        this.redisClient.quit();
+
         if (this.timeout != undefined) {
             clearTimeout(this.timeout)
         }
@@ -85,8 +88,6 @@ class Transcoder {
         if (this.ffmpeg != null && this.transcoding) {
             this.ffmpeg.kill('SIGKILL');
         }
-
-        this.redisClient.quit();
 
         let cleaner = redis.getClient();
         cleaner.keys(this.sessionId + '*', (err, keys) => {
