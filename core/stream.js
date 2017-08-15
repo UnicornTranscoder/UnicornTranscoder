@@ -23,7 +23,6 @@ stream.serveChunk = function (req, res, transcoder, chunkId) {
 
     function doWork() {
         if (!req.connection.destroyed) {
-            debug(req.query.session + 'serving ' + chunkId);
             let fileStream = fs.createReadStream(cwd + "chunk-" + utils.pad(chunkId, 5));
             fileStream.pipe(res, {end: false});
             fileStream.on('end', transcoder.getChunk.bind(transcoder, chunkId + 1, stream.serveChunk.bind(null, req, res, transcoder)))
@@ -31,7 +30,8 @@ stream.serveChunk = function (req, res, transcoder, chunkId) {
     }
     if (chunkId == -1) {
         if (!req.connection.destroyed) {
-            res.end()
+            res.end();
+            debug(req.query.session + ' end');
         }
     } else if (chunkId == 0) {
         stream.serveHeader(req, res, cwd, doWork);
@@ -47,7 +47,6 @@ stream.serveSubtitles = function (req, res) {
 
 stream.serveHeader = function (req, res, cwd, callback) {
     if (!req.connection.destroyed) {
-        debug(req.query.session + 'serving header');
         res.type(config.video_content_type);
         let fileStream = fs.createReadStream(cwd + "header");
         fileStream.pipe(res, {end: false});
