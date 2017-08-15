@@ -47,6 +47,7 @@ stream.serveSubtitles = function (req, res) {
 
 stream.serveHeader = function (req, res, cwd, callback) {
     if (!req.connection.destroyed) {
+        debug('Serving ' + req.query.session);
         res.type(config.video_content_type);
         let fileStream = fs.createReadStream(cwd + "header");
         fileStream.pipe(res, {end: false});
