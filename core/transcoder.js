@@ -126,7 +126,7 @@ class Transcoder {
             itm = itm.split(',');
             let chk = itm.shift();
 
-            if (chk.startsWith("chunk")) {
+            if (chk.startsWith("chunk") || chk.startsWith("media")) {
                 rc.set(req.params.sessionId + ":" + chk.split('-')[1], itm.toString())
             }
         });
