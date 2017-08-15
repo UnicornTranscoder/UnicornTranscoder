@@ -40,4 +40,12 @@ m3u8.serveSubtitles = function (req, res) {
     res.send('Serve VTT')
 };
 
+m3u8.stopTranscoder = function (req, res) {
+    if (typeof cache[req.query.session] != 'undefined') {
+        debug('Stop ' + req.query.session);
+        cache[req.query.session].killInstance();
+    }
+    res.send('');
+};
+
 module.exports = m3u8;
