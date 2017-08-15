@@ -28,7 +28,7 @@ m3u8.serveChunk = function (req, res) {
             cache[sessionId].timeout = setTimeout(() => {
                 debug(sessionId + ' timed out');
                 cache[sessionId].killInstance()
-            }, 120)
+            }, 120000)
         })
     } else {
         debug(req.params.sessionId + ' not found');
