@@ -86,9 +86,13 @@ class Transcoder {
             this.ffmpeg.kill('SIGKILL');
         }
 
-        this.redisClient.keys(this.sessionId + '*', (err, keys) => {
+        this.redisClient.quit();
+
+        let cleaner = redis.getClient();
+        cleaner.keys(this.sessionId + '*', (err, keys) => {
             if ((typeof keys != 'undefined') && keys.length > 0)
-                this.redisClient.del(keys);
+                cleaner.del(keys);
+            cleaner.quit();
         });
     }
 
