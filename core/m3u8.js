@@ -4,30 +4,30 @@
 
 const debug = require('debug')('m3u8');
 const Transcoder = require('./transcoder');
+const universal = require('./universal');
 const config = require('../utils/config');
 
 let m3u8 = {};
-let cache = {};
 
 m3u8.serve = function (req, res) {
     debug('M3U8 ' + req.params.sessionId);
-    cache[req.params.sessionId] = new Transcoder(req.params.sessionId, req.url, res);
+    universal.cache[req.params.sessionId] = new Transcoder(req.params.sessionId, req.url, res);
 };
 
 m3u8.serveChunk = function (req, res) {
     let sessionId = req.params.sessionId;
     debug('Requesting ' + req.params.partId + ' for session ' + sessionId);
 
-    if ((typeof cache[sessionId]) != 'undefined' && cache[sessionId].alive == true) {
-        cache[sessionId].getChunk(req.params.partId, () => {
+    if ((typeof universal.cache[sessionId]) != 'undefined' && universal.cache[sessionId].alive == true) {
+        universal.cache[sessionId].getChunk(req.params.partId, () => {
             debug('Serving ' + req.params.partId + ' for session ' + sessionId);
             res.sendFile(config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".ts");
 
-            if (cache[sessionId].timeout != undefined)
-                clearTimeout(cache[sessionId].timeout);
-            cache[sessionId].timeout = setTimeout(() => {
+            if (universal.cache[sessionId].timeout != undefined)
+                clearTimeout(universal.cache[sessionId].timeout);
+            universal.cache[sessionId].timeout = setTimeout(() => {
                 debug(sessionId + ' timed out');
-                cache[sessionId].killInstance()
+                universal.cache[sessionId].killInstance()
             }, 120000)
         })
     } else {
@@ -38,14 +38,6 @@ m3u8.serveChunk = function (req, res) {
 
 m3u8.serveSubtitles = function (req, res) {
     res.send('Serve VTT')
-};
-
-m3u8.stopTranscoder = function (req, res) {
-    if (typeof cache[req.query.session] != 'undefined') {
-        debug('Stop ' + req.query.session);
-        cache[req.query.session].killInstance();
-    }
-    res.send('');
 };
 
 module.exports = m3u8;

@@ -9,6 +9,7 @@ let m3u8 = require('../core/m3u8');
 let stream = require('../core/stream');
 let download = require('../core/download');
 let transcoder = require('../core/transcoder');
+let universal = require('../core/universal');
 let proxy = require('../core/proxy');
 let bodyParser = require('body-parser');
 
@@ -20,7 +21,7 @@ router.get('/video/:/transcode/universal/subtitles', stream.serveSubtitles);
 router.get('/video/:/transcode/universal/session/:sessionId/base/index.m3u8', m3u8.serve);
 router.get('/video/:/transcode/universal/session/:sessionId/:fileType/:partId.ts', m3u8.serveChunk);
 router.get('/video/:/transcode/universal/session/:sessionId/:fileType/:partId.vtt', m3u8.serveSubtitles);
-router.get('/video/:/transcode/universal/stop', m3u8.stopTranscoder);
+router.get('/video/:/transcode/universal/stop', universal.stopTranscoder);
 
 // Download files
 router.get('/library/parts/:id1/:id2/file.*', download.serve);
