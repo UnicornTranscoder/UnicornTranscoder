@@ -2,6 +2,7 @@
  * Created by drouar_b on 27/04/2017.
  */
 
+const path = require('path');
 const request = require('request');
 const config = require('../utils/config');
 
