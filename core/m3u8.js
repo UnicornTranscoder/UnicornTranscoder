@@ -21,7 +21,7 @@ m3u8.serveChunk = function (req, res) {
     if ((typeof cache[sessionId]) != 'undefined' && cache[sessionId].alive == true) {
         cache[sessionId].getChunk(req.params.partId, () => {
             debug('Serving ' + req.params.partId + ' for session ' + sessionId);
-            res.sendFile(config.xdg_cache_home + sessionId + "/" + req.params.partId + ".ts");
+            res.sendFile(config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".ts");
 
             if (cache[sessionId].timeout != undefined)
                 clearTimeout(cache[sessionId].timeout);
