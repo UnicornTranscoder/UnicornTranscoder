@@ -37,7 +37,6 @@ class Transcoder {
     }
 
     transcoderStarter(err, reply) {
-        //TODO 500
         if (err)
             return;
 
@@ -45,6 +44,14 @@ class Transcoder {
         fs.mkdirSync(config.xdg_cache_home + this.sessionId);
 
         let args = JSON.parse(reply);
+        args = args.map((arg) => {
+            return arg
+                .replace('{URL}', config.plex_url)
+                .replace('{PATH}', config.mount_point)
+                .replace('{SRTSRV}', config.srt_url)
+                .replace(/\{USRPLEX\}/g, config.plex_ressources)
+        });
+
         let env = Object.create(process.env);
         env.LD_LIBRARY_PATH = config.ld_library_path;
         env.FFMPEG_EXTERNAL_LIBS = config.ffmpeg_external_libs;
