@@ -46,7 +46,7 @@ class Transcoder {
         let args = JSON.parse(reply);
         args = args.map((arg) => {
             return arg
-                .replace('{URL}', config.plex_url)
+                .replace('{URL}', "http://127.0.0.1:" + config.port)
                 .replace('{PATH}', config.mount_point)
                 .replace('{SRTSRV}', config.srt_url)
                 .replace(/\{USRPLEX\}/g, config.plex_ressources)
