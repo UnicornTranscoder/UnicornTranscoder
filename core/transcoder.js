@@ -95,6 +95,7 @@ class Transcoder {
         cleaner.keys(this.sessionId + '*', (err, keys) => {
             if ((typeof keys != 'undefined') && keys.length > 0)
                 cleaner.del(keys);
+            cleaner.del(this.sessionId);
             cleaner.quit();
         });
     }
