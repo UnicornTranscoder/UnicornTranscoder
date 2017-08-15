@@ -2,6 +2,7 @@
  * Created by drouar_b on 27/04/2017.
  */
 
+const debug = require('debug')('download');
 const path = require('path');
 const request = require('request');
 const config = require('../utils/config');
@@ -13,6 +14,7 @@ download.serve = function (req, res) {
         if (!error && response.statusCode == 200) {
             let result = JSON.parse(body);
             if (result.status == 0) {
+                debug(config.mount_point + result.link);
                 res.download(config.mount_point + result.link, path.basename(config.mount_point + result.link))
             } else {
                 res.status(404).send('404 file not found in database')
