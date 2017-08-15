@@ -21,7 +21,10 @@ router.get('/video/:/transcode/universal/subtitles', stream.serveSubtitles);
 router.get('/video/:/transcode/universal/session/:sessionId/base/index.m3u8', m3u8.serve);
 router.get('/video/:/transcode/universal/session/:sessionId/:fileType/:partId.ts', m3u8.serveChunk);
 router.get('/video/:/transcode/universal/session/:sessionId/:fileType/:partId.vtt', m3u8.serveSubtitles);
+
+//Universal endpoints
 router.get('/video/:/transcode/universal/stop', universal.stopTranscoder);
+router.get('/video/:/transcode/universal/ping', universal.ping);
 
 // Download files
 router.get('/library/parts/:id1/:id2/file.*', download.serve);

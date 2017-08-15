@@ -15,4 +15,20 @@ universal.stopTranscoder = function (req, res) {
     res.send('');
 };
 
+universal.ping = function (req, res) {
+    let sessionId = req.query.session;
+
+    if (typeof universal.cache[sessionId] != 'undefined') {
+        debug('Ping ' + sessionId);
+
+        if (universal.cache[sessionId].timeout != undefined)
+            clearTimeout(universal.cache[sessionId].timeout);
+
+        universal.cache[sessionId].timeout = setTimeout(() => {
+            debug(sessionId + ' timed out (ping)');
+            universal.cache[sessionId].killInstance()
+        }, 120000)
+    }
+};
+
 module.exports = universal;
