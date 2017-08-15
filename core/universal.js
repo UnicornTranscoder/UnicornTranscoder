@@ -16,37 +16,27 @@ universal.stopTranscoder = function (req, res) {
     res.send('');
 };
 
-universal.ping = function (req, res) {
-    let sessionId = req.query.session;
-
-    if (typeof universal.cache[sessionId] != 'undefined') {
+universal.updateTimeout = function (sessionId) {
+    if (typeof sessionId != 'undefined' && typeof universal.cache[sessionId] != 'undefined') {
         debug('Ping ' + sessionId);
 
         if (universal.cache[sessionId].timeout != undefined)
             clearTimeout(universal.cache[sessionId].timeout);
 
         universal.cache[sessionId].timeout = setTimeout(() => {
-            debug(sessionId + ' timed out (ping)');
+            debug(sessionId + ' timed out');
             universal.cache[sessionId].killInstance()
         }, 120000)
     }
+};
+
+universal.ping = function (req, res) {
+    universal.updateTimeout(req.query.session);
     proxy(req, res);
 };
 
 universal.timeline = function (req, res) {
-    let sessionId = req.query.session;
-
-    if (typeof universal.cache[sessionId] != 'undefined') {
-        debug('Timeline ' + sessionId);
-
-        if (universal.cache[sessionId].timeout != undefined)
-            clearTimeout(universal.cache[sessionId].timeout);
-
-        universal.cache[sessionId].timeout = setTimeout(() => {
-            debug(sessionId + ' timed out (timeline)');
-            universal.cache[sessionId].killInstance()
-        }, 120000)
-    }
+    universal.updateTimeout(req.query["X-Plex-Client-Identifier"]);
     proxy(req, res);
 };
 

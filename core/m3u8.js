@@ -23,12 +23,7 @@ m3u8.serveChunk = function (req, res) {
             debug('Serving ' + req.params.partId + ' for session ' + sessionId);
             res.sendFile(config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".ts");
 
-            if (universal.cache[sessionId].timeout != undefined)
-                clearTimeout(universal.cache[sessionId].timeout);
-            universal.cache[sessionId].timeout = setTimeout(() => {
-                debug(sessionId + ' timed out (chunk m3u8)');
-                universal.cache[sessionId].killInstance()
-            }, 120000)
+            universal.updateTimeout(sessionId);
         })
     } else {
         debug(req.params.sessionId + ' not found');
