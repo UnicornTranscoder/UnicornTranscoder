@@ -79,7 +79,8 @@ class Transcoder {
         }
 
         this.redisClient.keys(this.sessionId + '*', (err, keys) => {
-            this.redisClient.del(keys);
+            if (keys.length > 0)
+                this.redisClient.del(keys);
         });
     }
 
