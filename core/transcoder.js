@@ -77,7 +77,7 @@ class Transcoder {
     }
 
     killInstance() {
-        debug('Killing ' + sessionId);
+        debug('Killing ' + this.sessionId);
         if (this.timeout != undefined) {
             clearTimeout(this.timeout)
         }
