@@ -16,10 +16,17 @@ m3u8.serve = function (req, res) {
 
 m3u8.serveChunk = function (req, res) {
     debug('Requesting ' + req.params.partId + ' for session ' + req.params.sessionId);
-    if ((typeof cache[req.params.sessionId]) != 'undefined') {
+    if ((typeof cache[req.params.sessionId]) != 'undefined' && cache[req.params.sessionId].alive == true) {
         cache[req.params.sessionId].getChunk(req.params.partId, () => {
             debug('Serving ' + req.params.partId + ' for session ' + req.params.sessionId);
             res.sendFile(config.xdg_cache_home + req.query.session + "/" + req.params.partId + ".ts");
+
+            if (cache[req.params.sessionId].timeout != undefined)
+                clearTimeout(cache[req.params.sessionId].timeout);
+            cache[req.params.sessionId].timeout = setTimeout(120, () => {
+                debug(req.params.sessionId + ' timed out');
+                cache[req.params.sessionId].killInstance()
+            })
         })
     } else {
         debug(req.params.sessionId + ' not found');

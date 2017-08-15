@@ -13,6 +13,7 @@ const utils = require('../utils/utils');
 
 class Transcoder {
     constructor(sessionId, url, res) {
+        this.alive = true;
         this.ffmpeg = null;
         this.transcoding = true;
         this.sessionId = sessionId;
@@ -80,6 +81,7 @@ class Transcoder {
     killInstance() {
         debug('Killing ' + this.sessionId);
         this.redisClient.quit();
+        this.alive = false;
 
         if (this.timeout != undefined) {
             clearTimeout(this.timeout)
