@@ -126,8 +126,11 @@ class Transcoder {
             itm = itm.split(',');
             let chk = itm.shift();
 
-            if (chk.startsWith("chunk") || chk.startsWith("media")) {
+            if (chk.match(/chunk-[0-9]{5}/)) {
                 rc.set(req.params.sessionId + ":" + chk.split('-')[1], itm.toString())
+            }
+            if (chk.match(/media-[0-9]{5}\.ts/)) {
+                rc.set(req.params.sessionId + ":" + chk.split('-')[1].split('.')[0], itm.toString())
             }
         });
         res.end()
