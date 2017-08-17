@@ -133,7 +133,7 @@ class Transcoder {
                 rc.set(req.params.sessionId + ":" + chk.split('-')[1], itm.toString())
             }
             if (chk.match(/sub-chunk-[0-9]{5}/)) {
-                rc.set(req.params.sessionId + ":sub:" + chk.split('-')[1], itm.toString())
+                rc.set(req.params.sessionId + ":sub:" + chk.split('-')[2], itm.toString())
             }
 
             if (chk.match(/media-[0-9]{5}\.ts/)) {
