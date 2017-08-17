@@ -50,7 +50,7 @@ stream.serveHeader = function (req, res, cwd, subtitle, callback) {
     if (!req.connection.destroyed) {
         debug('Serving ' + (subtitle ? ' subtitles ' :  '') + req.query.session);
         res.type((subtitle ? config.subtitles_content_type : config.video_content_type));
-        let fileStream = fs.createReadStream(cwd + + (subtitle ? 'sub-' : '') + 'header');
+        let fileStream = fs.createReadStream(cwd + (subtitle ? 'sub-' : '') + 'header');
         fileStream.pipe(res, {end: false});
         fileStream.on('end', callback);
     }
