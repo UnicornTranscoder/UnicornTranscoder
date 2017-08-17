@@ -112,7 +112,8 @@ class Transcoder {
                     });
                     rc.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + ":" + utils.pad(chunkId, 5))
                 } else {
-                    callback(-1)
+                    callback(-1);
+                    rc.quit();
                 }
             } else {
                 callback(chunkId)
