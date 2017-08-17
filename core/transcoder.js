@@ -100,23 +100,24 @@ class Transcoder {
         });
     }
 
-    getChunk(chunkId, callback) {
+    getChunk(chunkId, callback, subtitle = false) {
         let rc = redis.getClient();
 
-        rc.get(this.sessionId + ":" + utils.pad(chunkId, 5), (err, chunk) => {
+        rc.get(this.sessionId + (subtitle ? ":sub:" : ":") + utils.pad(chunkId, 5), (err, chunk) => {
             if (chunk == null) {
                 if (this.transcoding) {
                     rc.on("message", () => {
                         callback(chunkId);
                         rc.quit();
                     });
-                    rc.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + ":" + utils.pad(chunkId, 5))
+                    rc.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + (subtitle ? ":sub:" : ":") + utils.pad(chunkId, 5))
                 } else {
                     callback(-1);
                     rc.quit();
                 }
             } else {
-                callback(chunkId)
+                callback(chunkId);
+                rc.quit();
             }
         });
     }
@@ -131,8 +132,15 @@ class Transcoder {
             if (chk.match(/chunk-[0-9]{5}/)) {
                 rc.set(req.params.sessionId + ":" + chk.split('-')[1], itm.toString())
             }
+            if (chk.match(/sub-chunk-[0-9]{5}/)) {
+                rc.set(req.params.sessionId + ":sub:" + chk.split('-')[1], itm.toString())
+            }
+
             if (chk.match(/media-[0-9]{5}\.ts/)) {
                 rc.set(req.params.sessionId + ":" + chk.split('-')[1].split('.')[0], itm.toString())
+            }
+            if (chk.match(/media-[0-9]{5}\.vtt/)) {
+                rc.set(req.params.sessionId + ":sub:" + chk.split('-')[1].split('.')[0], itm.toString())
             }
         });
         res.end();
