@@ -134,7 +134,8 @@ class Transcoder {
                 rc.set(req.params.sessionId + ":" + chk.split('-')[1].split('.')[0], itm.toString())
             }
         });
-        res.end()
+        res.end();
+        rc.quit();
     }
 }
 
