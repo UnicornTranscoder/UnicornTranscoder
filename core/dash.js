@@ -2,6 +2,7 @@
  * Created by drouar_b on 18/08/2017.
  */
 
+const fs = require('fs');
 const debug = require('debug')('Dash');
 const Transcoder = require('./transcoder');
 const universal = require('./universal');
@@ -16,35 +17,23 @@ dash.serve = function (req, res) {
 
 dash.serveInit = function (req, res) {
     let sessionId = req.params.sessionId;
-    debug('Requesting init for session ' + sessionId);
 
-    if ((typeof universal.cache[sessionId]) != 'undefined' && universal.cache[sessionId].alive == true) {
-        universal.cache[sessionId].getChunk('init', () => {
-            debug('Serving init for session ' + sessionId);
-            res.sendFile(config.xdg_cache_home + sessionId + "/init-stream" + req.params.streamId + ".m4s");
-
-            universal.updateTimeout(sessionId);
-        }, req.params.streamId);
+    if (fs.existsSync(config.xdg_cache_home + sessionId + "/init-stream" + req.params.streamId + ".m4s")) {
+        debug('Serving ' + req.params.partId + ' for session ' + sessionId);
+        res.sendFile(config.xdg_cache_home + sessionId + "/init-stream" + req.params.streamId + ".m4s");
     } else {
-        debug(req.params.sessionId + ' not found');
-        res.status(404).send('Session not found');
+        res.status(404).send('Not found');
     }
 };
 
 dash.serveChunk = function (req, res) {
     let sessionId = req.params.sessionId;
-    debug('Requesting ' + req.params.partId + ' for session ' + sessionId);
 
-    if ((typeof universal.cache[sessionId]) != 'undefined' && universal.cache[sessionId].alive == true) {
-        universal.cache[sessionId].getChunk(req.params.partId, () => {
-            debug('Serving ' + req.params.partId + ' for session ' + sessionId);
-            res.sendFile(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + req.params.partId + ".m4s");
-
-            universal.updateTimeout(sessionId);
-        }, req.params.streamId);
+    if (fs.existsSync(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + req.params.partId + ".m4s")) {
+        debug('Serving ' + req.params.partId + ' for session ' + sessionId);
+        res.sendFile(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + req.params.partId + ".m4s");
     } else {
-        debug(req.params.sessionId + ' not found');
-        res.status(404).send('Session not found');
+        res.status(404).send('Not found');
     }
 };
 
