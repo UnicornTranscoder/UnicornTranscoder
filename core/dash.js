@@ -19,7 +19,7 @@ dash.serveInit = function (req, res) {
     let sessionId = req.params.sessionId;
 
     if (fs.existsSync(config.xdg_cache_home + sessionId + "/init-stream" + req.params.streamId + ".m4s")) {
-        debug('Serving ' + req.params.partId + ' for session ' + sessionId);
+        debug('Serving init-stream' + req.params.streamId + '.m4s for session ' + sessionId);
         res.sendFile(config.xdg_cache_home + sessionId + "/init-stream" + req.params.streamId + ".m4s");
     } else {
         res.status(404).send('Not found');
@@ -30,7 +30,7 @@ dash.serveChunk = function (req, res) {
     let sessionId = req.params.sessionId;
 
     if (fs.existsSync(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + req.params.partId + ".m4s")) {
-        debug('Serving ' + req.params.partId + ' for session ' + sessionId);
+        debug('Serving chunk-stream' + req.params.streamId + "-" + req.params.partId + '.m4s for session ' + sessionId);
         res.sendFile(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + req.params.partId + ".m4s");
     } else {
         res.status(404).send('Not found');
