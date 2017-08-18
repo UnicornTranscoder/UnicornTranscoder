@@ -14,6 +14,11 @@ let universal = require('../core/universal');
 let proxy = require('../core/proxy');
 let bodyParser = require('body-parser');
 
+//Dash routes
+router.get('/video/:/transcode/universal/start.mpd', dash.serve);
+router.get('/video/:/transcode/universal/dash/:sessionId/:streamId/initial.mp4', dash.serveInit);
+router.get('/video/:/transcode/universal/dash/:sessionId/:streamId/:partId.m4s', dash.serveChunk);
+
 //Stream mode
 router.get('/video/:/transcode/universal/start', stream.serve);
 router.get('/video/:/transcode/universal/subtitles', stream.serveSubtitles);
@@ -22,11 +27,6 @@ router.get('/video/:/transcode/universal/subtitles', stream.serveSubtitles);
 router.get('/video/:/transcode/universal/session/:sessionId/base/index.m3u8', m3u8.serve);
 router.get('/video/:/transcode/universal/session/:sessionId/:fileType/:partId.ts', m3u8.serveChunk);
 router.get('/video/:/transcode/universal/session/:sessionId/:fileType/:partId.vtt', m3u8.serveSubtitles);
-
-//Dash routes
-router.get('/video/:/transcode/universal/start.mpd', dash.serve);
-router.get('/video/:/transcode/universal/dash/:sessionId/:streamId/initial.mp4', dash.serveInit);
-router.get('/video/:/transcode/universal/dash/:sessionId/:streamId/:partId.m4s', dash.serveChunk);
 
 //Universal endpoints
 router.get('/video/:/transcode/universal/stop', universal.stopTranscoder);
