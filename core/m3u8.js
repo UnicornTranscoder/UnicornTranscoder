@@ -41,7 +41,7 @@ m3u8.serveSubtitles = function (req, res) {
             res.sendFile(config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".vtt");
 
             universal.updateTimeout(sessionId);
-        }, true)
+        }, 'sub')
     } else {
         debug(req.params.sessionId + ' not found');
         res.status(404).send('Session not found');

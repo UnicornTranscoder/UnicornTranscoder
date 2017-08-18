@@ -100,17 +100,17 @@ class Transcoder {
         });
     }
 
-    getChunk(chunkId, callback, subtitle = false) {
+    getChunk(chunkId, callback, streamId = '0') {
         let rc = redis.getClient();
 
-        rc.get(this.sessionId + (subtitle ? ":sub:" : ":") + utils.pad(chunkId, 5), (err, chunk) => {
+        rc.get(this.sessionId + ":" + streamId + ":" + (chunkId == 'init' ? chunkId : utils.pad(chunkId, 5)), (err, chunk) => {
             if (chunk == null) {
                 if (this.transcoding) {
                     rc.on("message", () => {
                         callback(chunkId);
                         rc.quit();
                     });
-                    rc.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + (subtitle ? ":sub:" : ":") + utils.pad(chunkId, 5))
+                    rc.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + ":" + streamId + ":" + (chunkId == 'init' ? chunkId : utils.pad(chunkId, 5)))
                 } else {
                     callback(-1);
                     rc.quit();
@@ -129,18 +129,29 @@ class Transcoder {
             itm = itm.split(',');
             let chk = itm.shift();
 
+            //Long polling
             if (chk.match(/chunk-[0-9]{5}/)) {
-                rc.set(req.params.sessionId + ":" + chk.split('-')[1], itm.toString())
+                rc.set(req.params.sessionId + ":0:" + chk.replace(/chunk-([0-9]{5})/, '$1'), itm.toString())
             }
             if (chk.match(/sub-chunk-[0-9]{5}/)) {
-                rc.set(req.params.sessionId + ":sub:" + chk.split('-')[2], itm.toString())
+                rc.set(req.params.sessionId + ":sub:" + chk.replace(/sub-chunk-([0-9]{5})/, '$1'), itm.toString())
             }
 
+            //M3U8
             if (chk.match(/media-[0-9]{5}\.ts/)) {
-                rc.set(req.params.sessionId + ":" + chk.split('-')[1].split('.')[0], itm.toString())
+                rc.set(req.params.sessionId + ":0:" + chk.replace(/media-([0-9]{5})\.ts/, '$1'), itm.toString())
             }
             if (chk.match(/media-[0-9]{5}\.vtt/)) {
-                rc.set(req.params.sessionId + ":sub:" + chk.split('-')[1].split('.')[0], itm.toString())
+                rc.set(req.params.sessionId + ":sub:" + chk.replace(/media-([0-9]{5})\.vtt/, '$1'), itm.toString())
+            }
+
+            //Dash
+            if (chk.match(/init-stream[0-9]\.m4s/)) {
+                rc.set(req.params.sessionId + ":" + chk.replace(/init-stream([0-9])\.m4s/, '$1') + ":init", itm.toString())
+            }
+            if (chk.match(/chunk-stream[0-9]-[0-9]{5}\.m4s/)) {
+                rc.set(req.params.sessionId + ":" + chk.replace(/chunk-stream([0-9])-[0-9]{5}\.m4s/, '$1') +
+                    ":" + chk.replace(/chunk-stream[0-9]-([0-9]{5})\.m4s/, '$1'), itm.toString())
             }
         });
         res.end();

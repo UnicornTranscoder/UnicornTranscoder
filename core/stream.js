@@ -75,7 +75,7 @@ stream.serveSubtitleChunk = function (req, res, transcoder, chunkId) {
 
             let fileStream = fs.createReadStream(cwd + "sub-chunk-" + utils.pad(chunkId, 5));
             fileStream.pipe(res, {end: false});
-            fileStream.on('end', transcoder.getChunk.bind(transcoder, chunkId + 1, stream.serveSubtitleChunk.bind(null, req, res, transcoder), true))
+            fileStream.on('end', transcoder.getChunk.bind(transcoder, chunkId + 1, stream.serveSubtitleChunk.bind(null, req, res, transcoder), 'sub'))
         }
     }
     if (chunkId == -1) {
