@@ -17,6 +17,10 @@ dash.serve = function (req, res) {
 };
 
 dash.serveInit = function (req, res) {
+    
+    // Allow CORS
+    res.header('Access-Control-Allow-Origin', '*');
+    
     let sessionId = req.params.sessionId;
 
     if (fs.existsSync(config.xdg_cache_home + sessionId + "/init-stream" + req.params.streamId + ".m4s")) {
@@ -28,6 +32,10 @@ dash.serveInit = function (req, res) {
 };
 
 dash.serveChunk = function (req, res) {
+
+    // Allow CORS
+    res.header('Access-Control-Allow-Origin', '*');
+
     let sessionId = req.params.sessionId;
 
     if (fs.existsSync(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + utils.pad(req.params.partId, 5) + ".m4s")) {
