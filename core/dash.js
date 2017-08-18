@@ -11,7 +11,7 @@ let dash = {};
 
 dash.serve = function (req, res) {
     debug(req.query.session);
-    universal.cache[req.query.session] = new Transcoder(req.query.session, req.url, res)
+    universal.cache[req.query.session] = new Transcoder(req.query.session, req, res)
 };
 
 dash.serveInit = function (req, res) {

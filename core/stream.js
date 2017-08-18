@@ -15,7 +15,7 @@ stream.serve = function(req, res) {
     debug('Stream ' + req.query.session.toString());
 
     if (typeof universal.cache[req.query.session] == 'undefined') {
-        universal.cache[req.query.session] = new Transcoder(req.query.session, req.url);
+        universal.cache[req.query.session] = new Transcoder(req.query.session, req);
     }
 
     req.connection.on("close", stream.connectionClosed.bind(null, universal.cache[req.query.session]));

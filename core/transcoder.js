@@ -10,9 +10,10 @@ const request = require('request');
 const config = require('../utils/config');
 const redis = require('../utils/redis');
 const utils = require('../utils/utils');
+const proxy = require('./proxy');
 
 class Transcoder {
-    constructor(sessionId, url, res) {
+    constructor(sessionId, req, res) {
         this.alive = true;
         this.ffmpeg = null;
         this.transcoding = true;
@@ -33,11 +34,11 @@ class Transcoder {
 
         this.redisClient.subscribe("__keyspace@" + config.redis_db + "__:" + sessionId);
 
-        request(config.plex_url + url, (error, response, body) => {
-            if (res) {
-                res.send(body)
-            }
-        })
+        if (typeof res != 'undefined') {
+            proxy(req, res)
+        } else {
+            request(config.plex_url + req.url)
+        }
     }
 
     transcoderStarter(err, reply) {
