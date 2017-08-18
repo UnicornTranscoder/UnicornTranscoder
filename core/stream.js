@@ -60,7 +60,7 @@ stream.serveHeader = function (req, res, cwd, subtitle, callback) {
 stream.serveSubtitles = function (req, res) {
     if (typeof universal.cache[req.query.session] != 'undefined') {
         debug('Subtitles ' + req.query.session.toString());
-        universal.cache[req.query.session].getChunk(0, stream.serveSubtitleChunk.bind(null, req, res, universal.cache[req.query.session]), true)
+        universal.cache[req.query.session].getChunk(0, stream.serveSubtitleChunk.bind(null, req, res, universal.cache[req.query.session]), 'sub')
     } else {
         res.status(404).send('Invalid session')
     }
