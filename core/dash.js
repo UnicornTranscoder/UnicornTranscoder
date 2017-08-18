@@ -7,6 +7,7 @@ const debug = require('debug')('Dash');
 const Transcoder = require('./transcoder');
 const universal = require('./universal');
 const config = require('../utils/config');
+const utils = require('../utils/utils');
 
 let dash = {};
 
@@ -29,9 +30,9 @@ dash.serveInit = function (req, res) {
 dash.serveChunk = function (req, res) {
     let sessionId = req.params.sessionId;
 
-    if (fs.existsSync(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + req.params.partId + ".m4s")) {
-        debug('Serving chunk-stream' + req.params.streamId + "-" + req.params.partId + '.m4s for session ' + sessionId);
-        res.sendFile(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + req.params.partId + ".m4s");
+    if (fs.existsSync(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + utils.pad(req.params.partId, 5) + ".m4s")) {
+        debug('Serving chunk-stream' + req.params.streamId + "-" + utils.pad(req.params.partId, 5) + '.m4s for session ' + sessionId);
+        res.sendFile(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + utils.pad(req.params.partId, 5) + ".m4s");
     } else {
         res.status(404).send('Not found');
     }
