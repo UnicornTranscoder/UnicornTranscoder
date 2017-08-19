@@ -29,6 +29,10 @@ dash.serveInit = function (req, res) {
     } else {
         res.status(404).send('Not found');
     }
+
+    if ((typeof universal.cache[sessionId]) != 'undefined' && universal.cache[sessionId].alive == true) {
+        universal.updateTimeout(sessionId);
+    }
 };
 
 dash.serveChunk = function (req, res) {
@@ -43,6 +47,10 @@ dash.serveChunk = function (req, res) {
         res.sendFile(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + utils.pad(parseInt(req.params.partId) + 1, 5) + ".m4s");
     } else {
         res.status(404).send('Not found');
+    }
+
+    if ((typeof universal.cache[sessionId]) != 'undefined' && universal.cache[sessionId].alive == true) {
+        universal.updateTimeout(sessionId);
     }
 };
 
