@@ -49,6 +49,11 @@ class Transcoder {
         fs.mkdirSync(config.xdg_cache_home + this.sessionId);
 
         let args = JSON.parse(reply);
+        if (args == null) {
+            debug(reply);
+            return;
+        }
+
         args = args.map((arg) => {
             return arg
                 .replace('{URL}', "http://127.0.0.1:" + config.port)
