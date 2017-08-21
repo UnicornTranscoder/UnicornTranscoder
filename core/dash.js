@@ -25,7 +25,7 @@ dash.serveInit = function (req, res) {
 
     if (fs.existsSync(config.xdg_cache_home + sessionId + "/init-stream" + req.params.streamId + ".m4s")) {
         debug('Serving init-stream' + req.params.streamId + '.m4s for session ' + sessionId);
-        res.sendFile(config.xdg_cache_home + sessionId + "/init-stream" + req.params.streamId + ".m4s");
+        res.download(config.xdg_cache_home + sessionId + "/init-stream" + req.params.streamId + ".m4s");
     } else {
         res.status(404).send('Not found');
     }
@@ -44,7 +44,7 @@ dash.serveChunk = function (req, res) {
 
     if (fs.existsSync(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + utils.pad(parseInt(req.params.partId) + 1, 5) + ".m4s")) {
         debug('Serving chunk-stream' + req.params.streamId + "-" + utils.pad(parseInt(req.params.partId) + 1, 5) + '.m4s for session ' + sessionId);
-        res.sendFile(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + utils.pad(parseInt(req.params.partId) + 1, 5) + ".m4s");
+        res.download(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + utils.pad(parseInt(req.params.partId) + 1, 5) + ".m4s");
     } else {
         res.status(404).send('Not found');
     }
