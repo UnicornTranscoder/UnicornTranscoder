@@ -38,6 +38,7 @@ router.get('/library/parts/:id1/:id2/file.*', download.serve);
 
 //Transcoder progression
 router.post('/video/:/transcode/session/:sessionId/seglist', bodyParser.text({ type: function () {return true} }), transcoder.chunkProcessCallback);
+router.post('/video/:/transcode/session/:sessionId/*/seglist', bodyParser.text({ type: function () {return true} }), transcoder.chunkProcessCallback);
 
 // Reverse all others to plex
 router.all('*', proxy);
