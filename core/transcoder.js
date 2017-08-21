@@ -162,7 +162,11 @@ class Transcoder {
         });
         rc.quit();
 
-        proxy(req, res);
+        request.post({
+            url: config.plex_url,
+            body: req.body,
+            headers: req.headers
+        })
     }
 }
 
