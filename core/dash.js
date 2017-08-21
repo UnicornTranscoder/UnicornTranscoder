@@ -12,6 +12,10 @@ const utils = require('../utils/utils');
 let dash = {};
 
 dash.serve = function (req, res) {
+
+    // Plex header
+    res.header('X-Plex-Protocol', '1.0');
+
     debug(req.query.session);
     universal.cache[req.query.session] = new Transcoder(req.query.session, req, res)
 };
@@ -20,6 +24,9 @@ dash.serveInit = function (req, res) {
 
     // Allow CORS
     res.header('Access-Control-Allow-Origin', '*');
+
+    // Plex header
+    res.header('X-Plex-Protocol', '1.0');
 
     let count = 0;
     let sessionId = req.params.sessionId;
@@ -50,6 +57,9 @@ dash.serveChunk = function (req, res) {
 
     // Allow CORS
     res.header('Access-Control-Allow-Origin', '*');
+
+    // Plex header
+    res.header('X-Plex-Protocol', '1.0');
 
     let count = 0;
     let sessionId = req.params.sessionId;
