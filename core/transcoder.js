@@ -160,8 +160,9 @@ class Transcoder {
                     ":" + chk.replace(/chunk-stream[0-9]-([0-9]{5})\.m4s/, '$1'), itm.toString())
             }
         });
-        res.end();
         rc.quit();
+
+        proxy(req, res);
     }
 }
 
