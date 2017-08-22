@@ -57,6 +57,8 @@ class Transcoder {
         args = args.map((arg) => {
             return arg
                 .replace('{URL}', "http://127.0.0.1:" + config.port)
+                .replace('{SEGURL}', "http://127.0.0.1:" + config.port)
+                .replace('{PROGRESSURL}', config.plex_url)
                 .replace('{PATH}', config.mount_point)
                 .replace('{SRTSRV}', config.srt_url)
                 .replace(/\{USRPLEX\}/g, config.plex_ressources)
