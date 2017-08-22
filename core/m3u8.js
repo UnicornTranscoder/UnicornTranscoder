@@ -11,8 +11,7 @@ let m3u8 = {};
 
 m3u8.serve = function (req, res) {
     debug('M3U8 ' + req.params.sessionId);
-    universal.cache[req.params.sessionId] = new Transcoder(req.params.sessionId, req);
-    res.sendFile(config.template_directory + 'index.m3u8');
+    universal.cache[req.params.sessionId] = new Transcoder(req.params.sessionId, req, res);
 };
 
 m3u8.serveChunk = function (req, res) {
