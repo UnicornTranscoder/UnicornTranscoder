@@ -163,7 +163,7 @@ class Transcoder {
         rc.quit();
 
         request.post({
-            url: config.plex_url,
+            url: config.plex_url + req.url,
             body: req.body,
             headers: req.headers
         })
