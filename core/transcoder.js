@@ -72,6 +72,7 @@ class Transcoder {
         env.XDG_CACHE_HOME = config.xdg_cache_home;
         env.XDG_DATA_HOME = config.xdg_data_home;
         env.EAE_ROOT = config.eae_root;
+        env.X_PLEX_TOKEN = parsed.env.X_PLEX_TOKEN;
 
         debug('Spawn ' + this.sessionId);
         this.ffmpeg = child_process.spawn(config.transcoder_path, args, {env: env, cwd: config.xdg_cache_home + this.sessionId + "/"});
