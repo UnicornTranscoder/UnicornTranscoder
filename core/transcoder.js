@@ -48,11 +48,13 @@ class Transcoder {
         rimraf.sync(config.xdg_cache_home + this.sessionId);
         fs.mkdirSync(config.xdg_cache_home + this.sessionId);
 
-        let args = JSON.parse(reply);
-        if (args == null) {
+        let parsed = JSON.parse(reply);
+        if (parsed == null) {
             debug(reply);
             return;
         }
+
+        let args = parsed.args;
 
         args = args.map((arg) => {
             return arg
