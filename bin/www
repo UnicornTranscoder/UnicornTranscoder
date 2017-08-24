@@ -4,10 +4,10 @@
  * Created by drouar_b on 27/04/2017.
  */
 
-let app = require('../app')
-let config = require('../utils/config')
-let debug = require('debug')('UnicornTranscoder2:server')
-let http = require('http')
+const app = require('../app')
+const config = require('../utils/config')
+const debug = require('debug')('UnicornTranscoder2:server')
+const http = require('http')
 
 app.set(config.port)
 let server = http.createServer(app)

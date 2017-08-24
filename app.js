@@ -2,11 +2,13 @@
  * Created by drouar_b on 27/04/2017.
  */
 
-let express = require('express');
-let routes = require('./routes/routes');
+const express = require('express');
+const restreamer = require('connect-restreamer');
+const routes = require('./routes/routes');
 
 let app = express();
 
+app.use(restreamer());
 app.use('/', routes);
 
 module.exports = app;
