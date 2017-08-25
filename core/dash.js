@@ -12,10 +12,6 @@ const utils = require('../utils/utils');
 let dash = {};
 
 dash.serve = function (req, res) {
-
-    // Plex header
-    res.header('X-Plex-Protocol', '1.0');
-
     debug(req.query.session);
     universal.cache[req.query.session] = new Transcoder(req.query.session, req, res)
 };
