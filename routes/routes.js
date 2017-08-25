@@ -41,6 +41,6 @@ router.post('/video/:/transcode/session/:sessionId/seglist', bodyParser.text({ t
 router.post('/video/:/transcode/session/:sessionId/*/seglist', bodyParser.text({ type: function () {return true} }), transcoder.chunkProcessCallback);
 
 // Reverse all others to plex
-router.all('*', proxy);
+router.all('*', bodyParser.raw({ type: function () {return true} }), proxy);
 
 module.exports = router;
