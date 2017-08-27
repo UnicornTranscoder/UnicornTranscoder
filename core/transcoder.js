@@ -185,7 +185,6 @@ class Transcoder {
 
                 rc.quit();
             } catch (e) {
-                console.log(e);
                 rc.quit();
             }
             res.end();
