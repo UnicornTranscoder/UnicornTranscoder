@@ -7,6 +7,7 @@ const debug = require('debug')('transcoder');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const request = require('request');
+const xml2js = require('xml2js');
 const config = require('../utils/config');
 const redis = require('../utils/redis');
 const utils = require('../utils/utils');
@@ -133,7 +134,7 @@ class Transcoder {
         });
     }
 
-    static chunkProcessCallback(req, res) {
+    static seglistParser(req, res) {
         let rc = redis.getClient();
 
         req.body.split(/\r?\n/).forEach((itm) => {
@@ -155,23 +156,40 @@ class Transcoder {
             if (chk.match(/media-[0-9]{5}\.vtt/)) {
                 rc.set(req.params.sessionId + ":sub:" + chk.replace(/media-([0-9]{5})\.vtt/, '$1'), itm.toString())
             }
-
-            //Dash
-            if (chk.match(/init-stream[0-9]\.m4s/)) {
-                rc.set(req.params.sessionId + ":" + chk.replace(/init-stream([0-9])\.m4s/, '$1') + ":init", itm.toString())
-            }
-            if (chk.match(/chunk-stream[0-9]-[0-9]{5}\.m4s/)) {
-                rc.set(req.params.sessionId + ":" + chk.replace(/chunk-stream([0-9])-[0-9]{5}\.m4s/, '$1') +
-                    ":" + chk.replace(/chunk-stream[0-9]-([0-9]{5})\.m4s/, '$1'), itm.toString())
-            }
         });
         rc.quit();
+        res.end();
+    }
 
-        request.post({
-            url: config.plex_url + req.url,
-            body: req.body,
-            headers: req.headers
-        })
+    static manifestParser(req, res) {
+        xml2js.parseString(req.body, function (err, mpd) {
+            if (err) {
+                res.end();
+                return;
+            }
+            let rc = redis.getClient();
+
+            try {
+                mpd.MPD.Period[0].AdaptationSet.forEach((adaptationSet) => {
+                    let c = 0;
+                    let i = 0;
+                    let streamId = adaptationSet.Representation[0]["$"].id;
+
+                    adaptationSet.Representation[0].SegmentTemplate[0].SegmentTimeline[0].S.forEach((s) => {
+                        for (i = c; i < c + (typeof s["$"].r != 'undefined' ? parseInt(s["$"].r) : 1); i++) {
+                            rc.set(req.params.sessionId + ":" + streamId + ":" + utils.pad(i, 5), s["$"].d);
+                        }
+                        c = i;
+                    });
+                });
+
+                rc.quit();
+            } catch (e) {
+                console.log(e);
+                rc.quit();
+            }
+            res.end();
+        });
     }
 }
 
