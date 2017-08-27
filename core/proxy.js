@@ -10,13 +10,15 @@ let proxy = httpProxy.createProxyServer({
 });
 
 module.exports = function (req, res) {
-    proxy.on('proxyReq', function(proxyReq, req, res, options) {
-        if(req.method=="POST" && req.body && !req.connection.destroyed){
-            proxyReq.setHeader('Content-Length', Buffer.byteLength(req.body));
-            proxyReq.write(req.body);
-            proxyReq.end();
-        }
-    });
+    req.removeAllListeners('data');
+    req.removeAllListeners('end');
 
+    process.nextTick(function () {
+        if(req.body) {
+            req.emit('data', JSON.stringify(req.body));
+        }
+        req.emit('end');
+    });
+    
     proxy.web(req, res)
 };
