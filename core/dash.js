@@ -38,7 +38,12 @@ dash.serveChunk = function (req, res) {
     res.header('Access-Control-Allow-Origin', '*');
 
     if ((typeof universal.cache[sessionId]) != 'undefined' && universal.cache[sessionId].alive == true) {
-        universal.cache[sessionId].getChunk(parseInt(req.params.partId), (chunkId) => {
+
+        if (typeof universal.cache[sessionId].chunkOffset  == 'undefined') {
+            universal.cache[sessionId].chunkOffset = parseInt(req.params.partId);
+        }
+
+        universal.cache[sessionId].getChunk(parseInt(req.params.partId) - universal.cache[sessionId].chunkOffset, (chunkId) => {
             debug('Serving chunk-stream' + req.params.streamId + "-" + utils.pad(chunkId + 1, 5) + '.m4s for session ' + sessionId);
             res.sendFile(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + utils.pad(chunkId + 1, 5) + ".m4s");
 
