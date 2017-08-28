@@ -126,6 +126,8 @@ class Transcoder {
     segmentJumper(chunkId, streamId, rc) {
         rc.get(this.sessionId + ":last", (err, last) => {
             if (err || last == null || parseInt(last) > chunkId || parseInt(last) < chunkId - 10) {
+                debug('jumping to segment ' + chunkId + ' for ' + this.sessionId);
+
                 this.ffmpeg.kill('SIGKILL');
                 this.transcoding = true;
 
