@@ -30,6 +30,7 @@ class Transcoder {
             this.timeout = undefined;
 
             this.redisClient.unsubscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId);
+            this.redisClient.set(this.sessionId + ":last", "00000");
             this.redisClient.get(this.sessionId, this.transcoderStarter.bind(this));
         });
 
@@ -123,7 +124,7 @@ class Transcoder {
 
     segmentJumper(chunkId, rc, callback) {
         rc.get(this.sessionId + ":last", (err, last) => {
-            if (err || last == null || parseInt(last) > chunkId || parseInt(last) < chunkId - 10) {
+            if (err || last == null || parseInt(last) > parseInt(chunkId) || parseInt(last) < parseInt(chunkId) - 10) {
                 debug('jumping to segment ' + chunkId + ' for ' + this.sessionId);
 
                 this.ffmpeg.kill('SIGKILL');
@@ -132,7 +133,7 @@ class Transcoder {
                 let prev = null;
                 this.transcoderArgs = this.transcoderArgs.map((arg) => {
                     if (prev == '-segment_start_number' || prev == '-skip_to_segment') {
-                        arg = (chunkId > 0 ? chunkId : 1);
+                        arg = parseInt(chunkId);
                     }
                     prev = arg;
                     return arg;
