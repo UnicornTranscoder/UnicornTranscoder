@@ -66,16 +66,8 @@ class Transcoder {
                 .replace(/\{USRPLEX\}/g, config.plex_ressources)
         });
 
-        if (typeof this.chunkOffset != 'undefined') {
-            let prev = null;
-            this.transcoderArgs = this.transcoderArgs.map((arg) => {
-                if (prev == '-segment_start_number' || prev == '-skip_to_segment') {
-                    arg = this.chunkOffset;
-                }
-                prev = arg;
-                return arg;
-            });
-        }
+        if (typeof this.chunkOffset != 'undefined')
+            this.patchArgs(this.chunkOffset);
 
         this.transcoderEnv = Object.create(process.env);
         this.transcoderEnv.LD_LIBRARY_PATH = config.ld_library_path;
@@ -133,7 +125,43 @@ class Transcoder {
         });
     }
 
-    segmentJumper(chunkId, rc, callback) {
+    patchArgs(chunkId) {
+        let prev = null;
+        this.transcoderArgs = this.transcoderArgs.map((arg) => {
+            if (prev == '-segment_start_number' || prev == '-skip_to_segment') {
+                arg = parseInt(chunkId);
+            }
+            prev = arg;
+            return arg;
+        });
+
+        prev = null;
+        let offset = 0;
+        let segmentDuration = 5;
+        this.transcoderArgs.map((arg) => {
+            if (prev == '-segment_time') {
+                segmentDuration = arg;
+            }
+            if (prev == '-min_seg_duration') {
+                offset = -1;
+                segmentDuration = arg / 1000000;
+            }
+        });
+
+        if (this.transcoderArgs.indexOf("-ss") == -1) {
+            this.transcoderArgs.unshift("-ss", chunkId * segmentDuration, "-noaccurate_seek")
+        } else {
+            prev = null;
+            this.transcoderArgs = this.transcoderArgs.map((arg) => {
+                if (prev == '-ss')
+                    arg = (chunkId + offset) * segmentDuration;
+                prev = arg;
+                return arg;
+            })
+        }
+    }
+
+    segmentJumper(chunkId, streamId, rc, callback) {
         rc.get(this.sessionId + ":last", (err, last) => {
             if (err || last == null || parseInt(last) > parseInt(chunkId) || parseInt(last) < parseInt(chunkId) - 10) {
                 debug('jumping to segment ' + chunkId + ' for ' + this.sessionId);
@@ -144,21 +172,13 @@ class Transcoder {
                     this.ffmpeg.removeAllListeners('exit');
                     this.ffmpeg.kill('SIGKILL');
 
-                    let prev = null;
-                    this.transcoderArgs = this.transcoderArgs.map((arg) => {
-                        if (prev == '-segment_start_number' || prev == '-skip_to_segment') {
-                            arg = parseInt(chunkId);
-                        }
-                        prev = arg;
-                        return arg;
-                    });
-
+                    this.patchArgs(chunkId);
                     this.startFFMPEG();
                 } else {
                     this.chunkOffset = parseInt(chunkId);
                 }
             }
-            callback()
+            this.waitChunk(chunkId, streamId, rc, callback)
         });
     }
 
@@ -167,30 +187,29 @@ class Transcoder {
 
         rc.get(this.sessionId + ":" + streamId + ":" + (chunkId == 'init' ? chunkId : utils.pad(chunkId, 5)), (err, chunk) => {
             if (chunk == null) {
-
-                let subscribeChunk = () => {
-                    if (this.transcoding) {
-                        rc.on("message", () => {
-                            callback(chunkId);
-                            rc.quit();
-                        });
-                        rc.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + ":" + streamId + ":" + (chunkId == 'init' ? chunkId : utils.pad(chunkId, 5)))
-                    } else {
-                        callback(-1);
-                        rc.quit();
-                    }
-                };
-
                 if (streamId != 'sub')
-                    this.segmentJumper(chunkId, rc, subscribeChunk);
+                    this.segmentJumper(chunkId, streamId, rc, callback);
                 else
-                    subscribeChunk();
+                    this.waitChunk(chunkId, streamId, rc, callback);
 
             } else {
                 callback(chunkId);
                 rc.quit();
             }
         });
+    }
+
+    waitChunk(chunkId, streamId, rc, callback) {
+        if (this.transcoding) {
+            rc.on("message", () => {
+                callback(chunkId);
+                rc.quit();
+            });
+            rc.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + ":" + streamId + ":" + (chunkId == 'init' ? chunkId : utils.pad(chunkId, 5)))
+        } else {
+            callback(-1);
+            rc.quit();
+        }
     }
 
     static seglistParser(req, res) {
