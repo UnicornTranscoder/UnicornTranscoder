@@ -55,9 +55,9 @@ class Transcoder {
             return;
         }
 
-        let args = parsed.args;
+        this.transcoderArgs = parsed.args;
 
-        args = args.map((arg) => {
+        this.transcoderArgs = args.map((arg) => {
             return arg
                 .replace('{URL}', "http://127.0.0.1:" + config.port)
                 .replace('{SEGURL}', "http://127.0.0.1:" + config.port)
@@ -67,16 +67,27 @@ class Transcoder {
                 .replace(/\{USRPLEX\}/g, config.plex_ressources)
         });
 
-        let env = Object.create(process.env);
-        env.LD_LIBRARY_PATH = config.ld_library_path;
-        env.FFMPEG_EXTERNAL_LIBS = config.ffmpeg_external_libs;
-        env.XDG_CACHE_HOME = config.xdg_cache_home;
-        env.XDG_DATA_HOME = config.xdg_data_home;
-        env.EAE_ROOT = config.eae_root;
-        env.X_PLEX_TOKEN = parsed.env.X_PLEX_TOKEN;
+        this.transcoderEnv = Object.create(process.env);
+        this.transcoderEnv.LD_LIBRARY_PATH = config.ld_library_path;
+        this.transcoderEnv.FFMPEG_EXTERNAL_LIBS = config.ffmpeg_external_libs;
+        this.transcoderEnv.XDG_CACHE_HOME = config.xdg_cache_home;
+        this.transcoderEnv.XDG_DATA_HOME = config.xdg_data_home;
+        this.transcoderEnv.EAE_ROOT = config.eae_root;
+        this.transcoderEnv.X_PLEX_TOKEN = parsed.env.X_PLEX_TOKEN;
 
+        this.startFFMPEG();
+    }
+
+    startFFMPEG() {
         debug('Spawn ' + this.sessionId);
-        this.ffmpeg = child_process.spawn(config.transcoder_path, args, {env: env, cwd: config.xdg_cache_home + this.sessionId + "/"});
+        this.ffmpeg = child_process.spawn(
+            config.transcoder_path,
+            this.transcoderArgs,
+            {
+                env: this.transcoderEnv,
+                cwd: config.xdg_cache_home + this.sessionId + "/"
+            });
+
         this.ffmpeg.on("exit", () => {
             debug('FFMPEG stopped ' + this.sessionId);
             this.transcoding = false
@@ -112,11 +123,35 @@ class Transcoder {
         });
     }
 
+    segmentJumper(chunkId, streamId, rc) {
+        rc.get(this.sessionId + ":last", (err, last) => {
+            if (err || last == null || parseInt(last) > chunkId || parseInt(last) < chunkId - 10) {
+                this.ffmpeg.kill('SIGKILL');
+                this.transcoding = true;
+
+                let prev = null;
+                this.transcoderArgs.map((arg) => {
+                    if (prev == '-segment_start_number' || prev == '-skip_to_segment') {
+                        arg = (chunkId > 0 ? chunkId : 1);
+                    }
+                    prev = arg;
+                    return arg;
+                });
+
+                rc.set(this.sessionId + ":" + streamId + ":last", utils.pad(chunkId, 5));
+                this.startFFMPEG();
+            }
+        });
+    }
+
     getChunk(chunkId, callback, streamId = '0') {
         let rc = redis.getClient();
 
         rc.get(this.sessionId + ":" + streamId + ":" + (chunkId == 'init' ? chunkId : utils.pad(chunkId, 5)), (err, chunk) => {
             if (chunk == null) {
+                if (streamId != 'sub')
+                    this.segmentJumper(chunkId, rc);
+
                 if (this.transcoding) {
                     rc.on("message", () => {
                         callback(chunkId);
@@ -135,6 +170,7 @@ class Transcoder {
     }
 
     static seglistParser(req, res) {
+        let last = -1;
         let rc = redis.getClient();
 
         req.body.split(/\r?\n/).forEach((itm) => {
@@ -143,7 +179,8 @@ class Transcoder {
 
             //Long polling
             if (chk.match(/chunk-[0-9]{5}/)) {
-                rc.set(req.params.sessionId + ":0:" + chk.replace(/chunk-([0-9]{5})/, '$1'), itm.toString())
+                rc.set(req.params.sessionId + ":0:" + chk.replace(/chunk-([0-9]{5})/, '$1'), itm.toString());
+                last = parseInt(chk.replace(/chunk-([0-9]{5})/, '$1'));
             }
             if (chk.match(/sub-chunk-[0-9]{5}/)) {
                 rc.set(req.params.sessionId + ":sub:" + chk.replace(/sub-chunk-([0-9]{5})/, '$1'), itm.toString())
@@ -151,12 +188,18 @@ class Transcoder {
 
             //M3U8
             if (chk.match(/media-[0-9]{5}\.ts/)) {
-                rc.set(req.params.sessionId + ":0:" + chk.replace(/media-([0-9]{5})\.ts/, '$1'), itm.toString())
+                rc.set(req.params.sessionId + ":0:" + chk.replace(/media-([0-9]{5})\.ts/, '$1'), itm.toString());
+                last = parseInt(chk.replace(/media-([0-9]{5})\.ts/, '$1'));
             }
             if (chk.match(/media-[0-9]{5}\.vtt/)) {
                 rc.set(req.params.sessionId + ":sub:" + chk.replace(/media-([0-9]{5})\.vtt/, '$1'), itm.toString())
             }
         });
+
+        if (last != -1) {
+            rc.set(req.params.sessionId + ":last", last);
+        }
+
         rc.quit();
         res.end();
     }
@@ -170,6 +213,8 @@ class Transcoder {
             let rc = redis.getClient();
 
             try {
+                let last = -1;
+
                 mpd.MPD.Period[0].AdaptationSet.forEach((adaptationSet) => {
                     let c = 0;
                     let i = 0;
@@ -178,10 +223,16 @@ class Transcoder {
                     adaptationSet.Representation[0].SegmentTemplate[0].SegmentTimeline[0].S.forEach((s) => {
                         for (i = c; i < c + (typeof s["$"].r != 'undefined' ? parseInt(s["$"].r) : 1); i++) {
                             rc.set(req.params.sessionId + ":" + streamId + ":" + utils.pad(i, 5), s["$"].d);
+                            if (i > last)
+                                i = last;
                         }
                         c = i;
                     });
                 });
+
+                if (last != -1) {
+                    rc.set(req.params.sessionId + ":last", last);
+                }
 
                 rc.quit();
             } catch (e) {
