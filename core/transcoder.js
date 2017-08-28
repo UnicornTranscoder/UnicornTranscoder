@@ -121,7 +121,7 @@ class Transcoder {
         });
     }
 
-    segmentJumper(chunkId, streamId, rc) {
+    segmentJumper(chunkId, rc) {
         rc.get(this.sessionId + ":last", (err, last) => {
             if (err || last == null || parseInt(last) > chunkId || parseInt(last) < chunkId - 10) {
                 debug('jumping to segment ' + chunkId + ' for ' + this.sessionId);
@@ -138,7 +138,7 @@ class Transcoder {
                     return arg;
                 });
 
-                rc.set(this.sessionId + ":" + streamId + ":last", utils.pad(chunkId, 5));
+                rc.set(this.sessionId + ":last", utils.pad(chunkId, 5));
                 this.startFFMPEG();
             }
         });
