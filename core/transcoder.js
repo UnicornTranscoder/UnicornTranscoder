@@ -55,9 +55,7 @@ class Transcoder {
             return;
         }
 
-        this.transcoderArgs = parsed.args;
-
-        this.transcoderArgs = args.map((arg) => {
+        this.transcoderArgs = parsed.args.map((arg) => {
             return arg
                 .replace('{URL}', "http://127.0.0.1:" + config.port)
                 .replace('{SEGURL}', "http://127.0.0.1:" + config.port)
@@ -132,7 +130,7 @@ class Transcoder {
                 this.transcoding = true;
 
                 let prev = null;
-                this.transcoderArgs.map((arg) => {
+                this.transcoderArgs = this.transcoderArgs.map((arg) => {
                     if (prev == '-segment_start_number' || prev == '-skip_to_segment') {
                         arg = (chunkId > 0 ? chunkId : 1);
                     }
