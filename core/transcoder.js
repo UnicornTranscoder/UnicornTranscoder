@@ -66,6 +66,17 @@ class Transcoder {
                 .replace(/\{USRPLEX\}/g, config.plex_ressources)
         });
 
+        if (typeof this.chunkOffset != 'undefined') {
+            let prev = null;
+            this.transcoderArgs = this.transcoderArgs.map((arg) => {
+                if (prev == '-segment_start_number' || prev == '-skip_to_segment') {
+                    arg = this.chunkOffset;
+                }
+                prev = arg;
+                return arg;
+            });
+        }
+
         this.transcoderEnv = Object.create(process.env);
         this.transcoderEnv.LD_LIBRARY_PATH = config.ld_library_path;
         this.transcoderEnv.FFMPEG_EXTERNAL_LIBS = config.ffmpeg_external_libs;
@@ -127,20 +138,25 @@ class Transcoder {
             if (err || last == null || parseInt(last) > parseInt(chunkId) || parseInt(last) < parseInt(chunkId) - 10) {
                 debug('jumping to segment ' + chunkId + ' for ' + this.sessionId);
 
-                this.ffmpeg.kill('SIGKILL');
-                this.transcoding = true;
-
-                let prev = null;
-                this.transcoderArgs = this.transcoderArgs.map((arg) => {
-                    if (prev == '-segment_start_number' || prev == '-skip_to_segment') {
-                        arg = parseInt(chunkId);
-                    }
-                    prev = arg;
-                    return arg;
-                });
-
                 rc.set(this.sessionId + ":last", parseInt(chunkId));
-                this.startFFMPEG();
+
+                if (this.ffmpeg != null) {
+                    this.ffmpeg.removeAllListeners('exit');
+                    this.ffmpeg.kill('SIGKILL');
+
+                    let prev = null;
+                    this.transcoderArgs = this.transcoderArgs.map((arg) => {
+                        if (prev == '-segment_start_number' || prev == '-skip_to_segment') {
+                            arg = parseInt(chunkId);
+                        }
+                        prev = arg;
+                        return arg;
+                    });
+
+                    this.startFFMPEG();
+                } else {
+                    this.chunkOffset = parseInt(chunkId);
+                }
             }
             callback()
         });
