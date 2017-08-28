@@ -146,6 +146,7 @@ class Transcoder {
                 offset = -1;
                 segmentDuration = arg / 1000000;
             }
+            prev = arg;
         });
 
         if (this.transcoderArgs.indexOf("-ss") == -1) {
