@@ -30,7 +30,7 @@ class Transcoder {
             this.timeout = undefined;
 
             this.redisClient.unsubscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId);
-            this.redisClient.set(this.sessionId + ":last", "00000");
+            this.redisClient.set(this.sessionId + ":last", 0);
             this.redisClient.get(this.sessionId, this.transcoderStarter.bind(this));
         });
 
@@ -139,7 +139,7 @@ class Transcoder {
                     return arg;
                 });
 
-                rc.set(this.sessionId + ":last", utils.pad(chunkId, 5));
+                rc.set(this.sessionId + ":last", parseInt(chunkId));
                 this.startFFMPEG();
             }
             callback()
