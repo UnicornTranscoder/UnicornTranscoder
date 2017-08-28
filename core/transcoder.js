@@ -150,12 +150,12 @@ class Transcoder {
         });
 
         if (this.transcoderArgs.indexOf("-ss") == -1) {
-            this.transcoderArgs.splice(this.transcoderArgs.indexOf("-i"), 0, "-ss", (chunkId + offset) * segmentDuration, "-noaccurate_seek");
+            this.transcoderArgs.splice(this.transcoderArgs.indexOf("-i"), 0, "-ss", (parseInt(chunkId) + offset) * segmentDuration, "-noaccurate_seek");
         } else {
             prev = null;
             this.transcoderArgs = this.transcoderArgs.map((arg) => {
                 if (prev == '-ss')
-                    arg = (chunkId + offset) * segmentDuration;
+                    arg = (parseInt(chunkId) + offset) * segmentDuration;
                 prev = arg;
                 return arg;
             })
