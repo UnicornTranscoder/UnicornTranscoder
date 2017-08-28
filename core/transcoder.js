@@ -126,6 +126,9 @@ class Transcoder {
     }
 
     patchArgs(chunkId) {
+        if (chunkId == 0)
+            return;
+
         let prev = null;
         this.transcoderArgs = this.transcoderArgs.map((arg) => {
             if (prev == '-segment_start_number' || prev == '-skip_to_segment') {
