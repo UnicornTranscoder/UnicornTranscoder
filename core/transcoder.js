@@ -121,7 +121,7 @@ class Transcoder {
         });
     }
 
-    segmentJumper(chunkId, rc) {
+    segmentJumper(chunkId, rc, callback) {
         rc.get(this.sessionId + ":last", (err, last) => {
             if (err || last == null || parseInt(last) > chunkId || parseInt(last) < chunkId - 10) {
                 debug('jumping to segment ' + chunkId + ' for ' + this.sessionId);
@@ -141,6 +141,7 @@ class Transcoder {
                 rc.set(this.sessionId + ":last", utils.pad(chunkId, 5));
                 this.startFFMPEG();
             }
+            callback()
         });
     }
 
@@ -149,19 +150,25 @@ class Transcoder {
 
         rc.get(this.sessionId + ":" + streamId + ":" + (chunkId == 'init' ? chunkId : utils.pad(chunkId, 5)), (err, chunk) => {
             if (chunk == null) {
-                if (streamId != 'sub')
-                    this.segmentJumper(chunkId, rc);
 
-                if (this.transcoding) {
-                    rc.on("message", () => {
-                        callback(chunkId);
+                let subscribeChunk = () => {
+                    if (this.transcoding) {
+                        rc.on("message", () => {
+                            callback(chunkId);
+                            rc.quit();
+                        });
+                        rc.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + ":" + streamId + ":" + (chunkId == 'init' ? chunkId : utils.pad(chunkId, 5)))
+                    } else {
+                        callback(-1);
                         rc.quit();
-                    });
-                    rc.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + ":" + streamId + ":" + (chunkId == 'init' ? chunkId : utils.pad(chunkId, 5)))
-                } else {
-                    callback(-1);
-                    rc.quit();
-                }
+                    }
+                };
+
+                if (streamId != 'sub')
+                    this.segmentJumper(chunkId, rc, subscribeChunk);
+                else
+                    subscribeChunk();
+
             } else {
                 callback(chunkId);
                 rc.quit();
