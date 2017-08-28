@@ -150,7 +150,7 @@ class Transcoder {
         });
 
         if (this.transcoderArgs.indexOf("-ss") == -1) {
-            this.transcoderArgs.unshift("-ss", chunkId * segmentDuration, "-noaccurate_seek")
+            this.transcoderArgs.slice(this.transcoderArgs.indexOf("-i"), 0, "-ss", (chunkId + offset) * segmentDuration, "-noaccurate_seek");
         } else {
             prev = null;
             this.transcoderArgs = this.transcoderArgs.map((arg) => {
