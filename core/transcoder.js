@@ -128,6 +128,7 @@ class Transcoder {
     patchArgs(chunkId) {
         if (chunkId == 0)
             return;
+        debug('jumping to segment ' + chunkId + ' for ' + this.sessionId);
 
         let prev = null;
         this.transcoderArgs = this.transcoderArgs.map((arg) => {
@@ -168,8 +169,6 @@ class Transcoder {
     segmentJumper(chunkId, streamId, rc, callback) {
         rc.get(this.sessionId + ":last", (err, last) => {
             if (err || last == null || parseInt(last) > parseInt(chunkId) || parseInt(last) < parseInt(chunkId) - 10) {
-                debug('jumping to segment ' + chunkId + ' for ' + this.sessionId);
-
                 rc.set(this.sessionId + ":last", parseInt(chunkId));
 
                 if (this.ffmpeg != null) {
