@@ -131,38 +131,41 @@ class Transcoder {
         debug('jumping to segment ' + chunkId + ' for ' + this.sessionId);
 
         let prev = null;
-        this.transcoderArgs = this.transcoderArgs.map((arg) => {
+        for (let i = 0; i < this.transcoderArgs.length; i++) {
             if (prev == '-segment_start_number' || prev == '-skip_to_segment') {
-                arg = parseInt(chunkId);
+                this.transcoderArgs[i] = parseInt(chunkId);
+                break;
             }
-            prev = arg;
-            return arg;
-        });
+            prev = this.transcoderArgs[i];
+        }
 
         prev = null;
         let offset = 0;
         let segmentDuration = 5;
-        this.transcoderArgs.map((arg) => {
+        for (let i = 0; i < this.transcoderArgs.length; i++) {
             if (prev == '-segment_time') {
-                segmentDuration = arg;
+                segmentDuration = this.transcoderArgs[i];
+                break;
             }
             if (prev == '-min_seg_duration') {
                 offset = -1;
-                segmentDuration = arg / 1000000;
+                segmentDuration = this.transcoderArgs[i] / 1000000;
+                break;
             }
-            prev = arg;
-        });
+            prev = this.transcoderArgs[i];
+        }
 
         if (this.transcoderArgs.indexOf("-ss") == -1) {
             this.transcoderArgs.splice(this.transcoderArgs.indexOf("-i"), 0, "-ss", (parseInt(chunkId) + offset) * segmentDuration, "-noaccurate_seek");
         } else {
             prev = null;
-            this.transcoderArgs = this.transcoderArgs.map((arg) => {
-                if (prev == '-ss')
-                    arg = (parseInt(chunkId) + offset) * segmentDuration;
-                prev = arg;
-                return arg;
-            })
+            for (let i = 0; i < this.transcoderArgs.length; i++) {
+                if (prev == '-ss') {
+                    this.transcoderArgs[i] = (parseInt(chunkId) + offset) * segmentDuration;
+                    break;
+                }
+                prev = this.transcoderArgs[i];
+            }
         }
     }
 
