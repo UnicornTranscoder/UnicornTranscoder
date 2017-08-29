@@ -270,7 +270,7 @@ class Transcoder {
                         for (i = c; i < c + (typeof s["$"].r != 'undefined' ? parseInt(s["$"].r) : 1); i++) {
                             rc.set(req.params.sessionId + ":" + streamId + ":" + utils.pad(i, 5), s["$"].d);
                             if (i > last)
-                                i = last;
+                                last = i;
                         }
                         c = i;
                     });
