@@ -14,6 +14,10 @@ let dash = {};
 dash.serve = function (req, res) {
     debug(req.query.session);
     universal.cache[req.query.session] = new Transcoder(req.query.session, req, res)
+
+    if (typeof req.query['X-Plex-Session-Identifier'] != 'undefined') {
+        universal.sessions[req.query['X-Plex-Session-Identifier']] = req.query.session.toString();
+    }
 };
 
 dash.serveInit = function (req, res) {
