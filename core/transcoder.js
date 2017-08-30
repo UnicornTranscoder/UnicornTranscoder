@@ -155,6 +155,14 @@ class Transcoder {
             prev = this.transcoderArgs[i];
         }
 
+        prev = null;
+        for (let i = 0; i < this.transcoderArgs.length; i++) {
+            if (prev.startsWith('-force_key_frames')) {
+                this.transcoderArgs[i] = 'expr:gte(t,'  + (parseInt(chunkId) + offset) * segmentDuration + '+n_forced*' + segmentDuration + ')';
+            }
+            prev = this.transcoderArgs[i];
+        }
+
         if (this.transcoderArgs.indexOf("-ss") == -1) {
             this.transcoderArgs.splice(this.transcoderArgs.indexOf("-i"), 0, "-ss", (parseInt(chunkId) + offset) * segmentDuration, "-noaccurate_seek");
         } else {
