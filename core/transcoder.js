@@ -163,6 +163,10 @@ class Transcoder {
             prev = this.transcoderArgs[i];
         }
 
+        if (this.transcoderArgs.indexOf("-vsync") != -1) {
+            this.transcoderArgs.splice(this.transcoderArgs.indexOf("-vsync"), 2)
+        }
+
         if (this.transcoderArgs.indexOf("-ss") == -1) {
             this.transcoderArgs.splice(this.transcoderArgs.indexOf("-i"), 0, "-ss", (parseInt(chunkId) + offset) * segmentDuration, "-noaccurate_seek");
         } else {
