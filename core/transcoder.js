@@ -130,7 +130,7 @@ class Transcoder {
             return;
         debug('jumping to segment ' + chunkId + ' for ' + this.sessionId);
 
-        let prev = null;
+        let prev = '';
         for (let i = 0; i < this.transcoderArgs.length; i++) {
             if (prev == '-segment_start_number' || prev == '-skip_to_segment') {
                 this.transcoderArgs[i] = parseInt(chunkId);
@@ -139,7 +139,7 @@ class Transcoder {
             prev = this.transcoderArgs[i];
         }
 
-        prev = null;
+        prev = '';
         let offset = 0;
         let segmentDuration = 5;
         for (let i = 0; i < this.transcoderArgs.length; i++) {
@@ -155,7 +155,7 @@ class Transcoder {
             prev = this.transcoderArgs[i];
         }
 
-        prev = null;
+        prev = '';
         for (let i = 0; i < this.transcoderArgs.length; i++) {
             if (prev.startsWith('-force_key_frames')) {
                 this.transcoderArgs[i] = 'expr:gte(t,'  + (parseInt(chunkId) + offset) * segmentDuration + '+n_forced*' + segmentDuration + ')';
@@ -166,7 +166,7 @@ class Transcoder {
         if (this.transcoderArgs.indexOf("-ss") == -1) {
             this.transcoderArgs.splice(this.transcoderArgs.indexOf("-i"), 0, "-ss", (parseInt(chunkId) + offset) * segmentDuration, "-noaccurate_seek");
         } else {
-            prev = null;
+            prev = '';
             for (let i = 0; i < this.transcoderArgs.length; i++) {
                 if (prev == '-ss') {
                     this.transcoderArgs[i] = (parseInt(chunkId) + offset) * segmentDuration;
