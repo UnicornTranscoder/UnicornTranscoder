@@ -5,6 +5,7 @@
 const debug = require('debug')('m3u8');
 const Transcoder = require('./transcoder');
 const universal = require('./universal');
+const proxy = require('./proxy');
 const config = require('../utils/config');
 
 let m3u8 = {};
@@ -44,6 +45,13 @@ m3u8.serveSubtitles = function (req, res) {
         debug(req.params.sessionId + ' not found');
         res.status(404).send('Session not found');
     }
+};
+
+m3u8.saveSession = function (req, res) {
+    if (typeof req.query['X-Plex-Session-Identifier'] != 'undefined') {
+        universal.sessions[req.query['X-Plex-Session-Identifier']] = req.query.session.toString();
+    }
+    proxy(req, res);
 };
 
 module.exports = m3u8;

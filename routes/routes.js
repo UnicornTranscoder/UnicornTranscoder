@@ -19,14 +19,15 @@ router.get('/video/:/transcode/universal/start.mpd', dash.serve);
 router.get('/video/:/transcode/universal/dash/:sessionId/:streamId/initial.mp4', dash.serveInit);
 router.get('/video/:/transcode/universal/dash/:sessionId/:streamId/:partId.m4s', dash.serveChunk);
 
-//Stream mode
-router.get('/video/:/transcode/universal/start', stream.serve);
-router.get('/video/:/transcode/universal/subtitles', stream.serveSubtitles);
-
 //m3u8 mode
+router.get('/video/:/transcode/universal/start.m3u8', m3u8.saveSession);
 router.get('/video/:/transcode/universal/session/:sessionId/base/index.m3u8', m3u8.serve);
 router.get('/video/:/transcode/universal/session/:sessionId/:fileType/:partId.ts', m3u8.serveChunk);
 router.get('/video/:/transcode/universal/session/:sessionId/:fileType/:partId.vtt', m3u8.serveSubtitles);
+
+//Stream mode
+router.get('/video/:/transcode/universal/start', stream.serve);
+router.get('/video/:/transcode/universal/subtitles', stream.serveSubtitles);
 
 //Universal endpoints
 router.get('/video/:/transcode/universal/stop', universal.stopTranscoder);
