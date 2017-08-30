@@ -22,9 +22,8 @@ m3u8.serveChunk = function (req, res) {
         universal.cache[sessionId].getChunk(req.params.partId, () => {
             debug('Serving ' + req.params.partId + ' for session ' + sessionId);
             res.sendFile(config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".ts");
-
-            universal.updateTimeout(sessionId);
-        })
+        });
+        universal.updateTimeout(sessionId);
     } else {
         debug(req.params.sessionId + ' not found');
         res.status(404).send('Session not found');
@@ -39,9 +38,8 @@ m3u8.serveSubtitles = function (req, res) {
         universal.cache[sessionId].getChunk(req.params.partId, () => {
             debug('Serving subtitles ' + req.params.partId + ' for session ' + sessionId);
             res.sendFile(config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".vtt");
-
-            universal.updateTimeout(sessionId);
-        }, 'sub')
+        }, 'sub');
+        universal.updateTimeout(sessionId);
     } else {
         debug(req.params.sessionId + ' not found');
         res.status(404).send('Session not found');
