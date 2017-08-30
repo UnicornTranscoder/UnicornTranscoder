@@ -18,6 +18,10 @@ stream.serve = function(req, res) {
         universal.cache[req.query.session] = new Transcoder(req.query.session, req);
     }
 
+    if (typeof req.query['X-Plex-Session-Identifier'] != 'undefined') {
+        universal.sessions[req.query['X-Plex-Session-Identifier']] = req.query.session.toString();
+    }
+
     req.connection.on("close", stream.connectionClosed.bind(null, universal.cache[req.query.session]));
     universal.cache[req.query.session].getChunk(0, stream.serveChunk.bind(null, req, res, universal.cache[req.query.session]))
 };
