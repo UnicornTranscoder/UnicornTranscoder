@@ -9,16 +9,10 @@ let proxy = httpProxy.createProxyServer({
     target: config.plex_url
 });
 
-module.exports = function (req, res) {
-    req.removeAllListeners('data');
-    req.removeAllListeners('end');
+proxy.on( 'error', function( error ){
+    console.log( error );
+});
 
-    process.nextTick(function () {
-        if(req.body) {
-            req.emit('data', JSON.stringify(req.body));
-        }
-        req.emit('end');
-    });
-    
+module.exports = function (req, res) {
     proxy.web(req, res)
 };
