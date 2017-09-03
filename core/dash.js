@@ -13,7 +13,7 @@ let dash = {};
 
 dash.serve = function (req, res) {
     debug(req.query.session);
-    universal.cache[req.query.session] = new Transcoder(req.query.session, req, res)
+    universal.cache[req.query.session] = new Transcoder(req.query.session, req, res);
 
     if (typeof req.query['X-Plex-Session-Identifier'] != 'undefined') {
         universal.sessions[req.query['X-Plex-Session-Identifier']] = req.query.session.toString();
@@ -22,7 +22,6 @@ dash.serve = function (req, res) {
 
 dash.serveInit = function (req, res) {
     let sessionId = req.params.sessionId;
-    res.header('Access-Control-Allow-Origin', '*');
 
     if ((typeof universal.cache[sessionId]) != 'undefined' && universal.cache[sessionId].alive == true) {
         universal.cache[sessionId].getChunk(0, () => {
@@ -39,7 +38,6 @@ dash.serveInit = function (req, res) {
 
 dash.serveChunk = function (req, res) {
     let sessionId = req.params.sessionId;
-    res.header('Access-Control-Allow-Origin', '*');
 
     if ((typeof universal.cache[sessionId]) != 'undefined' && universal.cache[sessionId].alive == true) {
         universal.cache[sessionId].getChunk(parseInt(req.params.partId), (chunkId) => {
