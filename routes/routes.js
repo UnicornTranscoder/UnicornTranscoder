@@ -43,7 +43,4 @@ router.post('/video/:/transcode/session/:sessionId/*/seglist', bodyParser.text({
 router.post('/video/:/transcode/session/:sessionId/manifest', bodyParser.text({ type: function () {return true} }), transcoder.manifestParser);
 router.post('/video/:/transcode/session/:sessionId/*/manifest', bodyParser.text({ type: function () {return true} }), transcoder.manifestParser);
 
-// Reverse all others to plex
-router.all('*', bodyParser.raw({ type: function () {return true} }), proxy);
-
 module.exports = router;
