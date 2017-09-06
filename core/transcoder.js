@@ -182,7 +182,7 @@ class Transcoder {
     }
 
     segmentJumper(chunkId, streamId, rc, callback) {
-        rc.get(this.sessionId + + ":" + streamId + ":last", (err, last) => {
+        rc.get(this.sessionId + ":last", (err, last) => {
             if (err || last == null || parseInt(last) > parseInt(chunkId) || parseInt(last) < parseInt(chunkId) - 10) {
                 rc.set(this.sessionId + ":last", parseInt(chunkId));
 
@@ -258,7 +258,7 @@ class Transcoder {
         });
 
         if (last != -1) {
-            rc.set(req.params.sessionId + ":0:last", last);
+            rc.set(req.params.sessionId + ":last", last);
         }
 
         rc.quit();
@@ -289,11 +289,11 @@ class Transcoder {
                         }
                         c = i;
                     });
-
-                    if (last != -1) {
-                        rc.set(req.params.sessionId + ":" + streamId + ":last", last);
-                    }
                 });
+
+                if (last != -1) {
+                    rc.set(req.params.sessionId + ":last", last);
+                }
 
                 rc.quit();
             } catch (e) {
