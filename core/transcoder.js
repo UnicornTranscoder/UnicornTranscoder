@@ -297,7 +297,7 @@ class Transcoder {
                     });
 
                     if (last != -1) {
-                        rc.set(req.params.sessionId + ":" + streamId + "00000", 0);
+                        rc.set(req.params.sessionId + ":" + streamId + ":00000", 0);
                         if (streamId == 0) {
                             rc.set(req.params.sessionId + ":last", last);
                         }
