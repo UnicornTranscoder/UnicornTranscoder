@@ -40,7 +40,7 @@ dash.serveChunk = function (req, res) {
     let sessionId = req.params.sessionId;
 
     if ((typeof universal.cache[sessionId]) != 'undefined' && universal.cache[sessionId].alive == true) {
-        universal.cache[sessionId].getChunk(parseInt(req.params.partId + 1), (chunkId) => {
+        universal.cache[sessionId].getChunk(parseInt(req.params.partId) + 1, (chunkId) => {
             debug('Serving chunk-stream' + req.params.streamId + "-" + utils.pad(chunkId, 5) + '.m4s for session ' + sessionId);
             res.sendFile(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + utils.pad(chunkId, 5) + ".m4s");
 
