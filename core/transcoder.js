@@ -205,7 +205,7 @@ class Transcoder {
 
         rc.get(this.sessionId + ":" + streamId + ":" + (chunkId == 'init' ? chunkId : utils.pad(chunkId, 5)), (err, chunk) => {
             if (chunk == null) {
-                if (streamId != 'sub')
+                if (streamId == '0')
                     this.segmentJumper(chunkId, streamId, rc, callback);
                 else
                     this.waitChunk(chunkId, streamId, rc, callback);
@@ -289,12 +289,12 @@ class Transcoder {
                         }
                         c = i;
                     });
+
+                    if (streamId == 0 && last != -1) {
+                        rc.set(req.params.sessionId + ":last", last);
+                    }
                 });
-
-                if (last != -1) {
-                    rc.set(req.params.sessionId + ":last", last);
-                }
-
+                
                 rc.quit();
             } catch (e) {
                 rc.quit();
