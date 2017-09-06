@@ -24,7 +24,7 @@ dash.serveInit = function (req, res) {
     let sessionId = req.params.sessionId;
 
     if ((typeof universal.cache[sessionId]) != 'undefined' && universal.cache[sessionId].alive == true) {
-        universal.cache[sessionId].getChunk(1, () => {
+        universal.cache[sessionId].getChunk(0, () => {
             debug('Serving init-stream' + req.params.streamId + '.m4s for session ' + sessionId);
             res.sendFile(config.xdg_cache_home + sessionId + "/init-stream" + req.params.streamId + ".m4s");
         }, req.params.streamId)

@@ -296,8 +296,11 @@ class Transcoder {
                         c = i;
                     });
 
-                    if (streamId == 0 && last != -1) {
-                        rc.set(req.params.sessionId + ":last", last);
+                    if (last != -1) {
+                        rc.set(req.params.sessionId + ":" + streamId + "00000", 0);
+                        if (streamId == 0) {
+                            rc.set(req.params.sessionId + ":last", last);
+                        }
                     }
                 });
 
