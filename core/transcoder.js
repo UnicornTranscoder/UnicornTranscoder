@@ -279,13 +279,19 @@ class Transcoder {
                 mpd.MPD.Period[0].AdaptationSet.forEach((adaptationSet) => {
                     let c = 0;
                     let i = 0;
+                    let offset = 1;
                     let streamId = adaptationSet.Representation[0]["$"].id;
+                    let timeScale = adaptationSet.Representation[0].SegmentTemplate[0]["$"].timescale;
 
                     adaptationSet.Representation[0].SegmentTemplate[0].SegmentTimeline[0].S.forEach((s) => {
+                        if (typeof s["$"].t != 'undefined') {
+                            offset = Math.round((s["$"].t / timeScale) / 5) + 1;
+                        }
+
                         for (i = c; i < c + (typeof s["$"].r != 'undefined' ? parseInt(s["$"].r) : 1); i++) {
-                            rc.set(req.params.sessionId + ":" + streamId + ":" + utils.pad(i, 5), s["$"].d);
-                            if (i > last)
-                                last = i;
+                            rc.set(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5), s["$"].d);
+                            if (i + offset > last)
+                                last = i + offset;
                         }
                         c = i;
                     });
@@ -294,7 +300,7 @@ class Transcoder {
                         rc.set(req.params.sessionId + ":last", last);
                     }
                 });
-                
+
                 rc.quit();
             } catch (e) {
                 rc.quit();
