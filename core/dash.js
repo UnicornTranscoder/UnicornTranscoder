@@ -27,13 +27,13 @@ dash.serveInit = function (req, res) {
         universal.cache[sessionId].getChunk(1, () => {
             debug('Serving init-stream' + req.params.streamId + '.m4s for session ' + sessionId);
             res.sendFile(config.xdg_cache_home + sessionId + "/init-stream" + req.params.streamId + ".m4s");
-
-            universal.updateTimeout(sessionId);
         }, req.params.streamId)
     } else {
         debug(req.params.sessionId + ' not found');
         res.status(404).send('Session not found');
     }
+
+    universal.updateTimeout(sessionId);
 };
 
 dash.serveChunk = function (req, res) {
@@ -43,13 +43,13 @@ dash.serveChunk = function (req, res) {
         universal.cache[sessionId].getChunk(parseInt(req.params.partId) + 1, (chunkId) => {
             debug('Serving chunk-stream' + req.params.streamId + "-" + utils.pad(chunkId, 5) + '.m4s for session ' + sessionId);
             res.sendFile(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + utils.pad(chunkId, 5) + ".m4s");
-
-            universal.updateTimeout(sessionId);
         }, req.params.streamId)
     } else {
         debug(req.params.sessionId + ' not found');
         res.status(404).send('Session not found');
     }
+
+    universal.updateTimeout(sessionId);
 };
 
 module.exports = dash;
