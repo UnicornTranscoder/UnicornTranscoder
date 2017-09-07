@@ -82,6 +82,7 @@ class Transcoder {
 
     startFFMPEG() {
         debug('Spawn ' + this.sessionId);
+        this.transcoding = true;
         this.ffmpeg = child_process.spawn(
             config.transcoder_path,
             this.transcoderArgs,
