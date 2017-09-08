@@ -7,7 +7,6 @@ const debug = require('debug')('transcoder');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const request = require('request');
-const xml2js = require('xml2js');
 const config = require('../utils/config');
 const redis = require('../utils/redis');
 const utils = require('../utils/utils');
@@ -159,7 +158,7 @@ class Transcoder {
         prev = '';
         for (let i = 0; i < this.transcoderArgs.length; i++) {
             if (prev.toString().startsWith('-force_key_frames')) {
-                this.transcoderArgs[i] = 'expr:gte(t,'  + (parseInt(chunkId) + offset) * segmentDuration + '+n_forced*' + segmentDuration + ')';
+                this.transcoderArgs[i] = 'expr:gte(t,' + (parseInt(chunkId) + offset) * segmentDuration + '+n_forced*' + segmentDuration + ')';
             }
             prev = this.transcoderArgs[i];
         }
@@ -229,88 +228,6 @@ class Transcoder {
             callback(-1);
             rc.quit();
         }
-    }
-
-    static seglistParser(req, res) {
-        let last = -1;
-        let rc = redis.getClient();
-
-        req.body.split(/\r?\n/).forEach((itm) => {
-            itm = itm.split(',');
-            let chk = itm.shift();
-
-            //Long polling
-            if (chk.match(/chunk-[0-9]{5}/)) {
-                rc.set(req.params.sessionId + ":0:" + chk.replace(/chunk-([0-9]{5})/, '$1'), itm.toString());
-                last = parseInt(chk.replace(/chunk-([0-9]{5})/, '$1'));
-            }
-            if (chk.match(/sub-chunk-[0-9]{5}/)) {
-                rc.set(req.params.sessionId + ":sub:" + chk.replace(/sub-chunk-([0-9]{5})/, '$1'), itm.toString())
-            }
-
-            //M3U8
-            if (chk.match(/media-[0-9]{5}\.ts/)) {
-                rc.set(req.params.sessionId + ":0:" + chk.replace(/media-([0-9]{5})\.ts/, '$1'), itm.toString());
-                last = parseInt(chk.replace(/media-([0-9]{5})\.ts/, '$1'));
-            }
-            if (chk.match(/media-[0-9]{5}\.vtt/)) {
-                rc.set(req.params.sessionId + ":sub:" + chk.replace(/media-([0-9]{5})\.vtt/, '$1'), itm.toString())
-            }
-        });
-
-        if (last != -1) {
-            rc.set(req.params.sessionId + ":last", last);
-        }
-
-        rc.quit();
-        res.end();
-    }
-
-    static manifestParser(req, res) {
-        xml2js.parseString(req.body, function (err, mpd) {
-            if (err) {
-                res.end();
-                return;
-            }
-            let rc = redis.getClient();
-
-            try {
-                let last = -1;
-
-                mpd.MPD.Period[0].AdaptationSet.forEach((adaptationSet) => {
-                    let c = 0;
-                    let i = 0;
-                    let offset = 1;
-                    let streamId = adaptationSet.Representation[0]["$"].id;
-                    let timeScale = adaptationSet.Representation[0].SegmentTemplate[0]["$"].timescale;
-
-                    adaptationSet.Representation[0].SegmentTemplate[0].SegmentTimeline[0].S.forEach((s) => {
-                        if (typeof s["$"].t != 'undefined') {
-                            offset = Math.round((s["$"].t / timeScale) / 5) + 1;
-                        }
-
-                        for (i = c; i < c + (typeof s["$"].r != 'undefined' ? parseInt(s["$"].r) + 1 : 1); i++) {
-                            rc.set(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5), s["$"].d);
-                            if (i + offset > last)
-                                last = i + offset;
-                        }
-                        c = i;
-                    });
-
-                    if (last != -1) {
-                        rc.set(req.params.sessionId + ":" + streamId + ":00000", 0);
-                        if (streamId == 0) {
-                            rc.set(req.params.sessionId + ":last", last);
-                        }
-                    }
-                });
-
-                rc.quit();
-            } catch (e) {
-                rc.quit();
-            }
-            res.end();
-        });
     }
 }
 
