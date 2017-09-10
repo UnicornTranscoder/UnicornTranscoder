@@ -116,7 +116,7 @@ class Transcoder {
             this.ffmpeg.kill('SIGKILL');
         }
 
-        rimraf(config.xdg_cache_home + this.sessionId);
+        rimraf(config.xdg_cache_home + this.sessionId, () => {});
 
         let cleaner = redis.getClient();
         cleaner.keys(this.sessionId + '*', (err, keys) => {
