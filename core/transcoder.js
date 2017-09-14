@@ -94,10 +94,11 @@ class Transcoder {
             debug('FFMPEG stopped ' + this.sessionId);
             this.transcoding = false
         });
+
+        this.updateLastChunk();
     }
 
     PMSTimeout() {
-        //TODO 500
         debug('Timeout ' + this.sessionId);
         this.timeout = undefined;
         this.killInstance();
@@ -127,9 +128,24 @@ class Transcoder {
         });
     }
 
+    updateLastChunk() {
+        let last = 0;
+        let prev = null;
+        let rc = redis.getClient();
+
+        for (let i = 0; i < this.transcoderArgs.length; i++) {
+            if (prev == '-segment_start_number' || prev == '-skip_to_segment') {
+                last = parseInt(this.transcoderArgs[i]);
+                break;
+            }
+            prev = this.transcoderArgs[i];
+        }
+
+        rc.set(this.sessionId + ":last", last);
+        rc.quit();
+    }
+
     patchArgs(chunkId) {
-        if (chunkId == 0)
-            return;
         debug('jumping to segment ' + chunkId + ' for ' + this.sessionId);
 
         let prev = '';
