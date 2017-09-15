@@ -201,7 +201,7 @@ class Transcoder {
 
     segmentJumper(chunkId, streamId, rc, callback) {
         rc.get(this.sessionId + ":last", (err, last) => {
-            if (err || last == null || parseInt(last) > parseInt(chunkId) || parseInt(last) < parseInt(chunkId) - 10) {
+            if (err || last == null || parseInt(last) >= parseInt(chunkId) || parseInt(last) < parseInt(chunkId) - 10) {
                 rc.set(this.sessionId + ":last", parseInt(chunkId));
 
                 if (this.ffmpeg != null) {
