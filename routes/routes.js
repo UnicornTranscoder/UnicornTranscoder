@@ -23,6 +23,7 @@ router.get('/video/:/transcode/universal/dash/:sessionId/:streamId/:partId.m4s',
 router.get('/video/:/transcode/universal/start.m3u8', m3u8.saveSession);
 router.get('/video/:/transcode/universal/session/:sessionId/base/index.m3u8', m3u8.serve);
 router.get('/video/:/transcode/universal/session/:sessionId/base-x-mc/index.m3u8', m3u8.serve);
+router.get('/video/:/transcode/universal/session/:sessionId/vtt-base/index.m3u8', proxy);
 router.get('/video/:/transcode/universal/session/:sessionId/:fileType/:partId.ts', m3u8.serveChunk);
 router.get('/video/:/transcode/universal/session/:sessionId/:fileType/:partId.vtt', m3u8.serveSubtitles);
 
