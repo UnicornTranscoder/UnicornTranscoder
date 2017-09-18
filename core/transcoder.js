@@ -141,7 +141,7 @@ class Transcoder {
             prev = this.transcoderArgs[i];
         }
 
-        rc.set(this.sessionId + ":last", last);
+        rc.set(this.sessionId + ":last", (last > 0 ? last - 1 : last));
         rc.quit();
     }
 
