@@ -3,6 +3,7 @@
  */
 
 const debug = require('debug')('m3u8');
+const fs = require('fs');
 const Transcoder = require('./transcoder');
 const universal = require('./universal');
 const proxy = require('./proxy');
@@ -21,11 +22,13 @@ m3u8.serveChunk = function (req, res) {
 
     if ((typeof universal.cache[sessionId]) != 'undefined' && universal.cache[sessionId].alive == true) {
         universal.cache[sessionId].getChunk(req.params.partId, (chunkId) => {
-            if (chunkId == -1) {
+            let file = config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".ts";
+
+            if (chunkId == -1 && !fs.existsSync(file)) {
                 res.status(404).send('Callback -1');
             } else {
                 debug('Serving ' + req.params.partId + ' for session ' + sessionId);
-                res.sendFile(config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".ts");
+                res.sendFile(file);
             }
         });
         universal.updateTimeout(sessionId);
@@ -41,11 +44,13 @@ m3u8.serveSubtitles = function (req, res) {
 
     if ((typeof universal.cache[sessionId]) != 'undefined' && universal.cache[sessionId].alive == true) {
         universal.cache[sessionId].getChunk(req.params.partId, (chunkId) => {
-            if (chunkId == -1) {
+            let file = config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".vtt";
+
+            if (chunkId == -1 && !fs.existsSync(file)) {
                 res.status(404).send('Callback -1');
             } else {
                 debug('Serving subtitles ' + req.params.partId + ' for session ' + sessionId);
-                res.sendFile(config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".vtt");
+                res.sendFile(file);
             }
         }, 'sub');
         universal.updateTimeout(sessionId);

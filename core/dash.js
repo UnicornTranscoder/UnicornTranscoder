@@ -25,11 +25,13 @@ dash.serveInit = function (req, res) {
 
     if ((typeof universal.cache[sessionId]) != 'undefined' && universal.cache[sessionId].alive == true) {
         universal.cache[sessionId].getChunk(0, (chunkId) => {
-            if (chunkId == -1) {
+            let file = config.xdg_cache_home + sessionId + "/init-stream" + req.params.streamId + ".m4s";
+
+            if (chunkId == -1 && !fs.existsSync(file)) {
                 res.status(404).send('Callback -1');
             } else {
                 debug('Serving init-stream' + req.params.streamId + '.m4s for session ' + sessionId);
-                res.sendFile(config.xdg_cache_home + sessionId + "/init-stream" + req.params.streamId + ".m4s");
+                res.sendFile(file);
             }
         }, req.params.streamId);
 
@@ -45,11 +47,13 @@ dash.serveChunk = function (req, res) {
 
     if ((typeof universal.cache[sessionId]) != 'undefined' && universal.cache[sessionId].alive == true) {
         universal.cache[sessionId].getChunk(parseInt(req.params.partId) + 1, (chunkId) => {
-            if (chunkId == -1) {
+            let file = config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + utils.pad(parseInt(req.params.partId) + 1, 5) + ".m4s";
+
+            if (chunkId == -1 && !fs.existsSync(file)) {
                 res.status(404).send('Callback -1');
             } else {
-                debug('Serving chunk-stream' + req.params.streamId + "-" + utils.pad(chunkId, 5) + '.m4s for session ' + sessionId);
-                res.sendFile(config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + utils.pad(chunkId, 5) + ".m4s");
+                debug('Serving chunk-stream' + req.params.streamId + "-" + utils.pad(parseInt(req.params.partId) + 1, 5) + '.m4s for session ' + sessionId);
+                res.sendFile(file);
             }
         }, req.params.streamId);
 
