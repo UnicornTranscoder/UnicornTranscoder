@@ -47,7 +47,8 @@ m3u8.serveSubtitles = function (req, res) {
             let file = config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".vtt";
 
             if (chunkId == -1 && !fs.existsSync(file)) {
-                res.status(404).send('Callback -1');
+                debug('Serving fake subtitles ' + req.params.partId + ' for session ' + sessionId);
+                res.send('');
             } else {
                 debug('Serving subtitles ' + req.params.partId + ' for session ' + sessionId);
                 res.sendFile(file);
