@@ -50,7 +50,8 @@ dash.serveChunk = function (req, res) {
             let file = config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + utils.pad(parseInt(req.params.partId) + 1, 5) + ".m4s";
 
             if (chunkId == -1 && !fs.existsSync(file)) {
-                res.status(404).send('Callback -1');
+                debug('Serving fake chunk-stream' + req.params.streamId + "-" + utils.pad(parseInt(req.params.partId) + 1, 5) + '.m4s for session ' + sessionId);
+                res.send('');
             } else {
                 debug('Serving chunk-stream' + req.params.streamId + "-" + utils.pad(parseInt(req.params.partId) + 1, 5) + '.m4s for session ' + sessionId);
                 res.sendFile(file);
