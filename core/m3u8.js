@@ -26,7 +26,7 @@ m3u8.serveChunk = function (req, res) {
 
             if (chunkId == -1 && !fs.existsSync(file)) {
                 debug('Serving fake ' + req.params.partId + ' for session ' + sessionId);
-                res.send('');
+                res.sendFile(config.plex_ressources + 'Resources/empty.ts');
             } else {
                 debug('Serving ' + req.params.partId + ' for session ' + sessionId);
                 res.sendFile(file);
@@ -49,7 +49,7 @@ m3u8.serveSubtitles = function (req, res) {
 
             if (chunkId == -1 && !fs.existsSync(file)) {
                 debug('Serving fake subtitles ' + req.params.partId + ' for session ' + sessionId);
-                res.send('');
+                res.sendFile(config.plex_ressources + 'Resources/empty.vtt');
             } else {
                 debug('Serving subtitles ' + req.params.partId + ' for session ' + sessionId);
                 res.sendFile(file);
