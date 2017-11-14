@@ -7,6 +7,7 @@ const debug = require('debug')('transcoder');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const request = require('request');
+const universal = require('./universal');
 const config = require('../utils/config');
 const redis = require('../utils/redis');
 const utils = require('../utils/utils');
@@ -126,6 +127,8 @@ class Transcoder {
             cleaner.del(this.sessionId);
             cleaner.quit();
         });
+
+        delete universal.cache[this.sessionId];
     }
 
     updateLastChunk() {

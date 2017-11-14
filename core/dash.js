@@ -13,6 +13,10 @@ let dash = {};
 
 dash.serve = function (req, res) {
     debug(req.query.session);
+
+    if (typeof universal.cache[req.params.sessionId] == 'undefined')
+        universal.cache[req.params.sessionId].killInstance();
+
     universal.cache[req.query.session] = new Transcoder(req.query.session, req, res);
 
     if (typeof req.query['X-Plex-Session-Identifier'] != 'undefined') {
