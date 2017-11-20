@@ -7,7 +7,7 @@ const fs = require('fs');
 const Transcoder = require('./transcoder');
 const universal = require('./universal');
 const proxy = require('./proxy');
-const config = require('../utils/config');
+const config = require('../config');
 
 let m3u8 = {};
 

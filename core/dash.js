@@ -6,7 +6,7 @@ const fs = require('fs');
 const debug = require('debug')('Dash');
 const Transcoder = require('./transcoder');
 const universal = require('./universal');
-const config = require('../utils/config');
+const config = require('../config');
 const utils = require('../utils/utils');
 
 let dash = {};

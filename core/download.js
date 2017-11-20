@@ -5,7 +5,7 @@
 const debug = require('debug')('download');
 const path = require('path');
 const request = require('request');
-const config = require('../utils/config');
+const config = require('../config');
 
 let download = {};
 

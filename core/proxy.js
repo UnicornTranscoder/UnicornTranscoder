@@ -3,7 +3,7 @@
  */
 
 const httpProxy = require('http-proxy');
-const config = require('../utils/config');
+const config = require('../config');
 
 let proxy = httpProxy.createProxyServer({
     target: config.plex_url

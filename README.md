@@ -10,5 +10,5 @@ This software is a part of __PlexCloud@Home__ project, it's the transcoder manag
 ## Installation
 * Clone this repository
 * Run `npm i`
-* Setup your environnement variables, read `utils/config.js` for more informations
+* Setup your environnement variables, read `config.js` for more informations
 * Run `npm start`
