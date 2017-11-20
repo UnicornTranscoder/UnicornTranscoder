@@ -240,9 +240,15 @@ class Transcoder {
 
     waitChunk(chunkId, streamId, rc, callback) {
         if (this.transcoding) {
+            let timeout = setTimeout(() => {
+                    rc.quit();
+                    callback(-2);
+                }, 10000);
+
             rc.on("message", () => {
-                callback(chunkId);
+                clearTimeout(timeout);
                 rc.quit();
+                callback(chunkId);
             });
             rc.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + ":" + streamId + ":" + (chunkId == 'init' ? chunkId : utils.pad(chunkId, 5)))
         } else {
