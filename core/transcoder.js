@@ -49,8 +49,13 @@ class Transcoder {
 
         let cleaner = redis.getClient();
         cleaner.keys(this.sessionId + ':*', (err, keys) => {
-            if ((typeof keys != 'undefined') && keys.length > 0 && keys.endsWith("last"))
-                cleaner.del(keys);
+            if (typeof keys != 'undefined') {
+                keys = keys.filter((k) => {
+                    return k.endsWith("last")
+                });
+                if (keys.length > 0)
+                    cleaner.del(keys);
+            }
             cleaner.quit();
         });
 
