@@ -47,6 +47,14 @@ class Transcoder {
         if (err)
             return;
 
+        let cleaner = redis.getClient();
+        cleaner.keys(this.sessionId + '*', (err, keys) => {
+            if ((typeof keys != 'undefined') && keys.length > 0)
+                cleaner.del(keys);
+            cleaner.del(this.sessionId);
+            cleaner.quit();
+        });
+        
         rimraf.sync(config.xdg_cache_home + this.sessionId);
         fs.mkdirSync(config.xdg_cache_home + this.sessionId);
 
