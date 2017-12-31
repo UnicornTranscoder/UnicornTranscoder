@@ -149,6 +149,11 @@ class Transcoder {
     }
 
     patchArgs(chunkId) {
+        if (this.transcoderArgs.includes("chunk-%05d")) {
+            debug('Skip patchArgs for longPolling');
+            return;
+        }
+
         debug('jumping to segment ' + chunkId + ' for ' + this.sessionId);
 
         let prev = '';
