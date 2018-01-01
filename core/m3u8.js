@@ -28,7 +28,9 @@ m3u8.serveChunk = function (req, res) {
         universal.cache[sessionId].getChunk(req.params.partId, (chunkId) => {
             let file = config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".ts";
 
-            if (chunkId == -1 && !fs.existsSync(file)) {
+            if (chunkId == -2) {
+                res.status(404).send('Callback ' + chunkId);
+            } else if (chunkId == -1 && !fs.existsSync(file)) {
                 debug('Serving fake ' + req.params.partId + ' for session ' + sessionId);
                 res.sendFile(config.plex_ressources + 'Resources/empty.ts');
             } else {
@@ -51,7 +53,9 @@ m3u8.serveSubtitles = function (req, res) {
         universal.cache[sessionId].getChunk(req.params.partId, (chunkId) => {
             let file = config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".vtt";
 
-            if (chunkId == -1 && !fs.existsSync(file)) {
+            if (chunkId == -2) {
+                res.status(404).send('Callback ' + chunkId);
+            } else if (chunkId == -1 && !fs.existsSync(file)) {
                 debug('Serving fake subtitles ' + req.params.partId + ' for session ' + sessionId);
                 res.sendFile(config.plex_ressources + 'Resources/empty.vtt');
             } else {
