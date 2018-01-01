@@ -77,10 +77,10 @@ class FFMPEG {
                 try {
                     let last = -1;
 
+                    let offset = 1;
                     mpd.MPD.Period[0].AdaptationSet.forEach((adaptationSet) => {
                         let c = 0;
                         let i = 0;
-                        let offset = 1;
                         let streamId = adaptationSet.Representation[0]["$"].id;
                         let timeScale = adaptationSet.Representation[0].SegmentTemplate[0]["$"].timescale;
 
