@@ -38,7 +38,9 @@ stream.serveChunk = function (req, res, transcoder, chunkId) {
             fileStream.on('end', transcoder.getChunk.bind(transcoder, chunkId + 1, stream.serveChunk.bind(null, req, res, transcoder)))
         }
     }
-    if (chunkId < 0) {
+    if (chunkId == -2) {
+        transcoder.getChunk(chunkId, stream.serveSubtitleChunk.bind(null, req, res, transcoder))
+    } else if (chunkId == -1) {
         if (!req.connection.destroyed) {
             res.end();
             debug(req.query.session + ' end');
@@ -82,7 +84,9 @@ stream.serveSubtitleChunk = function (req, res, transcoder, chunkId) {
             fileStream.on('end', transcoder.getChunk.bind(transcoder, chunkId + 1, stream.serveSubtitleChunk.bind(null, req, res, transcoder), 'sub'))
         }
     }
-    if (chunkId == -1) {
+    if (chunkId == -2) {
+        transcoder.getChunk(chunkId, stream.serveSubtitleChunk.bind(null, req, res, transcoder), 'sub')
+    } else if (chunkId == -1) {
         if (!req.connection.destroyed) {
             res.end();
             debug(req.query.session + ' subtitles end');
