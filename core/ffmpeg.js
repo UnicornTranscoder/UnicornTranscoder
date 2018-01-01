@@ -17,20 +17,20 @@ class FFMPEG {
             let chk = itm.shift();
 
             //Long polling
-            if (chk.match(/chunk-[0-9]{5}/)) {
+            if (chk.match(/^chunk-[0-9]{5}/)) {
                 rc.set(req.params.sessionId + ":0:" + chk.replace(/chunk-([0-9]{5})/, '$1'), itm.toString());
                 last = parseInt(chk.replace(/chunk-([0-9]{5})/, '$1'));
             }
-            if (chk.match(/sub-chunk-[0-9]{5}/)) {
+            if (chk.match(/^sub-chunk-[0-9]{5}/)) {
                 rc.set(req.params.sessionId + ":sub:" + chk.replace(/sub-chunk-([0-9]{5})/, '$1'), itm.toString())
             }
 
             //M3U8
-            if (chk.match(/media-[0-9]{5}\.ts/)) {
+            if (chk.match(/^media-[0-9]{5}\.ts/)) {
                 rc.set(req.params.sessionId + ":0:" + chk.replace(/media-([0-9]{5})\.ts/, '$1'), itm.toString());
                 last = parseInt(chk.replace(/media-([0-9]{5})\.ts/, '$1'));
             }
-            if (chk.match(/media-[0-9]{5}\.vtt/)) {
+            if (chk.match(/^media-[0-9]{5}\.vtt/)) {
                 rc.set(req.params.sessionId + ":sub:" + chk.replace(/media-([0-9]{5})\.vtt/, '$1'), itm.toString())
             }
         });
