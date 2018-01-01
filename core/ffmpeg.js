@@ -85,7 +85,7 @@ class FFMPEG {
                         let timeScale = adaptationSet.Representation[0].SegmentTemplate[0]["$"].timescale;
 
                         adaptationSet.Representation[0].SegmentTemplate[0].SegmentTimeline[0].S.forEach((s) => {
-                            if (typeof s["$"].t != 'undefined') {
+                            if (typeof s["$"].t != 'undefined' && streamId == 0) {
                                 offset = Math.round((s["$"].t / timeScale) / segmentTime) + 1;
                             }
 
