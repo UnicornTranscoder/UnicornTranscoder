@@ -43,7 +43,7 @@ class FFMPEG {
         res.end();
     }
 
-    static manifestParser(req, res) {
+    static async manifestParser(req, res) {
         let rc = redis.getClient();
 
         rc.get(req.params.sessionId, (err, reply) => {
@@ -70,46 +70,49 @@ class FFMPEG {
                 prev = parsed.args[i];
             }
 
-            xml2js.parseString(req.body, (err, mpd) => {
-                if (err)
-                    return;
 
-                try {
-                    let last = -1;
+            rc.keys(req.params.sessionId + ":[0-9]:*", (err, reply) => {
+                xml2js.parseString(req.body, (err, mpd) => {
+                    if (err)
+                        return;
 
-                    let offset = 1;
-                    mpd.MPD.Period[0].AdaptationSet.forEach((adaptationSet) => {
-                        let c = 0;
-                        let i = 0;
-                        let streamId = adaptationSet.Representation[0]["$"].id;
-                        let timeScale = adaptationSet.Representation[0].SegmentTemplate[0]["$"].timescale;
+                    try {
+                        let last = -1;
 
-                        adaptationSet.Representation[0].SegmentTemplate[0].SegmentTimeline[0].S.forEach((s) => {
-                            if (typeof s["$"].t != 'undefined' && streamId == 0) {
-                                offset = Math.round((s["$"].t / timeScale) / segmentTime);
+                        let offset = 1;
+                        mpd.MPD.Period[0].AdaptationSet.forEach((adaptationSet) => {
+                            let c = 0;
+                            let i = 0;
+                            let streamId = adaptationSet.Representation[0]["$"].id;
+                            let timeScale = adaptationSet.Representation[0].SegmentTemplate[0]["$"].timescale;
+
+                            adaptationSet.Representation[0].SegmentTemplate[0].SegmentTimeline[0].S.forEach((s) => {
+                                if (typeof s["$"].t != 'undefined' && streamId == 0) {
+                                    offset = Math.round((s["$"].t / timeScale) / segmentTime);
+                                }
+
+                                for (i = c; i < c + (typeof s["$"].r != 'undefined' ? parseInt(s["$"].r) + 1 : 1); i++) {
+                                    rc.set(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5), s["$"].d);
+                                    if (i + offset > last)
+                                        last = i + offset;
+                                }
+                                c = i;
+                            });
+
+                            if (last != -1) {
+                                rc.set(req.params.sessionId + ":" + streamId + ":00000", 0);
+                                if (streamId == 0) {
+                                    rc.set(req.params.sessionId + ":last", last);
+                                }
                             }
-
-                            for (i = c; i < c + (typeof s["$"].r != 'undefined' ? parseInt(s["$"].r) + 1 : 1); i++) {
-                                rc.set(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5), s["$"].d);
-                                if (i + offset > last)
-                                    last = i + offset;
-                            }
-                            c = i;
                         });
 
-                        if (last != -1) {
-                            rc.set(req.params.sessionId + ":" + streamId + ":00000", 0);
-                            if (streamId == 0) {
-                                rc.set(req.params.sessionId + ":last", last);
-                            }
-                        }
-                    });
-
-                    rc.quit();
-                } catch (e) {
-                    rc.quit();
-                }
-                res.end();
+                        rc.quit();
+                    } catch (e) {
+                        rc.quit();
+                    }
+                    res.end();
+                });
             });
         });
     }
