@@ -86,7 +86,7 @@ class FFMPEG {
 
                         adaptationSet.Representation[0].SegmentTemplate[0].SegmentTimeline[0].S.forEach((s) => {
                             if (typeof s["$"].t != 'undefined' && streamId == 0) {
-                                offset = Math.round((s["$"].t / timeScale) / segmentTime) + 1;
+                                offset = Math.round((s["$"].t / timeScale) / segmentTime);
                             }
 
                             for (i = c; i < c + (typeof s["$"].r != 'undefined' ? parseInt(s["$"].r) + 1 : 1); i++) {
