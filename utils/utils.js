@@ -13,7 +13,7 @@ utils.pad = function (n, width, z) {
 utils.toJSON = function (obj) {
     let cache = [];
 
-    JSON.stringify(obj, function(key, value) {
+    return JSON.stringify(obj, function(key, value) {
         if (typeof value === 'object' && value !== null) {
             if (cache.indexOf(value) !== -1) {
                 return;
