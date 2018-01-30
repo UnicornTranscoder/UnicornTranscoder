@@ -48,7 +48,7 @@ class FFMPEG {
 
     static manifestParser(req, res) {
         if (typeof buckets[req.params.sessionId] === "undefined")
-            buckets[req.params.sessionId] = new LeakyBucket(1, 1);
+            buckets[req.params.sessionId] = new LeakyBucket(1, 1, 1);
 
         buckets[req.params.sessionId].reAdd(1, (err) => {
             if (err) {
