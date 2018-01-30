@@ -57,7 +57,7 @@ universal.stats = function (req, res) {
 
         if (stream.transcoderArgs.indexOf('-codec:0') > 0) {
             if (typeof streams.codecs[stream.transcoderArgs[stream.transcoderArgs.indexOf('-codec:0') + 1]] == 'undefined')
-                streams.codecs[stream.transcoderArgs[stream.transcoderArgs.indexOf('-codec:0') + 1]] = 0;
+                streams.codecs[stream.transcoderArgs[stream.transcoderArgs.indexOf('-codec:0') + 1]] = 1;
             else
                 streams.codecs[stream.transcoderArgs[stream.transcoderArgs.indexOf('-codec:0') + 1]]++;
         }
