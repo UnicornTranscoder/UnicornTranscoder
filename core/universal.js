@@ -48,8 +48,8 @@ universal.stats = function (req, res) {
     streams.sessions = 0;
     streams.transcoding = 0;
 
-    Object.keys(universal.sessions).map((key, index) => {
-        let stream = universal.sessions[key];
+    Object.keys(universal.cache).map((key, index) => {
+        let stream = universal.cache[key];
 
         streams.sessions++;
         if (stream.alive == true)
