@@ -103,7 +103,7 @@ class FFMPEG {
 
                                     for (i = c; i < c + (typeof s["$"].r != 'undefined' ? parseInt(s["$"].r) + 1 : 1); i++) {
 
-                                        if (savedChunks.indexOf(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5)) == -1!)
+                                        if (savedChunks.indexOf(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5)) == -1)
                                         rc.set(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5), s["$"].d);
 
                                         if (i + offset > last)
