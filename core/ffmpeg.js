@@ -47,14 +47,16 @@ class FFMPEG {
     }
 
     static manifestParser(req, res) {
-        let rc = redis.getClient();
-
         if (typeof buckets[req.params.sessionId] === "undefined")
             buckets[req.params.sessionId] = new LeakyBucket(1, 1);
 
         buckets[req.params.sessionId].reAdd(1, (err) => {
-            if (err)
+            if (err) {
                 res.end();
+                return;
+            }
+
+            let rc = redis.getClient();
 
             rc.get(req.params.sessionId, (err, reply) => {
                 if (typeof reply == 'undefined') {
