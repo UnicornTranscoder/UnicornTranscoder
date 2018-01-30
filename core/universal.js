@@ -41,4 +41,26 @@ universal.timeline = function (req, res) {
     proxy(req, res);
 };
 
+universal.stats = function (req, res) {
+    let streams = {};
+
+    streams.codecs = {};
+    streams.transcoding = 0;
+    streams.actives = universal.sessions.length;
+
+    universal.sessions.forEach((stream) => {
+        if (stream.alive == true)
+            stream.transcoding++;
+
+        if (stream.transcoderArgs.indexOf('-codec:0') > 0) {
+            if (typeof streams.codecs[stream.transcoderArgs[stream.transcoderArgs.indexOf('-codec:0') + 1]] == 'undefined')
+                streams.codecs[stream.transcoderArgs[stream.transcoderArgs.indexOf('-codec:0') + 1]] = 0;
+            else
+                streams.codecs[stream.transcoderArgs[stream.transcoderArgs.indexOf('-codec:0') + 1]]++;
+        }
+    });
+
+    res.send(JSON.stringify(streams));
+};
+
 module.exports = universal;
