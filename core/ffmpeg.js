@@ -71,7 +71,7 @@ class FFMPEG {
             }
 
 
-            rc.keys(req.params.sessionId + ":[0-9]:*", (err, reply) => {
+            rc.keys(req.params.sessionId + ":[0-9]:*", (err, savedChunks) => {
                 xml2js.parseString(req.body, (err, mpd) => {
                     if (err)
                         return;
@@ -92,7 +92,10 @@ class FFMPEG {
                                 }
 
                                 for (i = c; i < c + (typeof s["$"].r != 'undefined' ? parseInt(s["$"].r) + 1 : 1); i++) {
-                                    rc.set(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5), s["$"].d);
+
+                                    if (savedChunks.indexOf(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5)) == -1)
+                                        rc.set(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5), s["$"].d);
+
                                     if (i + offset > last)
                                         last = i + offset;
                                 }
