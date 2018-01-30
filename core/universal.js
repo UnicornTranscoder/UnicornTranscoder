@@ -4,6 +4,7 @@
 
 const debug = require('debug')('universal');
 const proxy = require('./proxy');
+const utils = require('../utils/utils');
 
 let universal = {};
 universal.cache = {};
@@ -63,7 +64,9 @@ universal.stats = function (req, res) {
         }
     });
 
-    res.send(JSON.stringify(streams));
+    streams.debug = universal.cache;
+
+    res.send(utils.toJSON(streams));
 };
 
 module.exports = universal;
