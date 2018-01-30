@@ -66,6 +66,7 @@ universal.stats = function (req, res) {
 
     streams.debug = universal.cache;
 
+    res.setHeader('Content-Type', 'application/json');
     res.send(utils.toJSON(streams));
 };
 

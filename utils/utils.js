@@ -21,7 +21,7 @@ utils.toJSON = function (obj) {
             cache.push(value);
         }
         return value;
-    }, 2)
+    })
 };
 
 module.exports = utils;
