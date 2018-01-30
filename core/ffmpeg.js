@@ -6,6 +6,9 @@ const debug = require('debug')('ffmpeg');
 const xml2js = require('xml2js');
 const redis = require('../utils/redis');
 const utils = require('../utils/utils');
+const LeakyBucket = require('leaky-bucket');
+
+let buckets = {};
 
 class FFMPEG {
     static seglistParser(req, res) {
@@ -43,78 +46,86 @@ class FFMPEG {
         res.end();
     }
 
-    static async manifestParser(req, res) {
+    static manifestParser(req, res) {
         let rc = redis.getClient();
 
-        rc.get(req.params.sessionId, (err, reply) => {
-            if (typeof reply == 'undefined') {
-                rc.quit();
-                res.end();
-                return;
-            }
+        if (typeof buckets[req.params.sessionId] === "undefined")
+            buckets[req.params.sessionId] = new LeakyBucket(1, 1);
 
-            let parsed = JSON.parse(reply);
-            if (parsed == null) {
-                rc.quit();
+        buckets[req.params.sessionId].reAdd(1, (err) => {
+            if (err)
                 res.end();
-                return;
-            }
 
-            let prev = null;
-            let segmentTime = 5;
-            for (let i = 0; i < parsed.args.length; i++) {
-                if (prev == "-min_seg_duration") {
-                    segmentTime = parsed.args[i] / 1000000;
-                    break;
+            rc.get(req.params.sessionId, (err, reply) => {
+                if (typeof reply == 'undefined') {
+                    rc.quit();
+                    res.end();
+                    return;
                 }
-                prev = parsed.args[i];
-            }
+
+                let parsed = JSON.parse(reply);
+                if (parsed == null) {
+                    rc.quit();
+                    res.end();
+                    return;
+                }
+
+                let prev = null;
+                let segmentTime = 5;
+                for (let i = 0; i < parsed.args.length; i++) {
+                    if (prev == "-min_seg_duration") {
+                        segmentTime = parsed.args[i] / 1000000;
+                        break;
+                    }
+                    prev = parsed.args[i];
+                }
 
 
-            rc.keys(req.params.sessionId + ":[0-9]:*", (err, savedChunks) => {
-                xml2js.parseString(req.body, (err, mpd) => {
-                    if (err)
-                        return;
+                rc.keys(req.params.sessionId + ":[0-9]:*", (err, savedChunks) => {
+                    xml2js.parseString(req.body, (err, mpd) => {
+                        if (err)
+                            return;
 
-                    try {
-                        let last = -1;
+                        try {
+                            let last = -1;
 
-                        let offset = 1;
-                        mpd.MPD.Period[0].AdaptationSet.forEach((adaptationSet) => {
-                            let c = 0;
-                            let i = 0;
-                            let streamId = adaptationSet.Representation[0]["$"].id;
-                            let timeScale = adaptationSet.Representation[0].SegmentTemplate[0]["$"].timescale;
+                            let offset = 1;
+                            mpd.MPD.Period[0].AdaptationSet.forEach((adaptationSet) => {
+                                let c = 0;
+                                let i = 0;
+                                let streamId = adaptationSet.Representation[0]["$"].id;
+                                let timeScale = adaptationSet.Representation[0].SegmentTemplate[0]["$"].timescale;
 
-                            adaptationSet.Representation[0].SegmentTemplate[0].SegmentTimeline[0].S.forEach((s) => {
-                                if (typeof s["$"].t != 'undefined' && streamId == 0) {
-                                    offset = Math.round((s["$"].t / timeScale) / segmentTime);
-                                }
+                                adaptationSet.Representation[0].SegmentTemplate[0].SegmentTimeline[0].S.forEach((s) => {
+                                    if (typeof s["$"].t != 'undefined' && streamId == 0) {
+                                        offset = Math.round((s["$"].t / timeScale) / segmentTime);
+                                    }
 
-                                for (i = c; i < c + (typeof s["$"].r != 'undefined' ? parseInt(s["$"].r) + 1 : 1); i++) {
+                                    for (i = c; i < c + (typeof s["$"].r != 'undefined' ? parseInt(s["$"].r) + 1 : 1); i++) {
 
-                                    if (savedChunks.indexOf(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5)) == -1)
+                                        if (savedChunks.indexOf(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5)) == -1!)
                                         rc.set(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5), s["$"].d);
 
-                                    if (i + offset > last)
-                                        last = i + offset;
+                                        if (i + offset > last)
+                                            last = i + offset;
+                                    }
+                                    c = i;
+                                });
+
+                                if (last != -1) {
+                                    rc.set(req.params.sessionId + ":" + streamId + ":00000", 0);
+                                    if (streamId == 0) {
+                                        rc.set(req.params.sessionId + ":last", last);
+                                    }
                                 }
-                                c = i;
                             });
 
-                            if (last != -1) {
-                                rc.set(req.params.sessionId + ":" + streamId + ":00000", 0);
-                                if (streamId == 0) {
-                                    rc.set(req.params.sessionId + ":last", last);
-                                }
-                            }
-                        });
-
-                        rc.quit();
-                    } catch (e) {
-                        rc.quit();
-                    }
-                    res.end();
+                            rc.quit();
+                        } catch (e) {
+                            rc.quit();
+                        }
+                        res.end();
+                    });
                 });
             });
         });
