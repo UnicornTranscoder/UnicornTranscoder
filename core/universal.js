@@ -53,7 +53,7 @@ universal.stats = function (req, res) {
         let stream = universal.cache[key];
 
         streams.sessions++;
-        if (stream.alive == true)
+        if (stream.transcoding == true)
             streams.transcoding++;
 
         if (stream.transcoderArgs.indexOf('-codec:0') > 0) {
