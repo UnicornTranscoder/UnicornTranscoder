@@ -48,6 +48,7 @@ universal.timeline = function (req, res) {
 universal.stats = function (req, res) {
     let streams = {};
 
+    streams.files = [];
     streams.codecs = {};
     streams.sessions = 0;
     streams.transcoding = 0;
@@ -57,7 +58,6 @@ universal.stats = function (req, res) {
 
         streams.sessions++;
 
-        streams.files = [];
         for (let i = 0; i < stream.transcoderArgs.length; i++) {
             if (stream.transcoderArgs[i].startsWith(config.mount_point)) {
                 streams.files.push(stream.transcoderArgs[i]);
