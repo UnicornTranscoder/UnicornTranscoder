@@ -56,11 +56,20 @@ universal.stats = function (req, res) {
         if (stream.transcoding == true)
             streams.transcoding++;
 
-        if (stream.transcoderArgs.indexOf('-codec:0') > 0) {
-            if (typeof streams.codecs[stream.transcoderArgs[stream.transcoderArgs.indexOf('-codec:0') + 1]] == 'undefined')
-                streams.codecs[stream.transcoderArgs[stream.transcoderArgs.indexOf('-codec:0') + 1]] = 1;
-            else
-                streams.codecs[stream.transcoderArgs[stream.transcoderArgs.indexOf('-codec:0') + 1]]++;
+        if (stream.transcoderArgs.lastIndexOf('-codec:0') >= 0) {
+            if (stream.transcoderArgs[stream.transcoderArgs.lastIndexOf('-codec:0') + 1] == "copy") {
+                if (typeof streams.codecs["copy"] === "undefined")
+                    streams.codecs["copy"] = 1;
+                else
+                    streams.codecs["copy"]++;
+            } else {
+                if (stream.transcoderArgs[0].startsWith("-codec:")) {
+                    if (typeof streams.codecs[stream.transcoderArgs[1]] == 'undefined')
+                        streams.codecs[stream.transcoderArgs[1]] = 1;
+                    else
+                        streams.codecs[stream.transcoderArgs[1]]++;
+                }
+            }
         }
     });
 
