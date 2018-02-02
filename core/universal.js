@@ -58,10 +58,15 @@ universal.stats = function (req, res) {
 
         streams.sessions++;
 
+        if (typeof streams.transcoderArgs === "undefined")
+            return;
+
         for (let i = 0; i < stream.transcoderArgs.length; i++) {
-            if (stream.transcoderArgs[i].startsWith(config.mount_point)) {
-                streams.files.push(stream.transcoderArgs[i]);
-                i = stream.transcoderArgs.length;
+            if (typeof streams.transcoderArgs[i].startsWith !== "function") {
+                if (stream.transcoderArgs[i].startsWith(config.mount_point)) {
+                    streams.files.push(stream.transcoderArgs[i]);
+                    i = stream.transcoderArgs.length;
+                }
             }
         }
 
