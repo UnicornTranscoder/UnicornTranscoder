@@ -6,6 +6,7 @@ const debug = require('debug')('download');
 const path = require('path');
 const request = require('request');
 const config = require('../config');
+const universal = require('./universal');
 
 let download = {};
 
@@ -15,7 +16,10 @@ download.serve = function (req, res) {
             let result = JSON.parse(body);
             if (result.status == 0) {
                 debug(config.mount_point + result.link);
-                res.download(config.mount_point + result.link, path.basename(config.mount_point + result.link))
+                universal.downloads++;
+                res.download(config.mount_point + result.link, path.basename(config.mount_point + result.link), () => {
+                    universal.downloads--;
+                })
             } else {
                 res.status(404).send('404 file not found in database')
             }

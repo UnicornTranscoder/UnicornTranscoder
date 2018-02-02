@@ -9,6 +9,7 @@ const utils = require('../utils/utils');
 let universal = {};
 universal.cache = {};
 universal.sessions = {};
+universal.downloads = 0;
 
 universal.stopTranscoder = function (req, res) {
     if (typeof universal.cache[req.query.session] != 'undefined') {
@@ -72,6 +73,8 @@ universal.stats = function (req, res) {
             }
         }
     });
+
+    streams.downloads = universal.downloads;
 
     res.setHeader('Content-Type', 'application/json');
     res.send(utils.toJSON(streams));
