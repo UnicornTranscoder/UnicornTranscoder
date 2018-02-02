@@ -2,9 +2,11 @@
  * Created by drouar_b on 15/08/2017.
  */
 
+const path = require('path');
 const debug = require('debug')('universal');
 const proxy = require('./proxy');
 const utils = require('../utils/utils');
+const config = require('../config');
 
 let universal = {};
 universal.cache = {};
@@ -54,21 +56,31 @@ universal.stats = function (req, res) {
         let stream = universal.cache[key];
 
         streams.sessions++;
-        if (stream.transcoding == true)
+
+        stream.files = [];
+        for (let i = 0; i < stream.transcoderArgs.length; i++) {
+            if (stream.transcoderArgs[i].startsWith(config.mount_point)) {
+                streams.files.push(stream.transcoderArgs[i]);
+                i = stream.transcoderArgs.length;
+            }
+        }
+
+        if (stream.transcoding == true) {
             streams.transcoding++;
 
-        if (stream.transcoderArgs.lastIndexOf('-codec:0') >= 0) {
-            if (stream.transcoderArgs[stream.transcoderArgs.lastIndexOf('-codec:0') + 1] == "copy") {
-                if (typeof streams.codecs["copy"] === "undefined")
-                    streams.codecs["copy"] = 1;
-                else
-                    streams.codecs["copy"]++;
-            } else {
-                if (stream.transcoderArgs[0].startsWith("-codec:")) {
-                    if (typeof streams.codecs[stream.transcoderArgs[1]] == 'undefined')
-                        streams.codecs[stream.transcoderArgs[1]] = 1;
+            if (stream.transcoderArgs.lastIndexOf('-codec:0') >= 0) {
+                if (stream.transcoderArgs[stream.transcoderArgs.lastIndexOf('-codec:0') + 1] == "copy") {
+                    if (typeof streams.codecs["copy"] === "undefined")
+                        streams.codecs["copy"] = 1;
                     else
-                        streams.codecs[stream.transcoderArgs[1]]++;
+                        streams.codecs["copy"]++;
+                } else {
+                    if (stream.transcoderArgs[0].startsWith("-codec:")) {
+                        if (typeof streams.codecs[stream.transcoderArgs[1]] == 'undefined')
+                            streams.codecs[stream.transcoderArgs[1]] = 1;
+                        else
+                            streams.codecs[stream.transcoderArgs[1]]++;
+                    }
                 }
             }
         }
