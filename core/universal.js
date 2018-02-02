@@ -57,7 +57,7 @@ universal.stats = function (req, res) {
 
         streams.sessions++;
 
-        stream.files = [];
+        streams.files = [];
         for (let i = 0; i < stream.transcoderArgs.length; i++) {
             if (stream.transcoderArgs[i].startsWith(config.mount_point)) {
                 streams.files.push(stream.transcoderArgs[i]);
