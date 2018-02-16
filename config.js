@@ -27,14 +27,21 @@ module.exports = getenv.multi({
     //Transcoder settings
     video_content_type:       ['VIDEO_CONTENT_TYPE', 'video/x-matroska'],
     subtitles_content_type:   ['SUBTITLES_CONTENT_TYPE', 'text/vtt'],
-    ld_library_path:          ['LD_LIBRARY_PATH', '/root/UnicornTranscoder/Resources/'],
-    transcoder_path:          ['TRANSCODER_PATH', '/root/UnicornTranscoder/Resources/Plex Transcoder'],
-    ffmpeg_external_libs:     ['FFMPEG_EXTERNAL_LIBS', '/root/UnicornTranscoder/Codecs/'],
-    eae_root:                 ['EAE_ROOT', '/root/UnicornTranscoder/Cache/'],
-    xdg_cache_home:           ['XDG_CACHE_HOME', '/root/UnicornTranscoder/Cache/'],
-    xdg_data_home:            ['XDG_DATA_HOME', '/root/UnicornTranscoder/Resources/Resources/'],
-    plex_ressources:          ['PLEX_RESSOURCES', '/root/UnicornTranscoder/Resources/']
+    ld_library_path:          ['LD_LIBRARY_PATH', '/root/unicorn/UnicornTranscoder/Resources/'],
+    transcoder_path:          ['TRANSCODER_PATH', '/root/unicorn/UnicornTranscoder/Resources/Plex Transcoder'],
+    ffmpeg_external_libs:     ['FFMPEG_EXTERNAL_LIBS', '/root/unicorn/UnicornTranscoder/Codecs/'],
+    eae_root:                 ['EAE_ROOT', '/root/unicorn/UnicornTranscoder/Cache/'],
+    xdg_cache_home:           ['XDG_CACHE_HOME', '/root/unicorn/UnicornTranscoder/Cache/'],
+    xdg_data_home:            ['XDG_DATA_HOME', '/root/unicorn/UnicornTranscoder/Resources/Resources/'],
+    plex_ressources:          ['PLEX_RESSOURCES', '/root/unicorn/UnicornTranscoder/Resources/']
 });
+
+// Load Management
+module.exports.loadManagement = {
+	preferredMaxSessions: 10,
+	preferredMaxDownloads: 10,
+	preferredMaxTranscodes: 10
+};
 
 // TODO Remove API
 module.exports.endpoints = {
