@@ -46,6 +46,6 @@ router.post('/video/:/transcode/session/:sessionId/manifest', bodyParser.text({ 
 router.post('/video/:/transcode/session/:sessionId/*/manifest', bodyParser.text({ type: function () {return true} }), ffmpeg.manifestParser);
 
 //Transcoder stats
-router.get('/unicorn/stats', universal.stats);
+router.get('/api/stats', universal.stats);
 
 module.exports = router;
