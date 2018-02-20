@@ -22,6 +22,8 @@ dash.serve = function (req, res) {
     if (typeof req.query['X-Plex-Session-Identifier'] != 'undefined') {
         universal.sessions[req.query['X-Plex-Session-Identifier']] = req.query.session.toString();
     }
+
+    universal.updateTimeout(req.query.session);
 };
 
 dash.serveInit = function (req, res) {

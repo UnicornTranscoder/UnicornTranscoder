@@ -18,6 +18,8 @@ m3u8.serve = function (req, res) {
         universal.cache[req.params.sessionId].killInstance();
 
     universal.cache[req.params.sessionId] = new Transcoder(req.params.sessionId, req, res);
+
+    universal.updateTimeout(req.params.sessionId);
 };
 
 m3u8.serveChunk = function (req, res) {
