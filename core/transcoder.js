@@ -237,12 +237,12 @@ class Transcoder {
         });
     }
 
-    getChunk(chunkId, callback, streamId = '0') {
+    getChunk(chunkId, callback, streamId = '0', noJump = false) {
         let rc = redis.getClient();
 
         rc.get(this.sessionId + ":" + streamId + ":" + (chunkId == 'init' ? chunkId : utils.pad(chunkId, 5)), (err, chunk) => {
             if (chunk == null) {
-                if (streamId == '0')
+                if (streamId == '0' && noJump == false)
                     this.segmentJumper(chunkId, streamId, rc, callback);
                 else
                     this.waitChunk(chunkId, streamId, rc, callback);

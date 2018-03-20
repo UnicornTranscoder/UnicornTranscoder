@@ -40,7 +40,7 @@ dash.serveInit = function (req, res) {
                 debug('Serving init-stream' + req.params.streamId + '.m4s for session ' + sessionId);
                 res.sendFile(file);
             }
-        }, req.params.streamId);
+        }, req.params.streamId, true);
 
         universal.updateTimeout(sessionId);
     } else {
