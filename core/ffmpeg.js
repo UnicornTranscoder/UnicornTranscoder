@@ -12,38 +12,62 @@ let buckets = {};
 
 class FFMPEG {
     static seglistParser(req, res) {
-        let last = -1;
-        let rc = redis.getClient();
+        if (typeof buckets[req.params.sessionId] === "undefined")
+            buckets[req.params.sessionId] = new LeakyBucket(1, 1, 1);
 
-        req.body.split(/\r?\n/).forEach((itm) => {
-            itm = itm.split(',');
-            let chk = itm.shift();
-
-            //Long polling
-            if (chk.match(/^chunk-[0-9]{5}/)) {
-                rc.set(req.params.sessionId + ":0:" + chk.replace(/chunk-([0-9]{5})/, '$1'), itm.toString());
-                last = parseInt(chk.replace(/chunk-([0-9]{5})/, '$1'));
-            }
-            if (chk.match(/^sub-chunk-[0-9]{5}/)) {
-                rc.set(req.params.sessionId + ":sub:" + chk.replace(/sub-chunk-([0-9]{5})/, '$1'), itm.toString())
+        buckets[req.params.sessionId].reAdd(1, (err) => {
+            if (err) {
+                res.end();
+                return;
             }
 
-            //M3U8
-            if (chk.match(/^media-[0-9]{5}\.ts/)) {
-                rc.set(req.params.sessionId + ":0:" + chk.replace(/media-([0-9]{5})\.ts/, '$1'), itm.toString());
-                last = parseInt(chk.replace(/media-([0-9]{5})\.ts/, '$1'));
-            }
-            if (chk.match(/^media-[0-9]{5}\.vtt/)) {
-                rc.set(req.params.sessionId + ":sub:" + chk.replace(/media-([0-9]{5})\.vtt/, '$1'), itm.toString())
-            }
+            let last = -1;
+            let rc = redis.getClient();
+
+            rc.keys(req.params.sessionId + ":*", (savedChunks) => {
+                req.body.split(/\r?\n/).forEach((itm) => {
+                    itm = itm.split(',');
+                    let chk = itm.shift();
+
+                    //Long polling
+                    if (chk.match(/^chunk-[0-9]{5}/)) {
+                        let chunkId = chk.replace(/chunk-([0-9]{5})/, '$1');
+
+                        if (savedChunks.indexOf(req.params.sessionId + ":0:" + chunkId) === -1)
+                            rc.set(req.params.sessionId + ":0:" + chunkId, itm.toString());
+                        last = parseInt(chunkId);
+                    }
+                    if (chk.match(/^sub-chunk-[0-9]{5}/)) {
+                        let chunkId = chk.replace(/sub-chunk-([0-9]{5})/, '$1');
+
+                        if (savedChunks.indexOf(req.params.sessionId + ":sub:" + chunkId) === -1)
+                            rc.set(req.params.sessionId + ":sub:" + chunkId, itm.toString())
+                    }
+
+                    //M3U8
+                    if (chk.match(/^media-[0-9]{5}\.ts/)) {
+                        let chunkId = chk.replace(/media-([0-9]{5})\.ts/, '$1');
+
+                        if (savedChunks.indexOf(req.params.sessionId + ":0:" + chunkId) === -1)
+                            rc.set(req.params.sessionId + ":0:" + chunkId, itm.toString());
+                        last = parseInt(chunkId);
+                    }
+                    if (chk.match(/^media-[0-9]{5}\.vtt/)) {
+                        let chunkId = chk.replace(/media-([0-9]{5})\.vtt/, '$1');
+
+                        if (savedChunks.indexOf(req.params.sessionId + ":sub:" + chunkId) === -1)
+                            rc.set(req.params.sessionId + ":sub:" + chunkId, itm.toString())
+                    }
+                });
+
+                if (last !== -1) {
+                    rc.set(req.params.sessionId + ":last", last);
+                }
+
+                rc.quit();
+                res.end();
+            });
         });
-
-        if (last != -1) {
-            rc.set(req.params.sessionId + ":last", last);
-        }
-
-        rc.quit();
-        res.end();
     }
 
     static manifestParser(req, res) {
