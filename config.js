@@ -14,9 +14,8 @@ module.exports = getenv.multi({
     transcoder_decay_time: ['TRANSCODER_DECAY_TIME', 120, 'int'],
 
     //plex config
-    srt_url:  ['SRT_URL', 'https://srt.localhost'],
-    api_url:  ['API_URL', 'https://api.localhost'],
     plex_url: ['PLEX_URL', 'http://myplex.com:32400'],
+	base_url: ['BASE_URL', 'https://myplex.com'],
 
     //redis config
     redis_host: ['REDIS_HOST', '127.0.0.1'],
@@ -41,10 +40,4 @@ module.exports.loadManagement = {
 	preferredMaxSessions: 10,
 	preferredMaxDownloads: 10,
 	preferredMaxTranscodes: 10
-};
-
-// TODO Remove API
-module.exports.endpoints = {
-    path: "/path/",
-    transcode: "/transcode/"
 };

@@ -79,7 +79,7 @@ class Transcoder {
                 .replace('{SEGURL}', "http://127.0.0.1:" + config.port)
                 .replace('{PROGRESSURL}', config.plex_url)
                 .replace('{PATH}', config.mount_point)
-                .replace('{SRTSRV}', config.srt_url)
+                .replace('{SRTSRV}', config.base_url + '/api/sessions')
                 .replace(/\{USRPLEX\}/g, config.plex_ressources)
         });
 
