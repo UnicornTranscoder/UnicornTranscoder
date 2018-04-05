@@ -33,9 +33,17 @@ stream.serveChunk = function (req, res, transcoder, chunkId) {
         if (!req.connection.destroyed) {
             universal.updateTimeout(req.query.session);
 
-            let fileStream = fs.createReadStream(cwd + "chunk-" + utils.pad(chunkId, 5));
-            fileStream.pipe(res, {end: false});
-            fileStream.on('end', transcoder.getChunk.bind(transcoder, chunkId + 1, stream.serveChunk.bind(null, req, res, transcoder)))
+            let chkPath = cwd + "chunk-" + utils.pad(chunkId, 5);
+            fs.access(chkPath, fs.constants.R_OK, (err) => {
+                if (err) {
+                    res.end();
+                    return;
+                }
+
+                let fileStream = fs.createReadStream(chkPath);
+                fileStream.pipe(res, {end: false});
+                fileStream.on('end', transcoder.getChunk.bind(transcoder, chunkId + 1, stream.serveChunk.bind(null, req, res, transcoder)))
+            });
         }
     }
     if (chunkId == -2) {
@@ -56,9 +64,18 @@ stream.serveHeader = function (req, res, cwd, subtitle, callback) {
     if (!req.connection.destroyed) {
         debug('Serving ' + (subtitle ? ' subtitles ' :  '') + req.query.session);
         res.type((subtitle ? config.subtitles_content_type : config.video_content_type));
-        let fileStream = fs.createReadStream(cwd + (subtitle ? 'sub-' : '') + 'header');
-        fileStream.pipe(res, {end: false});
-        fileStream.on('end', callback);
+
+        let chkPath = cwd + (subtitle ? 'sub-' : '') + 'header';
+        fs.access(chkPath, fs.constants.R_OK, (err) => {
+            if (err) {
+                res.end();
+                return;
+            }
+
+            let fileStream = fs.createReadStream(chkPath);
+            fileStream.pipe(res, {end: false});
+            fileStream.on('end', callback);
+        });
     }
 };
 
@@ -79,9 +96,17 @@ stream.serveSubtitleChunk = function (req, res, transcoder, chunkId) {
         if (!req.connection.destroyed) {
             universal.updateTimeout(req.query.session);
 
-            let fileStream = fs.createReadStream(cwd + "sub-chunk-" + utils.pad(chunkId, 5));
-            fileStream.pipe(res, {end: false});
-            fileStream.on('end', transcoder.getChunk.bind(transcoder, chunkId + 1, stream.serveSubtitleChunk.bind(null, req, res, transcoder), 'sub'))
+            let chkPath = cwd + "sub-chunk-" + utils.pad(chunkId, 5);
+            fs.access(chkPath, fs.constants.R_OK, (err) => {
+                if (err) {
+                    res.end();
+                    return;
+                }
+
+                let fileStream = fs.createReadStream(chkPath);
+                fileStream.pipe(res, {end: false});
+                fileStream.on('end', transcoder.getChunk.bind(transcoder, chunkId + 1, stream.serveSubtitleChunk.bind(null, req, res, transcoder), 'sub'))
+            });
         }
     }
     if (chunkId == -2) {
