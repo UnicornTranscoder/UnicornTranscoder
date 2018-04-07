@@ -21,25 +21,32 @@ class Transcoder {
         this.sessionId = sessionId;
         this.redisClient = redis.getClient();
 
-        debug('Create session ' + this.sessionId);
-        this.timeout = setTimeout(this.PMSTimeout.bind(this), 20000);
+        if (typeof req !== 'undefined') {
+            debug('Create session ' + this.sessionId);
+            this.timeout = setTimeout(this.PMSTimeout.bind(this), 20000);
 
-        this.redisClient.on("message", () => {
-            debug('Callback ' + this.sessionId);
-            clearTimeout(this.timeout);
-            this.timeout = undefined;
+            this.redisClient.on("message", () => {
+                debug('Callback ' + this.sessionId);
+                clearTimeout(this.timeout);
+                this.timeout = undefined;
 
-            this.redisClient.unsubscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId);
+                this.redisClient.unsubscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId);
+                this.redisClient.set(this.sessionId + ":last", 0);
+                this.redisClient.get(this.sessionId, this.transcoderStarter.bind(this));
+            });
+
+            this.redisClient.subscribe("__keyspace@" + config.redis_db + "__:" + sessionId);
+
+            if (typeof res != 'undefined') {
+                proxy(req, res)
+            } else {
+                request(config.plex_url + req.url)
+            }
+        } else {
+            debug('Restarting session ' + this.sessionId);
+
             this.redisClient.set(this.sessionId + ":last", 0);
             this.redisClient.get(this.sessionId, this.transcoderStarter.bind(this));
-        });
-
-        this.redisClient.subscribe("__keyspace@" + config.redis_db + "__:" + sessionId);
-
-        if (typeof res != 'undefined') {
-            proxy(req, res)
-        } else {
-            request(config.plex_url + req.url)
         }
     }
 

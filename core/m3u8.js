@@ -14,7 +14,7 @@ let m3u8 = {};
 m3u8.serve = function (req, res) {
     debug('M3U8 ' + req.params.sessionId);
 
-    if (typeof universal.cache[req.params.sessionId] != 'undefined')
+    if (typeof universal.cache[req.params.sessionId] !== 'undefined')
         universal.cache[req.params.sessionId].killInstance();
 
     universal.cache[req.params.sessionId] = new Transcoder(req.params.sessionId, req, res);
@@ -26,7 +26,7 @@ m3u8.serveChunk = function (req, res) {
     let sessionId = req.params.sessionId;
     debug('Requesting ' + req.params.partId + ' for session ' + sessionId);
 
-    if ((typeof universal.cache[sessionId]) != 'undefined' && universal.cache[sessionId].alive == true) {
+    if ((typeof universal.cache[sessionId]) !== 'undefined' && universal.cache[sessionId].alive === true) {
         universal.cache[sessionId].getChunk(req.params.partId, (chunkId) => {
             let file = config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".ts";
 
@@ -42,8 +42,11 @@ m3u8.serveChunk = function (req, res) {
         });
         universal.updateTimeout(sessionId);
     } else {
-        debug(req.params.sessionId + ' not found');
-        res.status(404).send('Session not found');
+        debug(sessionId + ' not found');
+
+        universal.cache[sessionId] = new Transcoder(sessionId);
+        universal.updateTimeout(sessionId);
+        setTimeout(this.serveChunk.bind(req, res), 1000);
     }
 };
 
@@ -51,7 +54,7 @@ m3u8.serveSubtitles = function (req, res) {
     let sessionId = req.params.sessionId;
     debug('Requesting subtitles ' + req.params.partId + ' for session ' + sessionId);
 
-    if ((typeof universal.cache[sessionId]) != 'undefined' && universal.cache[sessionId].alive == true) {
+    if ((typeof universal.cache[sessionId]) !== 'undefined' && universal.cache[sessionId].alive === true) {
         universal.cache[sessionId].getChunk(req.params.partId, (chunkId) => {
             let file = config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".vtt";
 
@@ -67,16 +70,12 @@ m3u8.serveSubtitles = function (req, res) {
         }, 'sub');
         universal.updateTimeout(sessionId);
     } else {
-        debug(req.params.sessionId + ' not found');
-        res.status(404).send('Session not found');
-    }
-};
+        debug(sessionId + ' not found');
 
-m3u8.saveSession = function (req, res) {
-    if (typeof req.query['X-Plex-Session-Identifier'] != 'undefined') {
-        universal.sessions[req.query['X-Plex-Session-Identifier']] = req.query.session.toString();
+        universal.cache[sessionId] = new Transcoder(sessionId);
+        universal.updateTimeout(sessionId);
+        setTimeout(this.serveSubtitles.bind(req, res), 1000);
     }
-    proxy(req, res);
 };
 
 module.exports = m3u8;
