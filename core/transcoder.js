@@ -105,22 +105,26 @@ class Transcoder {
     }
 
     startFFMPEG() {
-        debug('Spawn ' + this.sessionId);
-        this.transcoding = true;
-        this.ffmpeg = child_process.spawn(
-            config.transcoder_path,
-            this.transcoderArgs,
-            {
-                env: this.transcoderEnv,
-                cwd: config.xdg_cache_home + this.sessionId + "/"
+        if (fs.existsSync(config.transcoder_path)) {
+            debug('Spawn ' + this.sessionId);
+            this.transcoding = true;
+            this.ffmpeg = child_process.spawn(
+                config.transcoder_path,
+                this.transcoderArgs,
+                {
+                    env: this.transcoderEnv,
+                    cwd: config.xdg_cache_home + this.sessionId + "/"
+                });
+
+            this.ffmpeg.on("exit", () => {
+                debug('FFMPEG stopped ' + this.sessionId);
+                this.transcoding = false
             });
 
-        this.ffmpeg.on("exit", () => {
-            debug('FFMPEG stopped ' + this.sessionId);
-            this.transcoding = false
-        });
-
-        this.updateLastChunk();
+            this.updateLastChunk();
+        } else {
+            setTimeout(this.startFFMPEG.bind(this), 500);
+        }
     }
 
     PMSTimeout() {
