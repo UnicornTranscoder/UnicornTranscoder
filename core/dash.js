@@ -48,7 +48,10 @@ dash.serveInit = function (req, res) {
 
         universal.cache[sessionId] = new Transcoder(sessionId);
         universal.updateTimeout(sessionId);
-        setTimeout(this.serveInit.bind(req, res), 1000);
+
+        setTimeout(() => {
+            res.status(404).send('Restarting session');
+        }, 10000);
     }
 };
 
@@ -76,7 +79,10 @@ dash.serveChunk = function (req, res) {
 
         universal.cache[sessionId] = new Transcoder(sessionId);
         universal.updateTimeout(sessionId);
-        setTimeout(this.serveChunk.bind(req, res), 1000);
+
+        setTimeout(() => {
+            res.status(404).send('Restarting session');
+        }, 10000);
     }
 };
 

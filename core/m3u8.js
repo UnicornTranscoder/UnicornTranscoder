@@ -46,7 +46,10 @@ m3u8.serveChunk = function (req, res) {
 
         universal.cache[sessionId] = new Transcoder(sessionId);
         universal.updateTimeout(sessionId);
-        setTimeout(this.serveChunk.bind(req, res), 1000);
+
+        setTimeout(() => {
+            res.status(404).send('Restarting session');
+        }, 10000);
     }
 };
 
@@ -74,7 +77,10 @@ m3u8.serveSubtitles = function (req, res) {
 
         universal.cache[sessionId] = new Transcoder(sessionId);
         universal.updateTimeout(sessionId);
-        setTimeout(this.serveSubtitles.bind(req, res), 1000);
+
+        setTimeout(() => {
+            res.status(404).send('Restarting session');
+        }, 10000);
     }
 };
 
