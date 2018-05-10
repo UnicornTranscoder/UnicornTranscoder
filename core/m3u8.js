@@ -49,8 +49,7 @@ m3u8.serveChunk = function (req, res) {
 
         setTimeout(() => {
             res.status(404).send('Restarting session');
-        }, 10000);
-    }
+        }, 10000);}
 };
 
 m3u8.serveSubtitles = function (req, res) {
@@ -82,6 +81,13 @@ m3u8.serveSubtitles = function (req, res) {
             res.status(404).send('Restarting session');
         }, 10000);
     }
+};
+
+m3u8.saveSession = function (req, res) {
+    if (typeof req.query['X-Plex-Session-Identifier'] != 'undefined') {
+        universal.sessions[req.query['X-Plex-Session-Identifier']] = req.query.session.toString();
+    }
+    proxy(req, res);
 };
 
 module.exports = m3u8;
