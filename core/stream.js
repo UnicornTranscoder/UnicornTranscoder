@@ -14,12 +14,12 @@ class Stream {
         let transcoder;
         let sessionId = req.query.session.toString();
 
-        debug('serve ' + sessionId);
-
         if (typeof universal.cache[sessionId] === 'undefined') {
             transcoder = universal.cache[sessionId] = new Transcoder(sessionId, req);
+            debug('create session ' + sessionId);
         } else {
             transcoder = universal.cache[sessionId];
+            debug('session found ' + sessionId);
         }
 
         universal.updateTimeout(sessionId);
