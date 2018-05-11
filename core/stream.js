@@ -28,8 +28,8 @@ class Stream {
             universal.sessions[req.query['X-Plex-Session-Identifier']] = sessionId;
         }
 
-        this.rangeParser(req);
-        this.serveHeader(req, res, transcoder, false);
+        Stream.rangeParser(req);
+        Stream.serveHeader(req, res, transcoder, false);
     }
 
     static serveSubtitles(req, res) {
@@ -45,7 +45,7 @@ class Stream {
         debug("serve subtitles " + sessionId);
         transcoder = universal.cache[req.query.session];
 
-        this.serveHeader(req, res, transcoder, true);
+        Stream.serveHeader(req, res, transcoder, true);
     }
 
     static rangeParser(req) {
@@ -67,16 +67,16 @@ class Stream {
         transcoder.getChunk(0, (chunkId) => {
             switch (chunkId) {
                 case -1:
-                    this.endConnection(req, res, isSubtitle);
+                    Stream.endConnection(req, res, isSubtitle);
                     return;
 
                 case -2:
-                    this.serveHeader(req, res, transcoder, isSubtitle);
+                    Stream.serveHeader(req, res, transcoder, isSubtitle);
                     return;
 
                 default:
-                    this.streamBuilder(req, res, isSubtitle, -1, () => {
-                        this.serveChunk(req, res, isSubtitle, 0);
+                    Stream.streamBuilder(req, res, isSubtitle, -1, () => {
+                        Stream.serveChunk(req, res, isSubtitle, 0);
                     });
             }
         }, (isSubtitle ? 'sub' : '0'), true)
@@ -86,16 +86,16 @@ class Stream {
         transcoder.getChunk(chunkId, (chunkId) => {
             switch (chunkId) {
                 case -1:
-                    this.endConnection(req, res, isSubtitle);
+                    Stream.endConnection(req, res, isSubtitle);
                     return;
 
                 case -2:
-                    this.serveChunk(req, res, transcoder, isSubtitle, chunkId);
+                    Stream.serveChunk(req, res, transcoder, isSubtitle, chunkId);
                     return;
 
                 default:
-                    this.streamBuilder(req, res, isSubtitle, chunkId, () => {
-                        this.serveChunk(req, res, isSubtitle, chunkId + 1);
+                    Stream.streamBuilder(req, res, isSubtitle, chunkId, () => {
+                        Stream.serveChunk(req, res, isSubtitle, chunkId + 1);
                     });
             }
         }, (isSubtitle ? 'sub' : '0'), true)
@@ -108,7 +108,7 @@ class Stream {
         //Access the file to get the size
         fs.stat(chunkPath, (err, stats) => {
             if (err) {
-                this.endConnection(req, res, isSubtitle);
+                Stream.endConnection(req, res, isSubtitle);
                 return;
             }
 
@@ -153,7 +153,7 @@ class Stream {
                         req.streamCursor += buffer.length;
                         if (req.streamCursor >= req.parsedRange.end) {
                             fileStream.removeAllListeners('readable');
-                            this.endConnection(req, res, isSubtitle);
+                            Stream.endConnection(req, res, isSubtitle);
                             return;
                         }
                     }
@@ -166,7 +166,7 @@ class Stream {
                         req.streamCursor += sizeToRead;
 
                         if (typeof req.parsedRange !== "undefined" && typeof req.parsedRange.end === "number" && req.parsedRange.end === req.streamCursor)
-                            this.endConnection(req, res, isSubtitle);
+                            Stream.endConnection(req, res, isSubtitle);
                         else
                             callback();
                     });
