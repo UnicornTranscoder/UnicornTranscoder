@@ -58,6 +58,7 @@ class Stream {
             if (range.length > 0) {
                 req.parsedRange = range[0];
                 req.streamCursor = 0;
+                debug('range found ' + req.parsedRange.start + '-' + req.parsedRange.end)
             }
         }
     }
