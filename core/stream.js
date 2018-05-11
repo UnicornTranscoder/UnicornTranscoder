@@ -76,7 +76,7 @@ class Stream {
 
                 default:
                     Stream.streamBuilder(req, res, isSubtitle, -1, () => {
-                        Stream.serveChunk(req, res, isSubtitle, 0);
+                        Stream.serveChunk(req, res, transcoder, isSubtitle, 0);
                     });
             }
         }, (isSubtitle ? 'sub' : '0'), true)
@@ -95,13 +95,13 @@ class Stream {
 
                 default:
                     Stream.streamBuilder(req, res, isSubtitle, chunkId, () => {
-                        Stream.serveChunk(req, res, isSubtitle, chunkId + 1);
+                        Stream.serveChunk(req, res, transcoder, isSubtitle, chunkId + 1);
                     });
             }
         }, (isSubtitle ? 'sub' : '0'), true)
     }
 
-    static streamBuilder(req, res, transcoder, isSubtitle, chunkId, callback) {
+    static streamBuilder(req, res, isSubtitle, chunkId, callback) {
         //Build the chunk Path
         let chunkPath = config.xdg_cache_home + req.query.session + "/" + (isSubtitle ? 'sub-' : '') + (chunkId === -1 ? 'header' : 'chunk-' + utils.pad(chunkId, 5));
 
