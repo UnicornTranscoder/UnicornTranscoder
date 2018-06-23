@@ -38,6 +38,10 @@ class FFMPEG {
 
                             let beginning = Math.ceil(parseFloat(itm[0]));
                             let end = Math.floor(parseFloat(itm[1]));
+
+                            if (beginning < end - 10)
+                                beginning = end - 10;
+                            
                             for (let i = beginning; i < end + 1; i++)
                                 rc.set(req.params.sessionId + ":timecode:" + i, chunkId);
                         }
