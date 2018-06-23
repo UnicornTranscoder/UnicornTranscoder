@@ -146,8 +146,6 @@ class Transcoder {
             this.ffmpeg.kill('SIGKILL');
         }
 
-        rimraf(config.xdg_cache_home + this.sessionId, () => {});
-
         let cleaner = redis.getClient();
         cleaner.keys(this.sessionId + (fullClean ? '*' : ':*'), (err, keys) => {
             if ((typeof keys != 'undefined') && keys.length > 0)
@@ -155,6 +153,7 @@ class Transcoder {
             cleaner.quit();
         });
 
+        rimraf.sync(config.xdg_cache_home + this.sessionId);
         delete universal.cache[this.sessionId];
     }
 
