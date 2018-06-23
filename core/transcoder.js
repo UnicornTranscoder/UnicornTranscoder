@@ -40,7 +40,7 @@ class Transcoder {
             if (typeof res != 'undefined') {
                 proxy(req, res)
             } else {
-                request(config.plex_url + req.url)
+                this.plexRequest = request(config.plex_url + req.url).on('error', (err) => { console.log(err)})
             }
         } else {
             debug('Restarting session ' + this.sessionId);
@@ -137,6 +137,9 @@ class Transcoder {
         debug('Killing ' + this.sessionId);
         this.redisClient.quit();
         this.alive = false;
+
+        if (typeof this.plexRequest !== 'undefined')
+            this.plexRequest.abort():
 
         if (this.timeout != undefined) {
             clearTimeout(this.timeout)
