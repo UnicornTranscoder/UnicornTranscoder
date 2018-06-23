@@ -235,6 +235,8 @@ class Transcoder {
     }
 
     patchSS(time, accurate) {
+        let prev = '';
+        
         if (this.transcoderArgs.indexOf("-ss") == -1) {
             if (accurate)
                 this.transcoderArgs.splice(this.transcoderArgs.indexOf("-i"), 0, "-ss", time, "-noaccurate_seek");
