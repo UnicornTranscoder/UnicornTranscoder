@@ -133,7 +133,7 @@ class Transcoder {
         this.killInstance();
     }
 
-    killInstance() {
+    killInstance(fullClean = false) {
         debug('Killing ' + this.sessionId);
         this.redisClient.quit();
         this.alive = false;
@@ -149,7 +149,7 @@ class Transcoder {
         rimraf(config.xdg_cache_home + this.sessionId, () => {});
 
         let cleaner = redis.getClient();
-        cleaner.keys(this.sessionId + ':*', (err, keys) => {
+        cleaner.keys(this.sessionId + (fullClean ? '' : ':*'), (err, keys) => {
             if ((typeof keys != 'undefined') && keys.length > 0)
                 cleaner.del(keys);
             cleaner.quit();

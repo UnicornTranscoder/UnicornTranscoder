@@ -30,7 +30,7 @@ class Stream {
 
                 if (newOffset < transcoder.streamOffset) {
                     debug('Offset (' + newOffset + ') lower than transcoding (' + transcoder.streamOffset + ') instance, restarting...');
-                    transcoder.killInstance();
+                    transcoder.killInstance(true);
                     //TODO Wainting instance remove, should create a callback
                     setTimeout(() => {
                         Stream.createTranscoder(req, res);
