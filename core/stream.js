@@ -29,14 +29,14 @@ class Stream {
                 let newOffset = parseInt(req.query.offset);
 
                 if (newOffset < transcoder.streamOffset) {
-                    debug('Offset lower than transcoding instance, restarting...');
+                    debug('Offset (' + newOffset + ') lower than transcoding (' + transcoder.streamOffset + ') instance, restarting...');
                     transcoder.killInstance();
                     //TODO Wainting instance remove, should create a callback
                     setTimeout(() => {
                         Stream.createTranscoder(req, res);
                     }, 1000);
                 } else {
-                    debug('Offset found, resuming');
+                    debug('Offset found ' + newOffset + ', resuming (transcoder: ' + transcoder.streamOffset + ')');
                     Stream.rangeParser(req);
                     Stream.serveHeader(req, res, transcoder, newOffset - transcoder.streamOffset, false);
                 }
