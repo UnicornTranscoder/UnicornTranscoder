@@ -284,7 +284,7 @@ class Transcoder {
                     this.waitChunk(chunkId, streamId, rc, callback);
 
             } else {
-                callback(chunkId);
+                callback(this.alive ? chunkId : -1);
                 rc.quit();
             }
         });
@@ -300,7 +300,7 @@ class Transcoder {
             rc.on("message", () => {
                 clearTimeout(timeout);
                 rc.quit();
-                callback(chunkId);
+                callback(this.alive ? chunkId : -1);
             });
             rc.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + ":" + streamId + ":" + (chunkId == 'init' ? chunkId : utils.pad(chunkId, 5)))
         } else {
