@@ -63,7 +63,7 @@ class Stream {
         debug('Offset found ' + newOffset + ', attempting to resume (transcoder: ' + transcoder.streamOffset + ')');
 
         let rc = redis.getClient();
-        rc.get(transcoder.sessionId + ':timecode:' + newOffset - transcoder.streamOffset, (err, chunk) => {
+        rc.get(transcoder.sessionId + ':timecode:' + newOffset, (err, chunk) => {
             if (err || chunk == null) {
                 debug('Offset not found, restarting...');
                 transcoder.killInstance(true, () => {
