@@ -20,7 +20,7 @@ class Stream {
 
         if (typeof universal.cache[sessionId] === 'undefined') {
             debug('create session ' + sessionId);
-            this.createTranscoder(req, res);
+            Stream.createTranscoder(req, res);
         } else {
             transcoder = universal.cache[sessionId];
             debug('session found ' + sessionId);
@@ -33,7 +33,7 @@ class Stream {
                     transcoder.killInstance();
                     //TODO Wainting instance remove, should create a callback
                     setTimeout(() => {
-                        this.createTranscoder(req, res);
+                        Stream.createTranscoder(req, res);
                     }, 1000);
                 } else {
                     debug('Offset found, resuming');
