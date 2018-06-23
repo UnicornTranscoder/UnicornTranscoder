@@ -14,22 +14,52 @@ class Stream {
         let transcoder;
         let sessionId = req.query.session.toString();
 
-        if (typeof universal.cache[sessionId] === 'undefined') {
-            transcoder = universal.cache[sessionId] = new Transcoder(sessionId, req);
-            debug('create session ' + sessionId);
-        } else {
-            transcoder = universal.cache[sessionId];
-            debug('session found ' + sessionId);
-        }
-
-        universal.updateTimeout(sessionId);
-
         if (typeof req.query['X-Plex-Session-Identifier'] !== 'undefined') {
             universal.sessions[req.query['X-Plex-Session-Identifier']] = sessionId;
         }
 
+        if (typeof universal.cache[sessionId] === 'undefined') {
+            debug('create session ' + sessionId);
+            this.createTranscoder(req, res);
+        } else {
+            transcoder = universal.cache[sessionId];
+            debug('session found ' + sessionId);
+
+            if (typeof req.query.offset !== 'undefined') {
+                let newOffset = parseInt(req.query.offset);
+
+                if (newOffset < transcoder.streamOffset) {
+                    debug('Offset lower than transcoding instance, restarting...');
+                    transcoder.killInstance();
+                    //TODO Wainting instance remove, should create a callback
+                    setTimeout(() => {
+                        this.createTranscoder(req, res);
+                    }, 1000);
+                } else {
+                    debug('Offset found, resuming');
+                    Stream.rangeParser(req);
+                    Stream.serveHeader(req, res, transcoder, newOffset - transcoder.streamOffset, false);
+                }
+            } else {
+                debug('Offset not found, resuming from beginning');
+                Stream.rangeParser(req);
+                Stream.serveHeader(req, res, transcoder, 0, false);
+            }
+        }
+    }
+
+    static createTranscoder(req, res) {
+        let sessionId = req.query.session.toString();
+        let transcoder = universal.cache[sessionId] = new Transcoder(sessionId, req);
+        if (typeof req.query.offset !== 'undefined')
+            transcoder.streamOffset = parseInt(req.query.offset);
+        else
+            transcoder.streamOffset = 0;
+
+        universal.updateTimeout(sessionId);
+
         Stream.rangeParser(req);
-        Stream.serveHeader(req, res, transcoder, false);
+        Stream.serveHeader(req, res, transcoder, 0, false);
     }
 
     static serveSubtitles(req, res) {
@@ -45,7 +75,7 @@ class Stream {
         debug("serve subtitles " + sessionId);
         transcoder = universal.cache[req.query.session];
 
-        Stream.serveHeader(req, res, transcoder, true);
+        Stream.serveHeader(req, res, transcoder, 0, true);
     }
 
     static rangeParser(req) {
@@ -63,20 +93,20 @@ class Stream {
         }
     }
 
-    static serveHeader(req, res, transcoder, isSubtitle) {
-        transcoder.getChunk(0, (chunkId) => {
+    static serveHeader(req, res, transcoder, offset, isSubtitle) {
+        transcoder.getChunk(offset, (chunkId) => {
             switch (chunkId) {
                 case -1:
                     Stream.endConnection(req, res, isSubtitle);
                     return;
 
                 case -2:
-                    Stream.serveHeader(req, res, transcoder, isSubtitle);
+                    Stream.serveHeader(req, res, transcoder, offset, isSubtitle);
                     return;
 
                 default:
                     Stream.streamBuilder(req, res, isSubtitle, -1, () => {
-                        Stream.serveChunk(req, res, transcoder, isSubtitle, 0);
+                        Stream.serveChunk(req, res, transcoder, isSubtitle, offset);
                     });
             }
         }, (isSubtitle ? 'sub' : '0'), true)
