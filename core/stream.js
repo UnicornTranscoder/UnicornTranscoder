@@ -30,11 +30,9 @@ class Stream {
 
                 if (newOffset < transcoder.streamOffset) {
                     debug('Offset (' + newOffset + ') lower than transcoding (' + transcoder.streamOffset + ') instance, restarting...');
-                    transcoder.killInstance(true);
-                    //TODO Wainting instance remove, should create a callback
-                    setTimeout(() => {
+                    transcoder.killInstance(true, () => {
                         Stream.createTranscoder(req, res);
-                    }, 1000);
+                    });
                 } else {
                     debug('Offset found ' + newOffset + ', resuming (transcoder: ' + transcoder.streamOffset + ')');
                     Stream.rangeParser(req);

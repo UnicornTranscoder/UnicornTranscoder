@@ -133,7 +133,7 @@ class Transcoder {
         this.killInstance();
     }
 
-    killInstance(fullClean = false) {
+    killInstance(fullClean = false, callback = () => {}) {
         debug('Killing ' + this.sessionId);
         this.redisClient.quit();
         this.alive = false;
@@ -146,15 +146,21 @@ class Transcoder {
             this.ffmpeg.kill('SIGKILL');
         }
 
+        rimraf.sync(config.xdg_cache_home + this.sessionId);
+
         let cleaner = redis.getClient();
         cleaner.keys(this.sessionId + (fullClean ? '*' : ':*'), (err, keys) => {
             if ((typeof keys != 'undefined') && keys.length > 0)
-                cleaner.del(keys);
+                cleaner.del(keys, () => {
+                    delete universal.cache[this.sessionId];
+                    callback();
+                });
+            else {
+                delete universal.cache[this.sessionId];
+                callback();
+            }
             cleaner.quit();
         });
-
-        rimraf.sync(config.xdg_cache_home + this.sessionId);
-        delete universal.cache[this.sessionId];
     }
 
     updateLastChunk() {
