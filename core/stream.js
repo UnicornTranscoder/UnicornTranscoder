@@ -35,7 +35,7 @@ class Stream {
                         Stream.createTranscoder(req, res);
                     });
                 } else {
-                    this.chunkRetriever(req, res, transcoder, newOffset);
+                    Stream.chunkRetriever(req, res, transcoder, newOffset);
                 }
             } else {
                 debug('Offset not found, resuming from beginning');
