@@ -36,8 +36,8 @@ class FFMPEG {
                         if (savedChunks.indexOf(req.params.sessionId + ":0:" + chunkId) === -1) {
                             rc.set(req.params.sessionId + ":0:" + chunkId, itm.toString());
 
-                            let beginning = Math.ceil(parseInt(itm[0]));
-                            let end = Math.floor(parseInt(itm[1]));
+                            let beginning = Math.ceil(parseFloat(itm[0]));
+                            let end = Math.floor(parseFloat(itm[1]));
                             for (let i = beginning; i < end + 1; i++)
                                 rc.set(req.params.sessionId + ":timecode:" + i, chunkId);
                         }
