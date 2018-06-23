@@ -31,7 +31,7 @@ class Stream {
 
                 if (newOffset < transcoder.streamOffset) {
                     debug('Offset (' + newOffset + ') lower than transcoding (' + transcoder.streamOffset + ') instance, restarting...');
-                    transcoder.killInstance(true, () => {
+                    transcoder.killInstance(false, () => {
                         Stream.createTranscoder(req, res);
                     });
                 } else {
@@ -66,7 +66,7 @@ class Stream {
         rc.get(transcoder.sessionId + ':timecode:' + newOffset, (err, chunk) => {
             if (err || chunk == null) {
                 debug('Offset not found, restarting...');
-                transcoder.killInstance(true, () => {
+                transcoder.killInstance(false, () => {
                     Stream.createTranscoder(req, res);
                 });
             } else {

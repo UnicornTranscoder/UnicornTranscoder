@@ -21,7 +21,7 @@ class Transcoder {
         this.sessionId = sessionId;
         this.redisClient = redis.getClient();
 
-        if (typeof req !== 'undefined') {
+        if (typeof req !== 'undefined' && typeof req.query.offset === "undefined") {
             debug('Create session ' + this.sessionId);
             this.timeout = setTimeout(this.PMSTimeout.bind(this), 20000);
 
@@ -40,10 +40,12 @@ class Transcoder {
             if (typeof res != 'undefined') {
                 proxy(req, res)
             } else {
-                this.plexRequest = request(config.plex_url + req.url).on('error', (err) => { console.log(err)})
+                this.plexRequest = request(config.plex_url + req.url).on('error', (err) => { console.log(err) })
             }
         } else {
             debug('Restarting session ' + this.sessionId);
+
+            this.streamOffset = parseInt(req.query.offset);
 
             this.redisClient.set(this.sessionId + ":last", 0);
             this.redisClient.get(this.sessionId, this.transcoderStarter.bind(this));
@@ -185,7 +187,8 @@ class Transcoder {
 
     patchArgs(chunkId) {
         if (this.transcoderArgs.includes("chunk-%05d")) {
-            debug('Skip patchArgs for longPolling');
+            debug('Patching long polling SS');
+            this.patchSS(this.streamOffset);
             return;
         }
 
@@ -228,13 +231,20 @@ class Transcoder {
             this.transcoderArgs.splice(this.transcoderArgs.indexOf("-vsync"), 2)
         }
 
+        this.patchSS((parseInt(chunkId) + offset) * segmentDuration);
+    }
+
+    patchSS(time, accurate) {
         if (this.transcoderArgs.indexOf("-ss") == -1) {
-            this.transcoderArgs.splice(this.transcoderArgs.indexOf("-i"), 0, "-ss", (parseInt(chunkId) + offset) * segmentDuration, "-noaccurate_seek");
+            if (accurate)
+                this.transcoderArgs.splice(this.transcoderArgs.indexOf("-i"), 0, "-ss", time, "-noaccurate_seek");
+            else
+                this.transcoderArgs.splice(this.transcoderArgs.indexOf("-i"), 0, "-ss", time);
         } else {
             prev = '';
             for (let i = 0; i < this.transcoderArgs.length; i++) {
                 if (prev == '-ss') {
-                    this.transcoderArgs[i] = (parseInt(chunkId) + offset) * segmentDuration;
+                    this.transcoderArgs[i] = time;
                     break;
                 }
                 prev = this.transcoderArgs[i];
