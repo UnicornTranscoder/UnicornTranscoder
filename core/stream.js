@@ -8,6 +8,7 @@ const Transcoder = require('./transcoder');
 const config = require('../config');
 const universal = require('./universal');
 const utils = require('../utils/utils');
+const redis = require('../utils/redis');
 
 class Stream {
     static serve(req, res) {
@@ -34,9 +35,7 @@ class Stream {
                         Stream.createTranscoder(req, res);
                     });
                 } else {
-                    debug('Offset found ' + newOffset + ', resuming (transcoder: ' + transcoder.streamOffset + ')');
-                    Stream.rangeParser(req);
-                    Stream.serveHeader(req, res, transcoder, newOffset - transcoder.streamOffset, false);
+                    this.chunkRetriever(req, res, transcoder, newOffset);
                 }
             } else {
                 debug('Offset not found, resuming from beginning');
@@ -58,6 +57,25 @@ class Stream {
 
         Stream.rangeParser(req);
         Stream.serveHeader(req, res, transcoder, 0, false);
+    }
+
+    static chunkRetriever(req, res, transcoder, newOffset) {
+        debug('Offset found ' + newOffset + ', attempting to resume (transcoder: ' + transcoder.streamOffset + ')');
+
+        let rc = redis.getClient();
+        rc.get(transcoder.sessionId + ':timecode:' + newOffset - transcoder.streamOffset, (err, chunk) => {
+            if (err || chunk == null) {
+                debug('Offset not found, restarting...');
+                transcoder.killInstance(true, () => {
+                    Stream.createTranscoder(req, res);
+                });
+            } else {
+                let chunkId = parseInt(chunk);
+                debug('Chunk ' + chunkId + ' found for offset ' + newOffset);
+                Stream.rangeParser(req);
+                Stream.serveHeader(req, res, transcoder, chunkId, false);
+            }
+        })
     }
 
     static serveSubtitles(req, res) {

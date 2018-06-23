@@ -33,8 +33,14 @@ class FFMPEG {
                     if (chk.match(/^chunk-[0-9]{5}/)) {
                         let chunkId = chk.replace(/chunk-([0-9]{5})/, '$1');
 
-                        if (savedChunks.indexOf(req.params.sessionId + ":0:" + chunkId) === -1)
+                        if (savedChunks.indexOf(req.params.sessionId + ":0:" + chunkId) === -1) {
                             rc.set(req.params.sessionId + ":0:" + chunkId, itm.toString());
+
+                            let beginning = Math.ceil(parseInt(itm[0]));
+                            let end = Math.floor(parseInt(itm[1]));
+                            for (let i = beginning; i < end + 1; i++)
+                                rc.set(req.params.sessionId + ":timecode:" + i, chunkId);
+                        }
                         last = parseInt(chunkId);
                     }
                     if (chk.match(/^sub-chunk-[0-9]{5}/)) {
