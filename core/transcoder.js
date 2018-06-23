@@ -139,7 +139,7 @@ class Transcoder {
         this.alive = false;
 
         if (typeof this.plexRequest !== 'undefined')
-            this.plexRequest.abort():
+            this.plexRequest.abort();
 
         if (this.timeout != undefined) {
             clearTimeout(this.timeout)
