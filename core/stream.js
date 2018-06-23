@@ -19,7 +19,7 @@ class Stream {
         }
 
         if (typeof universal.cache[sessionId] === 'undefined') {
-            debug('create session ' + sessionId);
+            debug('create session ' + sessionId + ' ' + req.query.offset);
             Stream.createTranscoder(req, res);
         } else {
             transcoder = universal.cache[sessionId];
