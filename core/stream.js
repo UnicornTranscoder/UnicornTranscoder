@@ -32,7 +32,7 @@ class Stream {
                 if (newOffset < transcoder.streamOffset) {
                     debug('Offset (' + newOffset + ') lower than transcoding (' + transcoder.streamOffset + ') instance, restarting...');
                     transcoder.killInstance(false, () => {
-                        Stream.createTranscoder(req, res);
+                        Stream.createTranscoder(req, res, newOffset);
                     });
                 } else {
                     Stream.chunkRetriever(req, res, transcoder, newOffset);
@@ -45,9 +45,9 @@ class Stream {
         }
     }
 
-    static createTranscoder(req, res) {
+    static createTranscoder(req, res, streamOffset) {
         let sessionId = req.query.session.toString();
-        let transcoder = universal.cache[sessionId] = new Transcoder(sessionId, req);
+        let transcoder = universal.cache[sessionId] = new Transcoder(sessionId, req, undefined, streamOffset);
         if (typeof req.query.offset !== 'undefined')
             transcoder.streamOffset = parseInt(req.query.offset);
         else
@@ -67,7 +67,7 @@ class Stream {
             if (err || chunk == null) {
                 debug('Offset not found, restarting...');
                 transcoder.killInstance(false, () => {
-                    Stream.createTranscoder(req, res);
+                    Stream.createTranscoder(req, res, newOffset);
                 });
             } else {
                 let chunkId = parseInt(chunk);

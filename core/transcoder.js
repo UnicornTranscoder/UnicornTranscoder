@@ -14,14 +14,14 @@ const utils = require('../utils/utils');
 const proxy = require('./proxy');
 
 class Transcoder {
-    constructor(sessionId, req, res) {
+    constructor(sessionId, req, res, streamOffset) {
         this.alive = true;
         this.ffmpeg = null;
         this.transcoding = true;
         this.sessionId = sessionId;
         this.redisClient = redis.getClient();
 
-        if (typeof req !== 'undefined' && typeof req.query.offset === "undefined") {
+        if (typeof req !== 'undefined' && typeof streamOffset === 'undefined') {
             debug('Create session ' + this.sessionId);
             this.timeout = setTimeout(this.PMSTimeout.bind(this), 20000);
 
@@ -45,7 +45,7 @@ class Transcoder {
         } else {
             debug('Restarting session ' + this.sessionId);
 
-            this.streamOffset = parseInt(req.query.offset);
+            this.streamOffset = streamOffset;
 
             this.redisClient.set(this.sessionId + ":last", 0);
             this.redisClient.get(this.sessionId, this.transcoderStarter.bind(this));
