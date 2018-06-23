@@ -294,7 +294,7 @@ class Transcoder {
         if (this.transcoding) {
             let timeout = setTimeout(() => {
                     rc.quit();
-                    callback(-2);
+                    callback(this.alive ? -2 : -1);
                 }, 10000);
 
             rc.on("message", () => {
