@@ -6,7 +6,7 @@ const getenv = require('getenv');
 
 module.exports = getenv.multi({
     // app config
-    port:                  ["PORT", 3000, 'int'],
+	port:                  ["PORT", 3000, 'int'],
     wait_time:             ['WAIT_TIME', 1000, 'int'],
     max_tries:             ['MAX_TRIES', 30, 'int'],
     mount_point:           ['MOUNT_POINT', '/mnt/acd'],
@@ -15,7 +15,7 @@ module.exports = getenv.multi({
 
     //plex config
     plex_url: ['PLEX_URL', 'http://myplex.com:32400'],
-	base_url: ['BASE_URL', 'https://myplex.com'],
+    base_url: ['BASE_URL', 'https://myplex.com'],
 
     //redis config
     redis_host: ['REDIS_HOST', '127.0.0.1'],
@@ -35,9 +35,10 @@ module.exports = getenv.multi({
     plex_ressources:          ['PLEX_RESSOURCES', '/root/unicorn/UnicornTranscoder/Resources/']
 });
 
-// Load Management
-module.exports.loadManagement = {
-	preferredMaxSessions: 10,
-	preferredMaxDownloads: 10,
-	preferredMaxTranscodes: 10
-};
+// Public configuration
+module.exports.public_config = getenv.multi({
+	serverName:               ["SERVER_NAME", ''],
+	preferredMaxSessions:     ['MAX_SESSIONS', 10, 'int'],
+	preferredMaxDownloads:    ['MAX_DOWNLOADS', 10, 'int'],
+	preferredMaxTranscodes:   ['MAX_TRANSCODES', 10, 'int']
+});

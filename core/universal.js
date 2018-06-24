@@ -92,7 +92,7 @@ universal.stats = function (req, res) {
     });
 
     streams.downloads = universal.downloads;
-    streams.config = config.loadManagement;
+    streams.config = config.public_config;
 
     res.setHeader('Content-Type', 'application/json');
     res.send(utils.toJSON(streams));
