@@ -136,20 +136,20 @@ class Transcoder {
     }
 
     cleanFiles(fullClean, callback) {
-        rimraf.sync(config.xdg_cache_home + this.sessionId);
-
-        let cleaner = redis.getClient();
-        cleaner.keys(this.sessionId + (fullClean ? '*' : ':*'), (err, keys) => {
-            if ((typeof keys !== 'undefined') && keys.length > 0)
-                cleaner.del(keys, () => {
+        rimraf(config.xdg_cache_home + this.sessionId, {}, () => {
+            let cleaner = redis.getClient();
+            cleaner.keys(this.sessionId + (fullClean ? '*' : ':*'), (err, keys) => {
+                if ((typeof keys !== 'undefined') && keys.length > 0)
+                    cleaner.del(keys, () => {
+                        delete universal.cache[this.sessionId];
+                        callback();
+                    });
+                else {
                     delete universal.cache[this.sessionId];
                     callback();
-                });
-            else {
-                delete universal.cache[this.sessionId];
-                callback();
-            }
-            cleaner.quit();
+                }
+                cleaner.quit();
+            });
         });
     }
 
