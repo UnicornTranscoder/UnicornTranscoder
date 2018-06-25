@@ -92,7 +92,7 @@ class Transcoder {
                 .replace(/\{USRPLEX\}/g, config.plex_ressources)
         });
 
-        if (typeof this.chunkOffset !== 'undefined' || this.streamOffset !== 'undefined')
+        if (typeof this.chunkOffset !== 'undefined' || typeof this.streamOffset !== 'undefined')
             this.patchArgs(this.chunkOffset);
 
         this.transcoderEnv = Object.create(process.env);
