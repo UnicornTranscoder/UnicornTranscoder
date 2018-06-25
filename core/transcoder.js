@@ -167,7 +167,7 @@ class Transcoder {
 
         if (this.ffmpeg != null && this.transcoding) {
             this.ffmpeg.kill('SIGKILL');
-            setTimeout(this.cleanFiles.bind(fullClean, callback), 500);
+            setTimeout(this.cleanFiles.bind(this, fullClean, callback), 500);
         } else {
             this.cleanFiles(fullClean, callback);
         }
