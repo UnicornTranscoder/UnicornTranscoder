@@ -60,7 +60,7 @@ class Transcoder {
         cleaner.keys(this.sessionId + ':*', (err, keys) => {
             if (typeof keys !== 'undefined') {
                 keys = keys.filter((k) => {
-                    return k.endsWith("last")
+                    return !k.endsWith("last")
                 });
                 if (keys.length > 0)
                     cleaner.del(keys, () => {
