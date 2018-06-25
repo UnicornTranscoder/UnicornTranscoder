@@ -25,6 +25,9 @@ class FFMPEG {
             let rc = redis.getClient();
 
             rc.keys(req.params.sessionId + ":*", (err, savedChunks) => {
+                if (savedChunks.indexOf(req.params.sessionId + ":last") === -1)
+                    return;
+
                 req.body.split(/\r?\n/).forEach((itm) => {
                     itm = itm.split(',');
                     let chk = itm.shift();
