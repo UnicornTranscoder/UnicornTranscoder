@@ -125,7 +125,7 @@ class Transcoder {
 
             this.updateLastChunk();
         } else {
-            setTimeout(this.startFFMPEG.bind(this), 500);
+            setTimeout(this.startFFMPEG.bind(this), 1000);
         }
     }
 
