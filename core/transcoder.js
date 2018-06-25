@@ -135,6 +135,24 @@ class Transcoder {
         this.killInstance();
     }
 
+    cleanFiles(fullClean, callback) {
+        rimraf.sync(config.xdg_cache_home + this.sessionId);
+
+        let cleaner = redis.getClient();
+        cleaner.keys(this.sessionId + (fullClean ? '*' : ':*'), (err, keys) => {
+            if ((typeof keys !== 'undefined') && keys.length > 0)
+                cleaner.del(keys, () => {
+                    delete universal.cache[this.sessionId];
+                    callback();
+                });
+            else {
+                delete universal.cache[this.sessionId];
+                callback();
+            }
+            cleaner.quit();
+        });
+    }
+
     killInstance(fullClean = false, callback = () => {}) {
         debug('Killing ' + this.sessionId);
         this.redisClient.quit();
@@ -149,23 +167,10 @@ class Transcoder {
 
         if (this.ffmpeg != null && this.transcoding) {
             this.ffmpeg.kill('SIGKILL');
+            setTimeout(this.cleanFiles.bind(fullClean, callback), 500);
+        } else {
+            this.cleanFiles(fullClean, callback);
         }
-
-        rimraf.sync(config.xdg_cache_home + this.sessionId);
-
-        let cleaner = redis.getClient();
-        cleaner.keys(this.sessionId + (fullClean ? '*' : ':*'), (err, keys) => {
-            if ((typeof keys != 'undefined') && keys.length > 0)
-                cleaner.del(keys, () => {
-                    delete universal.cache[this.sessionId];
-                    callback();
-                });
-            else {
-                delete universal.cache[this.sessionId];
-                callback();
-            }
-            cleaner.quit();
-        });
     }
 
     updateLastChunk() {
