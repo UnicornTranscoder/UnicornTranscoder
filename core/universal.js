@@ -16,7 +16,8 @@ universal.downloads = 0;
 universal.stopTranscoder = function (req, res) {
     if (typeof universal.cache[req.query.session] != 'undefined') {
         debug('Stop ' + req.query.session);
-        universal.cache[req.query.session].killInstance();
+        if (typeof universal.cache[req.query.session] !== 'undefined')
+            universal.cache[req.query.session].killInstance();
     }
     res.send('');
 };
