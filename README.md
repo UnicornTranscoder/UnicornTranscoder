@@ -2,11 +2,6 @@
 
 This software is a part of __PlexCloud@Home__ project, it's the transcoder manager.
 
-## Dependencies
-* RedisCache
-* *UnicornLoadBalancer*
-* *UnicornTranscoder*
-
 ## How does this work
 
 * The user send a request to the Plex server
@@ -76,3 +71,5 @@ This software is a part of __PlexCloud@Home__ project, it's the transcoder manag
 ## Notes
 
 The trancoder shouldn't serve the request directly, a reverse proxy such as nginx should be setup in front to install a SSL certificate.
+
+This project may be unstable and still contains some crash/problems. Pull requests are welcome.
