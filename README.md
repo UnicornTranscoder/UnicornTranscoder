@@ -2,6 +2,12 @@
 
 This software is a remote transcoder for `Plex Media Server`. It is able to handle all the requests from a `Plex Client` to transcode and serve a stream.
 
+## UnicornTranscoder Project
+
+- [UnicornTranscoder](https://github.com/UnicornTranscoder/UnicornTranscoder)
+- [UnicornLoadBalancer](https://github.com/UnicornTranscoder/UnicornLoadBalancer)
+- [UnicornFFMPEG](https://github.com/UnicornTranscoder/UnicornFFMPEG)
+
 ## How does this work
 
 * The user send a request to the Plex server
