@@ -6,7 +6,7 @@ const getenv = require('getenv');
 
 module.exports = getenv.multi({
     // app config
-	port:                  ["PORT", 3000, 'int'],
+    port:                  ["PORT", 3000, 'int'],
     wait_time:             ['WAIT_TIME', 1000, 'int'],
     max_tries:             ['MAX_TRIES', 30, 'int'],
     mount_point:           ['MOUNT_POINT', '/mnt/acd'],
