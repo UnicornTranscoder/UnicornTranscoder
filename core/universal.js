@@ -29,7 +29,8 @@ universal.updateTimeout = function (sessionId) {
 
         universal.cache[sessionId].timeout = setTimeout(() => {
             debug(sessionId + ' timed out');
-            universal.cache[sessionId].killInstance()
+            if (typeof universal.cache[sessionId] !== 'undefined')
+                universal.cache[sessionId].killInstance()
         }, config.transcoder_decay_time * 1000)
     } else if (typeof sessionId != 'undefined' && typeof universal.sessions[sessionId] != 'undefined' && sessionId != universal.sessions[sessionId]) {
         universal.updateTimeout(universal.sessions[sessionId])
