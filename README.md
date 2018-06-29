@@ -1,6 +1,6 @@
 ## UnicornTranscoder
 
-This software is a part of __PlexCloud@Home__ project, it's the transcoder manager.
+This software is a remote transcoder for `Plex Media Server`. It is able to handle all the requests from a `Plex Client` to transcode and serve a stream.
 
 ## How does this work
 
