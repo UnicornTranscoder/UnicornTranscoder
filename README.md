@@ -14,7 +14,7 @@ This software is a remote transcoder for `Plex Media Server`. It is able to hand
 * The request is caught by `UnicornLoadBalancer`
 * The  `UnicornLoadBalancer` answer a HTTP 302 with the URL of the `UnicornTranscoder`
 * The transcoder will send a request to the Plex Server
-* Plex Server will launch `Plex Transcoder` binanry which was replaced by `UnicornFFMPEG`
+* Plex Server will launch `Plex Transcoder` binary which was replaced by `UnicornFFMPEG`
 * `UnicornFFMPEG` push the arguments to the redis server
 * `UnicornTranscoder` launch FFMPEG and starts to serve the request for the stream
 
