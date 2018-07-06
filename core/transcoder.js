@@ -161,8 +161,12 @@ class Transcoder {
         if (typeof this.plexRequest !== 'undefined')
             this.plexRequest.abort();
 
-        if (this.timeout != undefined) {
+        if (typeof this.timeout !== 'undefined') {
             clearTimeout(this.timeout)
+        }
+
+        if (typeof this.sessionTimeout !== 'undefined') {
+            clearTimeout(this.sessionTimeout)
         }
 
         if (this.ffmpeg != null && this.transcoding) {

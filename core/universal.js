@@ -14,7 +14,7 @@ universal.sessions = {};
 universal.downloads = 0;
 
 universal.stopTranscoder = function (req, res) {
-    if (typeof universal.cache[req.query.session] != 'undefined') {
+    if (typeof universal.cache[req.query.session] !== 'undefined') {
         debug('Stop ' + req.query.session);
         if (typeof universal.cache[req.query.session] !== 'undefined')
             universal.cache[req.query.session].killInstance();
@@ -23,16 +23,16 @@ universal.stopTranscoder = function (req, res) {
 };
 
 universal.updateTimeout = function (sessionId) {
-    if (typeof sessionId != 'undefined' && typeof universal.cache[sessionId] != 'undefined' && universal.cache[sessionId].alive) {
-        if (universal.cache[sessionId].timeout != undefined)
-            clearTimeout(universal.cache[sessionId].timeout);
+    if (typeof sessionId !== 'undefined' && typeof universal.cache[sessionId] !== 'undefined' && universal.cache[sessionId].alive) {
+        if (typeof universal.cache[sessionId].sessionTimeout !== 'undefined')
+            clearTimeout(universal.cache[sessionId].sessionTimeout);
 
-        universal.cache[sessionId].timeout = setTimeout(() => {
+        universal.cache[sessionId].sessionTimeout = setTimeout(() => {
             debug(sessionId + ' timed out');
             if (typeof universal.cache[sessionId] !== 'undefined')
                 universal.cache[sessionId].killInstance()
         }, config.transcoder_decay_time * 1000)
-    } else if (typeof sessionId != 'undefined' && typeof universal.sessions[sessionId] != 'undefined' && sessionId != universal.sessions[sessionId]) {
+    } else if (typeof sessionId !== 'undefined' && typeof universal.sessions[sessionId] !== 'undefined' && sessionId !== universal.sessions[sessionId]) {
         universal.updateTimeout(universal.sessions[sessionId])
     }
 };
