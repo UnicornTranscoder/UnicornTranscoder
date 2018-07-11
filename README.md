@@ -82,5 +82,7 @@ This project may be unstable and still contains some crash/problems. Pull reques
 
 You can compile FFMPEG, since the version of FFMPEG used by Plex is slightly different, you can follow this guide:
 https://gist.github.com/drouarb/fb082c521d46aa43fdbb8cdc3d61ffbc
+
 This can allow you to run the transcoder on an ARM based server.
+
 Disclamer: Implementation of libx264 on other platform than x86_64 is not well optimized, you can see a performance gap.
