@@ -302,7 +302,7 @@ class Transcoder {
     waitChunk(chunkId, streamId, rc, callback) {
         if (this.transcoding) {
             let timeout = setTimeout(() => {
-                    rc.quit();
+                    rc.end(false);
                     callback(this.alive ? -2 : -1);
                 }, 10000);
 
