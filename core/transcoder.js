@@ -308,7 +308,7 @@ class Transcoder {
 
             rc.on("message", () => {
                 clearTimeout(timeout);
-                rc.quit();
+                rc.end(false);
                 callback(this.alive ? chunkId : -1);
             });
             rc.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + ":" + streamId + ":" + (chunkId == 'init' ? chunkId : utils.pad(chunkId, 5)))

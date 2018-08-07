@@ -35,7 +35,8 @@ dash.serveInit = function (req, res) {
 
 
             if (chunkId == -2 || (chunkId == -1 && !fs.existsSync(file))) {
-                res.status(404).send('Callback ' + chunkId);
+                if (!res.headersSent)
+                    res.status(404).send('Callback ' + chunkId);
             } else {
                 debug('Serving init-stream' + req.params.streamId + '.m4s for session ' + sessionId);
                 res.sendFile(file);
