@@ -129,6 +129,13 @@ class Stream {
     }
 
     static serveChunk(req, res, transcoder, isSubtitle, chunkId) {
+        if (req.connection.destroyed) {
+            Stream.endConnection(req, res, isSubtitle);
+            return;
+        }
+
+        universal.updateTimeout(req.query.session);
+
         transcoder.getChunk(chunkId, (chunkId) => {
             switch (chunkId) {
                 case -1:
