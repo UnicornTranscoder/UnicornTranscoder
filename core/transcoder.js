@@ -110,20 +110,25 @@ class Transcoder {
         if (fs.existsSync(config.transcoder_path)) {
             debug('Spawn ' + this.sessionId);
             this.transcoding = true;
-            this.ffmpeg = child_process.spawn(
-                config.transcoder_path,
-                this.transcoderArgs,
-                {
-                    env: this.transcoderEnv,
-                    cwd: config.xdg_cache_home + this.sessionId + "/"
+            try {
+                this.ffmpeg = child_process.spawn(
+                    config.transcoder_path,
+                    this.transcoderArgs,
+                    {
+                        env: this.transcoderEnv,
+                        cwd: config.xdg_cache_home + this.sessionId + "/"
+                    });
+                this.ffmpeg.on("exit", () => {
+                    debug('FFMPEG stopped ' + this.sessionId);
+                    this.transcoding = false
                 });
 
-            this.ffmpeg.on("exit", () => {
-                debug('FFMPEG stopped ' + this.sessionId);
-                this.transcoding = false
-            });
-
-            this.updateLastChunk();
+                this.updateLastChunk();
+            } catch (e) {
+                debug('Failed to start FFMPEG for session ' + this.sessionId);
+                debug(e.toString());
+                this.startFFMPEG();
+            }
         } else {
             setTimeout(this.startFFMPEG.bind(this), 1000);
         }
