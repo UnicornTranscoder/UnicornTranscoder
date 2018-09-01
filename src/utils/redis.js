@@ -1,10 +1,7 @@
-/**
- * Created by drouar_b on 23/05/2017.
- */
-
 const redis = require('redis');
-const config = require('../config');
+const loadConfig = require('../utils/config');
 
+const config = loadConfig();
 let redisMiddleware = {};
 
 redisMiddleware.getClient = function () {

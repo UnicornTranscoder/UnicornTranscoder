@@ -1,17 +1,14 @@
 {
-  "name": "UnicornTranscoder",
-  "version": "0.0.1",
+  "name": "rhino-transcoder",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./src/main"
   },
   "dependencies": {
     "body-parser": "^1.17.2",
     "cluster-node-cache": "^0.1.4",
-    "cors": "^2.8.4",
-    "debug": "^3.0.0",
-    "express": "~4.13.1",
-    "getenv": "^0.7.0",
+    "express": "^4.16.3",
     "http-proxy": "^1.16.2",
     "leaky-bucket": "^2.1.1",
     "redis": "^2.7.1",

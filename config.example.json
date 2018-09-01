@@ -1,0 +1,27 @@
+{
+    "port": 3241,
+    "mount_point": "/mnt/plex",
+    "transcoder_decay_time": 120,
+    "plex_url": "http://myplex.com:32400",
+    "base_url": "https://myplex.com",
+    "redis_host": "127.0.0.1",
+    "redis_port": 6379,
+    "redis_pass": "",
+    "redis_db": 1,
+    "video_content_type": "video/x-matroska",
+    "subtitles_content_type": "text/vtt",
+    "ld_library_path": "/root/unicorn/UnicornTranscoder/Resources/",
+    "transcoder_path": "/root/unicorn/UnicornTranscoder/Resources/Plex Transcoder",
+    "ffmpeg_external_libs": "/root/unicorn/UnicornTranscoder/Codecs/",
+    "eae_root": "/root/unicorn/UnicornTranscoder/Cache/",
+    "xdg_cache_home": "/root/unicorn/UnicornTranscoder/Cache/",
+    "xdg_data_home": "/root/unicorn/UnicornTranscoder/Resources/Resources/",
+    "plex_ressources": "/root/unicorn/UnicornTranscoder/Resources/",
+
+    "config": {
+        "serverName": "",
+        "preferredMaxSessions": 10,
+        "preferredMaxDownloads": 10,
+        "preferredMaxTranscodes": 10
+    }
+}

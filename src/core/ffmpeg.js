@@ -1,11 +1,6 @@
-/**
- * Created by drouar_b on 08/09/2017.
- */
-
-const debug = require('debug')('ffmpeg');
 const xml2js = require('xml2js');
 const redis = require('../utils/redis');
-const utils = require('../utils/utils');
+const pad = require('../utils/pad');
 const LeakyBucket = require('leaky-bucket');
 
 let buckets = {};
@@ -139,8 +134,8 @@ class FFMPEG {
 
                                     for (i = c; i < c + (typeof s["$"].r != 'undefined' ? parseInt(s["$"].r) + 1 : 1); i++) {
 
-                                        if (savedChunks.indexOf(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5)) == -1)
-                                        rc.set(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5), s["$"].d);
+                                        if (savedChunks.indexOf(req.params.sessionId + ":" + streamId + ":" + pad(i + offset, 5)) == -1)
+                                        rc.set(req.params.sessionId + ":" + streamId + ":" + pad(i + offset, 5), s["$"].d);
 
                                         if (i + offset > last)
                                             last = i + offset;

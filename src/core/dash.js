@@ -3,16 +3,17 @@
  */
 
 const fs = require('fs');
-const debug = require('debug')('Dash');
 const Transcoder = require('./transcoder');
 const universal = require('./universal');
-const config = require('../config');
-const utils = require('../utils/utils');
+const loadConfig = require('../utils/config');
+const pad = require('../utils/pad');
+
+const config = loadConfig();
 
 let dash = {};
 
 dash.serve = function (req, res) {
-    debug(req.query.session);
+    console.log(req.query.session);
 
     if (typeof universal.cache[req.params.sessionId] !== 'undefined')
         universal.cache[req.params.sessionId].killInstance();
@@ -38,14 +39,14 @@ dash.serveInit = function (req, res) {
                 if (!res.headersSent)
                     res.status(404).send('Callback ' + chunkId);
             } else {
-                debug('Serving init-stream' + req.params.streamId + '.m4s for session ' + sessionId);
+                console.log('Serving init-stream' + req.params.streamId + '.m4s for session ' + sessionId);
                 res.sendFile(file);
             }
         }, req.params.streamId, true);
 
         universal.updateTimeout(sessionId);
     } else {
-        debug(sessionId + ' not found');
+        console.log(sessionId + ' not found');
 
         universal.cache[sessionId] = new Transcoder(sessionId);
         universal.updateTimeout(sessionId);
@@ -61,22 +62,22 @@ dash.serveChunk = function (req, res) {
 
     if ((typeof universal.cache[sessionId]) !== 'undefined' && universal.cache[sessionId].alive === true) {
         universal.cache[sessionId].getChunk(parseInt(req.params.partId) + 1, (chunkId) => {
-            let file = config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + utils.pad(parseInt(req.params.partId) + 1, 5) + ".m4s";
+            let file = config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + pad(parseInt(req.params.partId) + 1, 5) + ".m4s";
 
             if (chunkId == -2) {
                 res.status(404).send('Callback ' + chunkId);
             } else if (chunkId == -1 && !fs.existsSync(file)) {
-                debug('Serving fake chunk-stream' + req.params.streamId + "-" + utils.pad(parseInt(req.params.partId) + 1, 5) + '.m4s for session ' + sessionId);
+                console.log('Serving fake chunk-stream' + req.params.streamId + "-" + pad(parseInt(req.params.partId) + 1, 5) + '.m4s for session ' + sessionId);
                 res.send('');
             } else {
-                debug('Serving chunk-stream' + req.params.streamId + "-" + utils.pad(parseInt(req.params.partId) + 1, 5) + '.m4s for session ' + sessionId);
+                console.log('Serving chunk-stream' + req.params.streamId + "-" + pad(parseInt(req.params.partId) + 1, 5) + '.m4s for session ' + sessionId);
                 res.sendFile(file);
             }
         }, req.params.streamId);
 
         universal.updateTimeout(sessionId);
     } else {
-        debug(req.params.sessionId + ' not found');
+        console.log(req.params.sessionId + ' not found');
 
         universal.cache[sessionId] = new Transcoder(sessionId);
         universal.updateTimeout(sessionId);

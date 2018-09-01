@@ -1,14 +1,11 @@
-/**
- * Created by drouar_b on 27/04/2017.
- */
-
 const fs = require('fs');
-const debug = require('debug')('Stream');
 const Transcoder = require('./transcoder');
-const config = require('../config');
+const loadConfig = require('../utils/config');
 const universal = require('./universal');
-const utils = require('../utils/utils');
+const pad = require('../utils/pad');
 const redis = require('../utils/redis');
+
+const config = loadConfig();
 
 class Stream {
     static serve(req, res) {
@@ -20,17 +17,17 @@ class Stream {
         }
 
         if (typeof universal.cache[sessionId] === 'undefined') {
-            debug('create session ' + sessionId + ' ' + req.query.offset);
+            console.log('create session ' + sessionId + ' ' + req.query.offset);
             Stream.createTranscoder(req, res);
         } else {
             transcoder = universal.cache[sessionId];
-            debug('session found ' + sessionId);
+            console.log('session found ' + sessionId);
 
             if (typeof req.query.offset !== 'undefined') {
                 let newOffset = parseInt(req.query.offset);
 
                 if (newOffset < transcoder.streamOffset) {
-                    debug('Offset (' + newOffset + ') lower than transcoding (' + transcoder.streamOffset + ') instance, restarting...');
+                    console.log('Offset (' + newOffset + ') lower than transcoding (' + transcoder.streamOffset + ') instance, restarting...');
                     transcoder.killInstance(false, () => {
                         Stream.createTranscoder(req, res, newOffset);
                     });
@@ -38,7 +35,7 @@ class Stream {
                     Stream.chunkRetriever(req, res, transcoder, newOffset);
                 }
             } else {
-                debug('Offset not found, resuming from beginning');
+                console.log('Offset not found, resuming from beginning');
                 Stream.rangeParser(req);
                 Stream.serveHeader(req, res, transcoder, 0, false);
             }
@@ -60,18 +57,18 @@ class Stream {
     }
 
     static chunkRetriever(req, res, transcoder, newOffset) {
-        debug('Offset found ' + newOffset + ', attempting to resume (transcoder: ' + transcoder.streamOffset + ')');
+        console.log('Offset found ' + newOffset + ', attempting to resume (transcoder: ' + transcoder.streamOffset + ')');
 
         let rc = redis.getClient();
         rc.get(transcoder.sessionId + ':timecode:' + newOffset, (err, chunk) => {
             if (err || chunk == null) {
-                debug('Offset not found, restarting...');
+                console.log('Offset not found, restarting...');
                 transcoder.killInstance(false, () => {
                     Stream.createTranscoder(req, res, newOffset);
                 });
             } else {
                 let chunkId = parseInt(chunk);
-                debug('Chunk ' + chunkId + ' found for offset ' + newOffset);
+                console.log('Chunk ' + chunkId + ' found for offset ' + newOffset);
                 Stream.rangeParser(req);
                 Stream.serveHeader(req, res, transcoder, chunkId, false);
             }
@@ -83,12 +80,12 @@ class Stream {
         let sessionId = req.query.session.toString();
 
         if (typeof universal.cache[req.query.session] === 'undefined') {
-            debug(" subtitle session " + sessionId + " not found");
+            console.log(" subtitle session " + sessionId + " not found");
             res.status(404).send("Session not found");
             return;
         }
 
-        debug("serve subtitles " + sessionId);
+        console.log("serve subtitles " + sessionId);
         transcoder = universal.cache[req.query.session];
 
         Stream.serveHeader(req, res, transcoder, 0, true);
@@ -99,12 +96,12 @@ class Stream {
 
         if (typeof range === "object") {
             if (range.type !== "bytes")
-                debug("WARNING range type " + range.type);
+                console.log("WARNING range type " + range.type);
 
             if (range.length > 0) {
                 req.parsedRange = range[0];
                 req.streamCursor = 0;
-                debug('range found ' + req.parsedRange.start + '-' + req.parsedRange.end)
+                console.log('range found ' + req.parsedRange.start + '-' + req.parsedRange.end)
             }
         }
     }
@@ -156,7 +153,7 @@ class Stream {
 
     static streamBuilder(req, res, isSubtitle, chunkId, callback) {
         //Build the chunk Path
-        let chunkPath = config.xdg_cache_home + req.query.session + "/" + (isSubtitle ? 'sub-' : '') + (chunkId === -1 ? 'header' : 'chunk-' + utils.pad(chunkId, 5));
+        let chunkPath = config.xdg_cache_home + req.query.session + "/" + (isSubtitle ? 'sub-' : '') + (chunkId === -1 ? 'header' : 'chunk-' + pad(chunkId, 5));
 
         //Access the file to get the size
         fs.stat(chunkPath, (err, stats) => {
@@ -231,7 +228,7 @@ class Stream {
     static endConnection(req, res, isSubtitle) {
         if (!req.connection.destroyed) {
             res.end();
-            debug(req.query.session + (isSubtitle ? ' subtitles' : '') + ' end');
+            console.log(req.query.session + (isSubtitle ? ' subtitles' : '') + ' end');
         }
     }
 }

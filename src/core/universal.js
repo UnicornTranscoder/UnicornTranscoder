@@ -1,13 +1,7 @@
-/**
- * Created by drouar_b on 15/08/2017.
- */
-
-const path = require('path');
-const debug = require('debug')('universal');
 const proxy = require('./proxy');
-const utils = require('../utils/utils');
-const config = require('../config');
+const loadConfig = require('../utils/config');
 
+const config = loadConfig();
 let universal = {};
 universal.cache = {};
 universal.sessions = {};
@@ -15,7 +9,7 @@ universal.downloads = 0;
 
 universal.stopTranscoder = function (req, res) {
     if (typeof universal.cache[req.query.session] !== 'undefined') {
-        debug('Stop ' + req.query.session);
+        console.log('Stop ' + req.query.session);
         if (typeof universal.cache[req.query.session] !== 'undefined')
             universal.cache[req.query.session].killInstance();
     }
@@ -28,7 +22,7 @@ universal.updateTimeout = function (sessionId) {
             clearTimeout(universal.cache[sessionId].sessionTimeout);
 
         universal.cache[sessionId].sessionTimeout = setTimeout(() => {
-            debug(sessionId + ' timed out');
+            console.log(sessionId + ' timed out');
             if (typeof universal.cache[sessionId] !== 'undefined')
                 universal.cache[sessionId].killInstance()
         }, config.transcoder_decay_time * 1000)
@@ -97,7 +91,17 @@ universal.stats = function (req, res) {
     streams.config = config.public_config;
 
     res.setHeader('Content-Type', 'application/json');
-    res.send(utils.toJSON(streams));
+
+    let cache = [];
+    res.send(JSON.stringify(streams, (_, value) => {
+        if (typeof(value) === 'object' && value !== null) {
+            if (cache.indexOf(value) !== -1) {
+                return;
+            }
+            cache.push(value);
+        }
+        return value;
+    }));
 };
 
 module.exports = universal;

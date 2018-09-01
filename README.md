@@ -1,54 +1,28 @@
-## UnicornTranscoder
+## RhinoTranscoder
 
-This software is a remote transcoder for `Plex Media Server`. It is able to handle all the requests from a `Plex Client` to transcode and serve a stream.
+This is a transcoding node for Plex, used by the [RhinoLoadBalancer](https://github.com/mrkno/RhinoLoadBalancer). It is able to handle all the requests from a `Plex Client` to transcode and serve a stream.
 
-## UnicornTranscoder Project
+This is a __heavily modified__ fork the of [UnicornTranscoder](https://github.com/UnicornTranscoder/UnicornTranscoder), with the aim of improving its dynamic scaling abilities.
 
-- [UnicornTranscoder](https://github.com/UnicornTranscoder/UnicornTranscoder)
-- [UnicornLoadBalancer](https://github.com/UnicornTranscoder/UnicornLoadBalancer)
-- [UnicornFFMPEG](https://github.com/UnicornTranscoder/UnicornFFMPEG)
+## Dependencies
 
-## How does this work
-
-* The user send a request to the Plex server
-* The request is caught by `UnicornLoadBalancer`
-* The  `UnicornLoadBalancer` answer a HTTP 302 with the URL of the `UnicornTranscoder`
-* The transcoder will send a request to the Plex Server
-* Plex Server will launch `Plex Transcoder` binary which was replaced by `UnicornFFMPEG`
-* `UnicornFFMPEG` push the arguments to the redis server
-* `UnicornTranscoder` launch FFMPEG and starts to serve the request for the stream
-
-
+* Plex Media Server
+* NodeJS (with yarn or npm)
+* A FUSE with your library or all your library replicated to the transcoder server
+* A [RhinoLoadBalancer](https://github.com/mrkno/RhinoLoadBalancer).
 
 ## Setup
 
-### 1. Needed Softwares
-
-* Redis server
-* Plex Media Server
-* NodeJS
-* npm
-* A FUSE with your library or all your library replicated to the transcoder server
-
-### 2. Pre-required 
-
-* Setup `Plex Media Server`
-
-* Setup [UnicornFFMPEG](https://github.com/UnicornTranscoder/UnicornFFMPEG)
-* Setup [UnicornLoadBalancer](https://github.com/UnicornTranscoder/UnicornLoadBalancer)
-
-### 3. Setup UnicornTranscoder
-
-* Clone this repository
-* Install the NodeJS dependencies with `npm install`
-* Install the Plex Dependencies
+1. Clone this repository
+2. Install with `yarn` or `npm install`
+3. Install the Plex Dependencies
   * Run `./setup_transcoder.sh <download_url_of_your_plex_server_version>` It will install FFMPEG and the FFMPEG libraries
   * Copy all the codecs for FFMPEG from your `Plex Media Server` to a directory
   * Copy `EasyAudioEncoder` to a directory
-* Run EasyAudioEncoder
+4. Run EasyAudioEncoder
   * It could be a daemon an example systemd configuration is available in the repository
   * **Note:** Easy Audio Encoder will work in the directory it was run
-* Configure the transcoder (`config.js`)
+5. Configure the transcoder (`config.js`)
   * It can be configured by modifying the file or setting environement variables
 
 | Variable               | Description                                                  |
@@ -72,17 +46,4 @@ This software is a remote transcoder for `Plex Media Server`. It is able to hand
 | xdg_data_home          | Should be Ressources path + '/Ressources/'                   |
 | plex_ressources        | Should be Ressources path                                    |
 
-* Run the transcoder
-
-## Notes
-
-The trancoder shouldn't serve the request directly, a reverse proxy such as nginx should be setup in front to install a SSL certificate.
-
-This project may be unstable and still contains some crash/problems. Pull requests are welcome.
-
-You can compile FFMPEG, since the version of FFMPEG used by Plex is slightly different, you can follow this guide:
-https://gist.github.com/drouarb/fb082c521d46aa43fdbb8cdc3d61ffbc
-
-This can allow you to run the transcoder on an ARM based server.
-
-Disclamer: Implementation of libx264 on other platform than x86_64 is not well optimized, you can see a performance gap.
+6. Run the transcoder

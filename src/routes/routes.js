@@ -1,7 +1,3 @@
-/**
- * Created by drouar_b on 27/04/2017.
- */
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const router = express.Router();
