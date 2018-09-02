@@ -1,68 +1,59 @@
-/**
- * Created by drouar_b on 18/08/2017.
- */
-
 const fs = require('fs');
 const Transcoder = require('./transcoder');
 const universal = require('./universal');
-const loadConfig = require('../utils/config');
 const pad = require('../utils/pad');
+const sleep = require('../utils/sleep');
 
-const config = loadConfig();
-
-let dash = {};
-
-dash.serve = function (req, res) {
-    console.log(req.query.session);
-
-    if (typeof universal.cache[req.params.sessionId] !== 'undefined')
-        universal.cache[req.params.sessionId].killInstance();
-
-    universal.cache[req.query.session] = new Transcoder(req.query.session, req, res);
-
-    if (typeof req.query['X-Plex-Session-Identifier'] !== 'undefined') {
-        universal.sessions[req.query['X-Plex-Session-Identifier']] = req.query.session.toString();
+class Dash {
+    constructor(config) {
+        this._config = config;
     }
 
-    universal.updateTimeout(req.query.session);
-};
-
-dash.serveInit = function (req, res) {
-    let sessionId = req.params.sessionId;
-
-    if ((typeof universal.cache[sessionId]) !== 'undefined' && universal.cache[sessionId].alive === true) {
-        universal.cache[sessionId].getChunk(0, (chunkId) => {
-            let file = config.xdg_cache_home + sessionId + "/init-stream" + req.params.streamId + ".m4s";
-
-
+    async serve(req, res) {
+        console.log(req.query.session);
+    
+        if (universal.cache[req.params.sessionId] !== void(0)) {
+            await universal.cache[req.params.sessionId].killInstance();
+        }
+        universal.cache[req.query.session] = new Transcoder(req.query.session, req, res);
+    
+        if (req.query['X-Plex-Session-Identifier'] !== void(0)) {
+            universal.sessions[req.query['X-Plex-Session-Identifier']] = req.query.session.toString();
+        }
+        await universal.updateTimeout(req.query.session);
+    }
+    
+    async serveInit(req, res) {
+        let sessionId = req.params.sessionId;
+        if ((universal.cache[sessionId]) !== void(0) && universal.cache[sessionId].alive === true) {
+            const chunkId = await universal.cache[sessionId].getChunk(0, req.params.streamId, true);
+            let file = this._config.xdg_cache_home + sessionId + "/init-stream" + req.params.streamId + ".m4s";
             if (chunkId == -2 || (chunkId == -1 && !fs.existsSync(file))) {
-                if (!res.headersSent)
+                if (!res.headersSent) {
                     res.status(404).send('Callback ' + chunkId);
+                }
             } else {
                 console.log('Serving init-stream' + req.params.streamId + '.m4s for session ' + sessionId);
                 res.sendFile(file);
             }
-        }, req.params.streamId, true);
-
-        universal.updateTimeout(sessionId);
-    } else {
-        console.log(sessionId + ' not found');
-
-        universal.cache[sessionId] = new Transcoder(sessionId);
-        universal.updateTimeout(sessionId);
-
-        setTimeout(() => {
+            await universal.updateTimeout(sessionId);
+        } else {
+            console.log(sessionId + ' not found');
+    
+            universal.cache[sessionId] = new Transcoder(sessionId);
+            await universal.updateTimeout(sessionId);
+            
+            await sleep(10000);
             res.status(404).send('Restarting session');
-        }, 10000);
+        }
     }
-};
-
-dash.serveChunk = function (req, res) {
-    let sessionId = req.params.sessionId;
-
-    if ((typeof universal.cache[sessionId]) !== 'undefined' && universal.cache[sessionId].alive === true) {
-        universal.cache[sessionId].getChunk(parseInt(req.params.partId) + 1, (chunkId) => {
-            let file = config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + pad(parseInt(req.params.partId) + 1, 5) + ".m4s";
+    
+    async serveChunk (req, res) {
+        let sessionId = req.params.sessionId;
+    
+        if ((universal.cache[sessionId]) !== void(0) && universal.cache[sessionId].alive === true) {
+            const chunkId = await universal.cache[sessionId].getChunk(parseInt(req.params.partId) + 1, req.params.streamId);
+            let file = this._config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + pad(parseInt(req.params.partId) + 1, 5) + ".m4s";
 
             if (chunkId == -2) {
                 res.status(404).send('Callback ' + chunkId);
@@ -73,19 +64,19 @@ dash.serveChunk = function (req, res) {
                 console.log('Serving chunk-stream' + req.params.streamId + "-" + pad(parseInt(req.params.partId) + 1, 5) + '.m4s for session ' + sessionId);
                 res.sendFile(file);
             }
-        }, req.params.streamId);
+            await universal.updateTimeout(sessionId);
+        } else {
+            console.log(req.params.sessionId + ' not found');
+    
+            universal.cache[sessionId] = new Transcoder(sessionId);
+            await universal.updateTimeout(sessionId);
 
-        universal.updateTimeout(sessionId);
-    } else {
-        console.log(req.params.sessionId + ' not found');
-
-        universal.cache[sessionId] = new Transcoder(sessionId);
-        universal.updateTimeout(sessionId);
-
-        setTimeout(() => {
+            await sleep(10000);
             res.status(404).send('Restarting session');
-        }, 10000);
+        }
     }
-};
+}
 
-module.exports = dash;
+
+
+module.exports = Dash;

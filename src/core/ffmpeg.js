@@ -1,26 +1,31 @@
 const xml2js = require('xml2js');
-const redis = require('../utils/redis');
+const util = require('util');
 const pad = require('../utils/pad');
 const LeakyBucket = require('leaky-bucket');
 
-let buckets = {};
-
 class FFMPEG {
-    static seglistParser(req, res) {
-        if (typeof buckets[req.params.sessionId] === "undefined")
-            buckets[req.params.sessionId] = new LeakyBucket(1, 1, 1);
+    constructor(websocket) {
+        this._ws = websocket;
+        this._parseXmlString = util.promisify(xml2js.parseString);
+        this._buckets = {};
+    }
 
-        buckets[req.params.sessionId].reAdd(1, (err) => {
+    async seglistParser(req, res) {
+        if (this._buckets[req.params.sessionId] === void(0)) {
+            this._buckets[req.params.sessionId] = new LeakyBucket(1, 1, 1);
+        }
+
+        this._buckets[req.params.sessionId].reAdd(1, async(err) => {
             if (err) {
                 res.end();
                 return;
             }
 
             let last = -1;
-            let rc = redis.getClient();
 
-            rc.keys(req.params.sessionId + ":*", (err, savedChunks) => {
-                req.body.split(/\r?\n/).forEach((itm) => {
+            try {
+                const savedChunks = await this._ws.getByKeyPattern(req.params.sessionId + ":*");
+                for (let itm of req.body.split(/\r?\n/)) {
                     itm = itm.split(',');
                     let chk = itm.shift();
 
@@ -29,74 +34,79 @@ class FFMPEG {
                         let chunkId = chk.replace(/chunk-([0-9]{5})/, '$1');
 
                         if (savedChunks.indexOf(req.params.sessionId + ":0:" + chunkId) === -1) {
-                            rc.set(req.params.sessionId + ":0:" + chunkId, itm.toString());
+                            this._ws.updateKey(req.params.sessionId + ":0:" + chunkId, itm.toString());
 
                             let beginning = Math.ceil(parseFloat(itm[0]));
                             let end = Math.floor(parseFloat(itm[1]));
 
-                            if (beginning < end - 10)
+                            if (beginning < end - 10) {
                                 beginning = end - 10;
+                            }
                             
-                            for (let i = beginning; i < end + 1; i++)
-                                rc.set(req.params.sessionId + ":timecode:" + i, chunkId);
+                            for (let i = beginning; i < end + 1; i++) {
+                                this._ws.updateKey(req.params.sessionId + ":timecode:" + i, chunkId);
+                            }
                         }
                         last = parseInt(chunkId);
                     }
                     if (chk.match(/^sub-chunk-[0-9]{5}/)) {
                         let chunkId = chk.replace(/sub-chunk-([0-9]{5})/, '$1');
 
-                        if (savedChunks.indexOf(req.params.sessionId + ":sub:" + chunkId) === -1)
-                            rc.set(req.params.sessionId + ":sub:" + chunkId, itm.toString())
+                        if (savedChunks.indexOf(req.params.sessionId + ":sub:" + chunkId) === -1) {
+                            this._ws.updateKey(req.params.sessionId + ":sub:" + chunkId, itm.toString())
+                        }
                     }
 
                     //M3U8
                     if (chk.match(/^media-[0-9]{5}\.ts/)) {
                         let chunkId = chk.replace(/media-([0-9]{5})\.ts/, '$1');
 
-                        if (savedChunks.indexOf(req.params.sessionId + ":0:" + chunkId) === -1)
-                            rc.set(req.params.sessionId + ":0:" + chunkId, itm.toString());
+                        if (savedChunks.indexOf(req.params.sessionId + ":0:" + chunkId) === -1) {
+                            this._ws.updateKey(req.params.sessionId + ":0:" + chunkId, itm.toString());
+                        }
                         last = parseInt(chunkId);
                     }
                     if (chk.match(/^media-[0-9]{5}\.vtt/)) {
                         let chunkId = chk.replace(/media-([0-9]{5})\.vtt/, '$1');
 
-                        if (savedChunks.indexOf(req.params.sessionId + ":sub:" + chunkId) === -1)
-                            rc.set(req.params.sessionId + ":sub:" + chunkId, itm.toString())
+                        if (savedChunks.indexOf(req.params.sessionId + ":sub:" + chunkId) === -1) {
+                            this._ws.updateKey(req.params.sessionId + ":sub:" + chunkId, itm.toString());
+                        }
                     }
-                });
-
-                if (last !== -1) {
-                    rc.set(req.params.sessionId + ":last", last);
                 }
 
-                rc.quit();
+                if (last !== -1) {
+                    this._ws.updateKey(req.params.sessionId + ":last", last);
+                }
+
                 res.end();
-            });
+            }
+            catch (e) {
+                console.error('Segment list parsing failed: ' + e + '\n' + e.stack);
+            }
         });
     }
 
-    static manifestParser(req, res) {
-        if (typeof buckets[req.params.sessionId] === "undefined")
-            buckets[req.params.sessionId] = new LeakyBucket(1, 1, 1);
+    manifestParser(req, res) {
+        if (this._buckets[req.params.sessionId] === void(0)) {
+            this._buckets[req.params.sessionId] = new LeakyBucket(1, 1, 1);
+        }
 
-        buckets[req.params.sessionId].reAdd(1, (err) => {
+        this._buckets[req.params.sessionId].reAdd(1, async(err) => {
             if (err) {
                 res.end();
                 return;
             }
 
-            let rc = redis.getClient();
-
-            rc.get(req.params.sessionId, (err, reply) => {
-                if (typeof reply == 'undefined') {
-                    rc.quit();
+            try {
+                const reply = await this._ws.getSession(req.params.sessionId);
+                if (reply === void(0)) {
                     res.end();
                     return;
                 }
 
                 let parsed = JSON.parse(reply);
                 if (parsed == null) {
-                    rc.quit();
                     res.end();
                     return;
                 }
@@ -111,54 +121,44 @@ class FFMPEG {
                     prev = parsed.args[i];
                 }
 
+                const savedChunks = await this._ws.getByKeyPattern(req.params.sessionId + ":[0-9]:*");
+                const mpd = await this._parseXmlString(req.body);
 
-                rc.keys(req.params.sessionId + ":[0-9]:*", (err, savedChunks) => {
-                    xml2js.parseString(req.body, (err, mpd) => {
-                        if (err)
-                            return;
+                let last = -1;
 
-                        try {
-                            let last = -1;
+                let offset = 1;
+                for (let adaptationSet of mpd.MPD.Period[0].AdaptationSet) {
+                    let c = 0;
+                    let i = 0;
+                    let streamId = adaptationSet.Representation[0]["$"].id;
+                    let timeScale = adaptationSet.Representation[0].SegmentTemplate[0]["$"].timescale;
 
-                            let offset = 1;
-                            mpd.MPD.Period[0].AdaptationSet.forEach((adaptationSet) => {
-                                let c = 0;
-                                let i = 0;
-                                let streamId = adaptationSet.Representation[0]["$"].id;
-                                let timeScale = adaptationSet.Representation[0].SegmentTemplate[0]["$"].timescale;
-
-                                adaptationSet.Representation[0].SegmentTemplate[0].SegmentTimeline[0].S.forEach((s) => {
-                                    if (typeof s["$"].t != 'undefined' && streamId == 0) {
-                                        offset = Math.round((s["$"].t / timeScale) / segmentTime);
-                                    }
-
-                                    for (i = c; i < c + (typeof s["$"].r != 'undefined' ? parseInt(s["$"].r) + 1 : 1); i++) {
-
-                                        if (savedChunks.indexOf(req.params.sessionId + ":" + streamId + ":" + pad(i + offset, 5)) == -1)
-                                        rc.set(req.params.sessionId + ":" + streamId + ":" + pad(i + offset, 5), s["$"].d);
-
-                                        if (i + offset > last)
-                                            last = i + offset;
-                                    }
-                                    c = i;
-                                });
-
-                                if (last != -1) {
-                                    rc.set(req.params.sessionId + ":" + streamId + ":00000", 0);
-                                    if (streamId == 0) {
-                                        rc.set(req.params.sessionId + ":last", last);
-                                    }
-                                }
-                            });
-
-                            rc.quit();
-                        } catch (e) {
-                            rc.quit();
+                    for (let s of adaptationSet.Representation[0].SegmentTemplate[0].SegmentTimeline[0].S) {
+                        if (s["$"].t != void(0) && streamId == 0) {
+                            offset = Math.round((s["$"].t / timeScale) / segmentTime);
                         }
-                        res.end();
-                    });
-                });
-            });
+                        for (i = c; i < c + (s["$"].r !== void(0) ? parseInt(s["$"].r) + 1 : 1); i++) {
+                            if (savedChunks.indexOf(req.params.sessionId + ":" + streamId + ":" + pad(i + offset, 5)) == -1) {
+                                this._ws.updateKey(req.params.sessionId + ":" + streamId + ":" + pad(i + offset, 5), s["$"].d);
+                            }
+                            if (i + offset > last) {
+                                last = i + offset;
+                            }
+                        }
+                        c = i;
+                    }
+
+                    if (last != -1) {
+                        this._ws.updateKey(req.params.sessionId + ":" + streamId + ":00000", 0);
+                        if (streamId == 0) {
+                            this._ws.updateKey(req.params.sessionId + ":last", last);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Parsing manifest failed.');
+            }
+            res.end();
         });
     }
 }

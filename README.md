@@ -32,10 +32,6 @@ This is a __heavily modified__ fork the of [UnicornTranscoder](https://github.co
 | transcoder_decay_time  | The time to wait in second before an unactive session is killed |
 | plex_url               | A direct URL to your Plex Media Server (not going through UnicornLoadBalancer) |
 | base_url               | URL to your UnicornLoadBalancer                              |
-| redis_host             | Host of your redis server                                    |
-| redis_port             | Port of your redis server                                    |
-| redis_pass             | Password of your redis server                                |
-| redis_db               | The database ID the transcoder should use                    |
 | video_content_type     | Content Type for video (do not modify)                       |
 | subtitles_content_type | Content Type for subtitles (do not modify)                   |
 | ld_library_path        | Path for FFMPEG libraries, if you used `setup_transcoder.sh` it should have created a Ressources folder, it is the path to this folder |
