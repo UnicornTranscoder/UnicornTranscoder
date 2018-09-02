@@ -74,4 +74,8 @@ const deleteDirectory = async(directory) => {
     return await rmdirp(directory);
 };
 
-module.exports = deleteDirectory;
+module.exports = {
+    deleteDirectory: deleteDirectory,
+    filesInDirectory: filesInDirectory,
+    fileExists: fileExists
+};

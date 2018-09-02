@@ -22,8 +22,8 @@ This is a __heavily modified__ fork the of [UnicornTranscoder](https://github.co
 4. Run EasyAudioEncoder
   * It could be a daemon an example systemd configuration is available in the repository
   * **Note:** Easy Audio Encoder will work in the directory it was run
-5. Configure the transcoder (`config.js`)
-  * It can be configured by modifying the file or setting environement variables
+5. Configure the transcoder in `config.json`. See `config.example.json` for variables that can be changed.
+
 
 | Variable               | Description                                                  |
 | ---------------------- | ------------------------------------------------------------ |
@@ -34,12 +34,5 @@ This is a __heavily modified__ fork the of [UnicornTranscoder](https://github.co
 | base_url               | URL to your UnicornLoadBalancer                              |
 | video_content_type     | Content Type for video (do not modify)                       |
 | subtitles_content_type | Content Type for subtitles (do not modify)                   |
-| ld_library_path        | Path for FFMPEG libraries, if you used `setup_transcoder.sh` it should have created a Ressources folder, it is the path to this folder |
-| transcoder_path        | Path to FFMPEG binary, it should be Ressources path + '/Plex Transcoder' |
-| ffmpeg_external_libs   | Path to the directory with the codecs from Plex              |
-| eae_root               | Path to the working directory of Easy Audio Encoder          |
-| xdg_cache_home         | Path where the converted chunks will be stored               |
-| xdg_data_home          | Should be Ressources path + '/Ressources/'                   |
-| plex_ressources        | Should be Ressources path                                    |
 
 6. Run the transcoder

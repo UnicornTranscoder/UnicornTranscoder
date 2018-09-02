@@ -1,25 +1,22 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
-const request = require('request');
 const Dash = require('../core/dash');
 const M3U8 = require('../core/m3u8');
 const Stream = require('../core/stream');
 const Universal = require('../core/universal');
 const Ffmpeg = require('../core/ffmpeg');
-const proxy = require('../core/proxy');
 
 class Routes {
     constructor(config, websocket) {
         this._config = config;
         this._websocket = websocket;
         this._router = express.Router();
-        this._dash = new Dash(config);
-        this._m3u8 = new M3U8(config);
-        this._stream = new Stream(websocket, config);
         this._universal = new Universal(config);
+        this._dash = new Dash(config, this._universal, this._websocket);
+        this._m3u8 = new M3U8(config, websocket, this._universal);
+        this._stream = new Stream(websocket, config, this._universal);
         this._ffmpeg = new Ffmpeg(websocket);
-        this._proxy = proxy(config);
         this._setupRoutes();
     }
 
@@ -29,9 +26,10 @@ class Routes {
         this._router.get('/video/:/transcode/universal/dash/:sessionId/:streamId/:partId.m4s', this._dash.serveChunk.bind(this._dash));
 
         this._router.get('/video/:/transcode/universal/start.m3u8', this._m3u8.saveSession.bind(this._m3u8));
+
         this._router.get('/video/:/transcode/universal/session/:sessionId/base/index.m3u8', this._m3u8.serve.bind(this._m3u8));
         this._router.get('/video/:/transcode/universal/session/:sessionId/base-x-mc/index.m3u8', this._m3u8.serve.bind(this._m3u8));
-        this._router.get('/video/:/transcode/universal/session/:sessionId/vtt-base/index.m3u8', this._proxy);
+
         this._router.get('/video/:/transcode/universal/session/:sessionId/:fileType/:partId.ts', this._m3u8.serveChunk.bind(this._m3u8));
         this._router.get('/video/:/transcode/universal/session/:sessionId/:fileType/:partId.vtt', this._m3u8.serveSubtitles.bind(this._m3u8));
 
@@ -42,19 +40,18 @@ class Routes {
         this._router.get('/video/:/transcode/universal/ping', this._universal.ping.bind(this._universal));
         this._router.get('/:/timeline', this._universal.timeline.bind(this._universal));
 
-        this._router.get('/library/parts/:id1/:id2/file.*', (req, res) => {
-            request(config.base_url + '/api/pathname/' + req.params.id1 + '/', (error, response, body) => {
-                if (!error && response.statusCode == 200) {
-                    let result = JSON.parse(body);
-                    console.log(result.file);
-                    universal.downloads++;
-                    res.download(result.file, path.basename(result.file), () => {
-                        universal.downloads--;
-                    });
-                } else {
-                    res.status(404).send('404 File not found')
-                }
-            })
+        this._router.get('/library/parts/:id1/:id2/file.*', async(req, res) => {
+            try {
+                const result = await this._websocket.getPath(req.params.id1);
+                console.log(result.file);
+                this._universal.downloads++;
+                res.download(result.file, path.basename(result.file), () => {
+                    this._universal.downloads--;
+                });
+            }
+            catch(e) {
+                res.status(404).send('404 File not found');
+            }
         });
 
         //Transcoder progression

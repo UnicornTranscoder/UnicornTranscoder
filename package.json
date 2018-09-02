@@ -9,7 +9,6 @@
     "body-parser": "^1.17.2",
     "cluster-node-cache": "^0.1.4",
     "express": "^4.16.3",
-    "http-proxy": "^1.16.2",
     "leaky-bucket": "^2.1.1",
     "request": "^2.81.0",
     "xml2js": "^0.4.19"

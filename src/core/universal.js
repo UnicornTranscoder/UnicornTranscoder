@@ -1,5 +1,3 @@
-const proxy = require('./proxy');
-
 class Universal {
     constructor(config) {
         this._config = config;
@@ -36,12 +34,10 @@ class Universal {
 
     async ping(req, res) {
         await this.updateTimeout(req.query.session);
-        proxy(req, res);
     }
 
     async timeline(req, res) {
         await this.updateTimeout(req.query["X-Plex-Session-Identifier"]);
-        proxy(req, res);
     }
 
     stats(_, res) {

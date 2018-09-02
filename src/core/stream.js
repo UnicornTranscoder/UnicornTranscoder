@@ -1,60 +1,61 @@
 const fs = require('fs');
+const path = require('path');
 const Transcoder = require('./transcoder');
-const universal = require('./universal');
 const pad = require('../utils/pad');
 
 class Stream {
-    constructor(websocket, config) {
+    constructor(websocket, config, universal) {
         this._ws = websocket;
         this._config = config;
+        this._universal = universal;
     }
 
     async serve(req, res) {
         let transcoder;
         let sessionId = req.query.session.toString();
 
-        if (req.query['X-Plex-Session-Identifier'] !== void(0)) {
-            universal.sessions[req.query['X-Plex-Session-Identifier']] = sessionId;
+        if (req.query['X-Plex-Session-Identifier'] !== void (0)) {
+            this._universal.sessions[req.query['X-Plex-Session-Identifier']] = sessionId;
         }
 
-        if (universal.cache[sessionId] === void(0)) {
+        if (this._universal.cache[sessionId] === void (0)) {
             console.log('create session ' + sessionId + ' ' + req.query.offset);
-            Stream.createTranscoder(req, res);
+            this.createTranscoder(req, res);
         } else {
-            transcoder = universal.cache[sessionId];
+            transcoder = this._universal.cache[sessionId];
             console.log('session found ' + sessionId);
 
-            if (req.query.offset !== void(0)) {
+            if (req.query.offset !== void (0)) {
                 let newOffset = parseInt(req.query.offset);
 
                 if (newOffset < transcoder.streamOffset) {
                     console.log('Offset (' + newOffset + ') lower than transcoding (' + transcoder.streamOffset + ') instance, restarting...');
                     await transcoder.killInstance(false);
-                    Stream.createTranscoder(req, res, newOffset);
+                    this.createTranscoder(req, res, newOffset);
                 } else {
-                    Stream.chunkRetriever(req, res, transcoder, newOffset);
+                    this.chunkRetriever(req, res, transcoder, newOffset);
                 }
             } else {
                 console.log('Offset not found, resuming from beginning');
-                Stream.rangeParser(req);
-                Stream.serveHeader(req, res, transcoder, 0, false);
+                this.rangeParser(req);
+                this.serveHeader(req, res, transcoder, 0, false);
             }
         }
     }
 
     async createTranscoder(req, res, streamOffset) {
         let sessionId = req.query.session.toString();
-        let transcoder = universal.cache[sessionId] = new Transcoder(sessionId, req, void(0), streamOffset);
-        if (req.query.offset !== void(0)) {
+        let transcoder = this._universal.cache[sessionId] = new Transcoder(this._config, this._ws, this._universal, sessionId, req, streamOffset);
+        if (req.query.offset !== void (0)) {
             transcoder.streamOffset = parseInt(req.query.offset);
         }
         else {
             transcoder.streamOffset = 0;
         }
-        await universal.updateTimeout(sessionId);
+        await this._universal.updateTimeout(sessionId);
 
-        Stream.rangeParser(req);
-        Stream.serveHeader(req, res, transcoder, 0, false);
+        this.rangeParser(req);
+        this.serveHeader(req, res, transcoder, 0, false);
     }
 
     async chunkRetriever(req, res, transcoder, newOffset) {
@@ -66,13 +67,13 @@ class Stream {
             }
             let chunkId = parseInt(chunk);
             console.log('Chunk ' + chunkId + ' found for offset ' + newOffset);
-            Stream.rangeParser(req);
-            Stream.serveHeader(req, res, transcoder, chunkId, false);
+            this.rangeParser(req);
+            this.serveHeader(req, res, transcoder, chunkId, false);
         }
         catch (e) {
             console.log('Offset not found, restarting...');
             await transcoder.killInstance(false);
-            Stream.createTranscoder(req, res, newOffset);
+            this.createTranscoder(req, res, newOffset);
         }
     }
 
@@ -80,16 +81,16 @@ class Stream {
         let transcoder;
         let sessionId = req.query.session.toString();
 
-        if (universal.cache[req.query.session] === void(0)) {
+        if (this._universal.cache[req.query.session] === void (0)) {
             console.log(" subtitle session " + sessionId + " not found");
             res.status(404).send("Session not found");
             return;
         }
 
         console.log("serve subtitles " + sessionId);
-        transcoder = universal.cache[req.query.session];
+        transcoder = this._universal.cache[req.query.session];
 
-        Stream.serveHeader(req, res, transcoder, 0, true);
+        this.serveHeader(req, res, transcoder, 0, true);
     }
 
     rangeParser(req) {
@@ -111,16 +112,16 @@ class Stream {
         transcoder.getChunk(offset, (chunkId) => {
             switch (chunkId) {
                 case -1:
-                    Stream.endConnection(req, res, isSubtitle);
+                    this.endConnection(req, res, isSubtitle);
                     return;
 
                 case -2:
-                    Stream.serveHeader(req, res, transcoder, offset, isSubtitle);
+                    this.serveHeader(req, res, transcoder, offset, isSubtitle);
                     return;
 
                 default:
-                    Stream.streamBuilder(req, res, isSubtitle, -1, () => {
-                        Stream.serveChunk(req, res, transcoder, isSubtitle, offset);
+                    this.streamBuilder(req, res, isSubtitle, -1, () => {
+                        this.serveChunk(req, res, transcoder, isSubtitle, offset);
                     });
             }
         }, (isSubtitle ? 'sub' : '0'), true)
@@ -128,25 +129,25 @@ class Stream {
 
     async serveChunk(req, res, transcoder, isSubtitle, chunkId) {
         if (req.connection.destroyed) {
-            Stream.endConnection(req, res, isSubtitle);
+            this.endConnection(req, res, isSubtitle);
             return;
         }
 
-        await universal.updateTimeout(req.query.session);
+        await this._universal.updateTimeout(req.query.session);
 
         transcoder.getChunk(chunkId, (chunkId) => {
             switch (chunkId) {
                 case -1:
-                    Stream.endConnection(req, res, isSubtitle);
+                    this.endConnection(req, res, isSubtitle);
                     return;
 
                 case -2:
-                    Stream.serveChunk(req, res, transcoder, isSubtitle, chunkId);
+                    this.serveChunk(req, res, transcoder, isSubtitle, chunkId);
                     return;
 
                 default:
-                    Stream.streamBuilder(req, res, isSubtitle, chunkId, () => {
-                        Stream.serveChunk(req, res, transcoder, isSubtitle, chunkId + 1);
+                    this.streamBuilder(req, res, isSubtitle, chunkId, () => {
+                        this.serveChunk(req, res, transcoder, isSubtitle, chunkId + 1);
                     });
             }
         }, (isSubtitle ? 'sub' : '0'), true)
@@ -154,12 +155,13 @@ class Stream {
 
     streamBuilder(req, res, isSubtitle, chunkId, callback) {
         //Build the chunk Path
-        let chunkPath = this._config.xdg_cache_home + req.query.session + "/" + (isSubtitle ? 'sub-' : '') + (chunkId === -1 ? 'header' : 'chunk-' + pad(chunkId, 5));
+        const chunkPath = path.join(this._config.plex.transcoder, "Cache", req.query.session,
+            (isSubtitle ? 'sub-' : '') + (chunkId === -1 ? 'header' : 'chunk-' + pad(chunkId, 5)));
 
         //Access the file to get the size
         fs.stat(chunkPath, (err, stats) => {
             if (err) {
-                Stream.endConnection(req, res, isSubtitle);
+                this.endConnection(req, res, isSubtitle);
                 return;
             }
 
@@ -167,7 +169,7 @@ class Stream {
             let sizeToRead;
 
             //Check if we have to skip some data
-            if (req.parsedRange !== void(0) && typeof req.parsedRange.start === "number" && (req.parsedRange.start - req.streamCursor) > 0) {
+            if (req.parsedRange !== void (0) && typeof req.parsedRange.start === "number" && (req.parsedRange.start - req.streamCursor) > 0) {
                 let toSkip = req.parsedRange.start - req.streamCursor;
 
                 //Skip the whole file
@@ -189,7 +191,7 @@ class Stream {
             }
 
             //Check the end range
-            if (req.parsedRange !== void(0) && typeof req.parsedRange.end === "number" && req.parsedRange.end < (req.streamCursor + sizeToRead)) {
+            if (req.parsedRange !== void (0) && typeof req.parsedRange.end === "number" && req.parsedRange.end < (req.streamCursor + sizeToRead)) {
                 //Extract data and push it to the stream
                 fileStream.on('readable', () => {
                     let buffer;
@@ -204,7 +206,7 @@ class Stream {
                         req.streamCursor += buffer.length;
                         if (req.streamCursor >= req.parsedRange.end) {
                             fileStream.removeAllListeners('readable');
-                            Stream.endConnection(req, res, isSubtitle);
+                            this.endConnection(req, res, isSubtitle);
                             return;
                         }
                     }
@@ -212,14 +214,16 @@ class Stream {
             } else {
                 //Send the whole file
                 if (!req.connection.destroyed) {
-                    fileStream.pipe(res, {end: false});
+                    fileStream.pipe(res, { end: false });
                     fileStream.on('end', () => {
                         req.streamCursor += sizeToRead;
 
-                        if (req.parsedRange !== void(0) && typeof req.parsedRange.end === "number" && req.parsedRange.end === req.streamCursor)
-                            Stream.endConnection(req, res, isSubtitle);
-                        else
+                        if (req.parsedRange !== void (0) && typeof req.parsedRange.end === "number" && req.parsedRange.end === req.streamCursor) {
+                            this.endConnection(req, res, isSubtitle);
+                        }
+                        else {
                             callback();
+                        }
                     });
                 }
             }
