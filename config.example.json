@@ -2,7 +2,8 @@
     "server": {
         "port": 3241,
         "loadBalancer": "https://myplex.com",
-        "password": "my_new_transcoder_node_password"
+        "password": "my_new_transcoder_node_password",
+        "keepAliveTimeout": 20000
     },
     "plex": {
         "mount": "/mnt/plex",

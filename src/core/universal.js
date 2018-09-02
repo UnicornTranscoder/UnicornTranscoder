@@ -1,12 +1,14 @@
 const publicIp = require('public-ip');
 
 class Universal {
-    constructor(config) {
+    constructor(config, websocket) {
         this._config = config;
+        this._ws = websocket;
         this._cache = {};
         this._sessions = {};
         this._downloads = 0;
         this._ip = null;
+        setInterval(this._stats.bind(this), config.server.loadUpdateInterval);
     }
 
     getCache(id) {
@@ -55,7 +57,7 @@ class Universal {
         await this.updateTimeout(req.query["X-Plex-Session-Identifier"]);
     }
 
-    async stats(_, res) {
+    async _stats() {
         const streams = {
             files: [],
             codecs: {},
@@ -124,18 +126,7 @@ class Universal {
         streams.config = this._config.load;
         streams.ip = this._ip;
     
-        res.setHeader('Content-Type', 'application/json');
-    
-        let cache = [];
-        res.send(JSON.stringify(streams, (_, value) => {
-            if (typeof (value) === 'object' && value !== null) {
-                if (cache.indexOf(value) !== -1) {
-                    return;
-                }
-                cache.push(value);
-            }
-            return value;
-        }));
+        this._ws.send("load", streams);
     }
 }
 

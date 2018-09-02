@@ -12,8 +12,8 @@ class Routes {
         this._config = config;
         this._websocket = websocket;
         this._router = express.Router();
-        this._universal = new Universal(config);
-        this._dash = new Dash(config, this._universal, this._websocket);
+        this._universal = new Universal(config, websocket);
+        this._dash = new Dash(config, this._universal, websocket);
         this._m3u8 = new M3U8(config, websocket, this._universal);
         this._stream = new Stream(websocket, config, this._universal);
         this._ffmpeg = new Ffmpeg(websocket);
@@ -60,8 +60,6 @@ class Routes {
         this._router.post('/video/:/transcode/session/:sessionId/*/seglist', bodyParserText, this._ffmpeg.seglistParser.bind(this._ffmpeg));
         this._router.post('/video/:/transcode/session/:sessionId/manifest', bodyParserText, this._ffmpeg.manifestParser.bind(this._ffmpeg));
         this._router.post('/video/:/transcode/session/:sessionId/*/manifest', bodyParserText, this._ffmpeg.manifestParser.bind(this._ffmpeg));
-
-        this._router.get('/api/stats', this._universal.stats.bind(this._universal));
     }
 
     toRoute() {
