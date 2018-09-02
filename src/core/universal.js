@@ -1,9 +1,24 @@
+const publicIp = require('public-ip');
+
 class Universal {
     constructor(config) {
         this._config = config;
         this._cache = {};
         this._sessions = {};
         this._downloads = 0;
+        this._ip = null;
+    }
+
+    getCache(id) {
+        return this._cache[id];
+    }
+
+    deleteCache(id) {
+        delete this._cache[id];
+    }
+
+    putCache(id, val) {
+        this._cache[id] = val;
     }
 
     async stopTranscoder(req, res) {
@@ -26,7 +41,7 @@ class Universal {
                 if (this._cache[sessionId] !== void(0)) {
                     await this._cache[sessionId].killInstance();
                 }
-            }, this._config.transcoder_decay_time * 1000)
+            }, this._config.plex.transcoderDecayTime * 1000)
         } else if (sessionId !== void(0) && this._sessions[sessionId] !== void(0) && sessionId !== this._sessions[sessionId]) {
             await this.updateTimeout(this._sessions[sessionId])
         }
@@ -40,7 +55,7 @@ class Universal {
         await this.updateTimeout(req.query["X-Plex-Session-Identifier"]);
     }
 
-    stats(_, res) {
+    async stats(_, res) {
         const streams = {
             files: [],
             codecs: {},
@@ -59,7 +74,7 @@ class Universal {
     
             for (let i = 0; i < stream.transcoderArgs.length; i++) {
                 if (typeof(stream.transcoderArgs[i].startsWith) === "function") {
-                    if (stream.transcoderArgs[i].startsWith(this._config.mount_point)) {
+                    if (stream.transcoderArgs[i].startsWith(this._config.plex.mount)) {
                         streams.files.push(stream.transcoderArgs[i]);
                         i = stream.transcoderArgs.length;
                     }
@@ -90,9 +105,24 @@ class Universal {
                 }
             }
         }
+
+        if (this._ip === null) {
+            try {
+                this._ip = await publicIp.v4();
+            }
+            catch (e1) {
+                try {
+                    this._ip = await publicIp.v6();
+                }
+                catch (e2) {
+                    this._ip = '127.0.0.1';
+                }
+            }
+        }
     
         streams.downloads = this._downloads;
-        streams.config = this._config.public_config;
+        streams.config = this._config.load;
+        streams.ip = this._ip;
     
         res.setHeader('Content-Type', 'application/json');
     

@@ -14,10 +14,10 @@ class M3U8 {
 
     async serve(req, res) {
         console.log('M3U8 ' + req.params.sessionId);
-        if (this._universal.cache[req.params.sessionId] !== void (0)) {
-            await this._universal.cache[req.params.sessionId].killInstance();
+        if (this._universal.getCache(req.params.sessionId) !== void (0)) {
+            await this._universal.getCache(req.params.sessionId).killInstance();
         }
-        this._universal.cache[req.params.sessionId] = new Transcoder(this._config, this._ws, this._universal, req.params.sessionId, req);
+        this._universal.putCache(req.params.sessionId, new Transcoder(this._config, this._ws, this._universal, req.params.sessionId, req));
         await this._universal.updateTimeout(req.params.sessionId);
     }
 
@@ -25,8 +25,9 @@ class M3U8 {
         let sessionId = req.params.sessionId;
         console.log(`Requesting ${req.params.partId} for session ${sessionId}`);
 
-        if ((this._universal.cache[sessionId]) !== void (0) && this._universal.cache[sessionId].alive === true) {
-            const chunkId = await this._universal.cache[sessionId].getChunk(req.params.partId);
+        const tr = this._universal.getCache(sessionId);
+        if (tr !== void(0) && tr.alive === true) {
+            const chunkId = await tr.getChunk(req.params.partId);
             const file = path.join(this._plexCachePath, sessionId, `media-${req.params.partId}.ts`);
             if (chunkId == -2) {
                 if (!res.headersSent) {
@@ -43,7 +44,7 @@ class M3U8 {
         } else {
             console.log(`${sessionId} not found`);
 
-            this._universal.cache[sessionId] = new Transcoder(this._config, this._ws, this._universal, sessionId);
+            this._universal.putCache(sessionId, new Transcoder(this._config, this._ws, this._universal, sessionId));
             await this._universal.updateTimeout(sessionId);
 
             await sleep(10000);
@@ -55,8 +56,9 @@ class M3U8 {
         let sessionId = req.params.sessionId;
         console.log(`Requesting subtitles ${req.params.partId} for session ${sessionId}`);
 
-        if ((this._universal.cache[sessionId]) !== void (0) && this._universal.cache[sessionId].alive === true) {
-            const chunkId = await this._universal.cache[sessionId].getChunk(req.params.partId, 'sub');
+        const tr = this._universal.getCache(sessionId);
+        if (tr !== void(0) && tr.alive === true) {
+            const chunkId = await tr.getChunk(req.params.partId, 'sub');
             const file = path.join(this._plexCachePath, sessionId, `media-${req.params.partId}.vtt`);
             if (chunkId == -2) {
                 if (!res.headersSent) {
@@ -73,7 +75,7 @@ class M3U8 {
         } else {
             console.log(sessionId + ' not found');
 
-            this._universal.cache[sessionId] = new Transcoder(this._config, this._ws, this._universal, sessionId);
+            this._universal.putCache(sessionId, new Transcoder(this._config, this._ws, this._universal, sessionId));
             await this._universal.updateTimeout(sessionId);
 
             await sleep(10000);

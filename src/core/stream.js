@@ -18,11 +18,11 @@ class Stream {
             this._universal.sessions[req.query['X-Plex-Session-Identifier']] = sessionId;
         }
 
-        if (this._universal.cache[sessionId] === void (0)) {
+        if (this._universal.getCache(sessionId) === void(0)) {
             console.log('create session ' + sessionId + ' ' + req.query.offset);
             this.createTranscoder(req, res);
         } else {
-            transcoder = this._universal.cache[sessionId];
+            transcoder = this._universal.getCache(sessionId);
             console.log('session found ' + sessionId);
 
             if (req.query.offset !== void (0)) {
@@ -45,7 +45,7 @@ class Stream {
 
     async createTranscoder(req, res, streamOffset) {
         let sessionId = req.query.session.toString();
-        let transcoder = this._universal.cache[sessionId] = new Transcoder(this._config, this._ws, this._universal, sessionId, req, streamOffset);
+        let transcoder = this._universal.putCache(sessionId, new Transcoder(this._config, this._ws, this._universal, sessionId, req, streamOffset));
         if (req.query.offset !== void (0)) {
             transcoder.streamOffset = parseInt(req.query.offset);
         }
@@ -81,14 +81,14 @@ class Stream {
         let transcoder;
         let sessionId = req.query.session.toString();
 
-        if (this._universal.cache[req.query.session] === void (0)) {
+        if (this._universal.getCache(req.query.session) === void(0)) {
             console.log(" subtitle session " + sessionId + " not found");
             res.status(404).send("Session not found");
             return;
         }
 
         console.log("serve subtitles " + sessionId);
-        transcoder = this._universal.cache[req.query.session];
+        transcoder = this._universal.getCache(req.query.session);
 
         this.serveHeader(req, res, transcoder, 0, true);
     }

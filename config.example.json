@@ -7,9 +7,9 @@
     "plex": {
         "mount": "/mnt/plex",
         "transcoder": "/root/rhino/RhinoTranscoder/Plex/",
-        "transcoder_decay_time": 120,
-        "video_content_type": "video/x-matroska",
-        "subtitles_content_type": "text/vtt"
+        "transcoderDecayTime": 120,
+        "videoContentType": "video/x-matroska",
+        "subtitlesContentType": "text/vtt"
     },
     "load": {
         "preferredMaxSessions": 10,

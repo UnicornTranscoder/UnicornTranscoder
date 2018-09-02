@@ -41,7 +41,7 @@ class Transcoder {
             });
 
             this.redisClient.subscribe("__keyspace@" + this._config.redis_db + "__:" + this.sessionId);
-            this.plexRequest = request(this._config.plex_url + req.url).on('error', (err) => { console.log(err) })
+            this.plexRequest = request(this._config.server.loadBalancer + '/' + req.url).on('error', (err) => { console.log(err) })
         } else {
             console.log('Restarting session ' + this.sessionId);
 
@@ -67,7 +67,13 @@ class Transcoder {
         }
         const sessionCache = path.join(this._plexTranscoderCache, this.sessionId);
         await deleteDirectory(sessionCache);
-        fs.mkdirSync(sessionCache);
+        try {
+            fs.mkdirSync(sessionCache);
+        }
+        catch (e) {
+            console.error('Cannot create transcoder cache directory.');
+            process.exit(-4);
+        }
 
         let parsed = JSON.parse(reply);
         if (parsed == null) {
@@ -77,11 +83,11 @@ class Transcoder {
 
         this.transcoderArgs = parsed.args.map((arg) => {
             return arg
-                .replace('{URL}', "http://127.0.0.1:" + this._config.port)
-                .replace('{SEGURL}', "http://127.0.0.1:" + this._config.port)
-                .replace('{PROGRESSURL}', this._config.plex_url)
-                .replace('{PATH}', this._config.mount_point)
-                .replace('{SRTSRV}', this._config.base_url + '/api/sessions')
+                .replace('{URL}', "http://127.0.0.1:" + this._config.server.port)
+                .replace('{SEGURL}', "http://127.0.0.1:" + this._config.server.port)
+                .replace('{PROGRESSURL}', this._config.server.loadBalancer)
+                .replace('{PATH}', this._config.plex.mount)
+                .replace('{SRTSRV}', this._config.server.loadBalancer + '/rhino/sessions')
                 .replace(/\{USRPLEX\}/g, this._plexTranscoderResources)
         });
 
@@ -134,14 +140,13 @@ class Transcoder {
         await this.killInstance();
     }
 
-    async cleanFiles(fullClean, callback) {
+    async cleanFiles(fullClean) {
         await deleteDirectory(path.join(this._plexTranscoderCache, this.sessionId));
         const keys = await this._ws.getByKeyPattern(this.sessionId + (fullClean ? '*' : ':*'));
         if ((keys !== void (0)) && keys.length > 0) {
             await this._ws.deleteKeys.del(keys);
         }
-        delete this._universal.cache[this.sessionId];
-        callback();
+        this._universal.deleteCache(this.sessionId);
     }
 
     async killInstance(fullClean = false) {

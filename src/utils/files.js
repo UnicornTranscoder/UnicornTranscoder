@@ -51,27 +51,31 @@ const filesInDirectory = async(directory) => {
  * content, this method will delete a directory regardless of contents. Does not
  * follow symlinks.
  * @param {string} directory the (potentially non-empty) directory to delete.
- * @param {function()} callback method called on success or failure, (error).
  */
 const deleteDirectory = async(directory) => {
-    await Promise.all((await filesInDirectory(directory)).map(async(file) => {
-        file = path.join(directory, file);
-        try {
-            if (await fileExists(file) === 'directory') {
-                await deleteDirectory(file);
+    try {
+        await Promise.all((await filesInDirectory(directory)).map(async(file) => {
+            file = path.join(directory, file);
+            try {
+                if (await fileExists(file) === 'directory') {
+                    await deleteDirectory(file);
+                }
+                else {
+                    await chmodp(file, 666);
+                    await unlinkp(file);
+                }
+                return true;
             }
-            else {
-                await chmodp(file, 666);
-                await unlinkp(file);
+            catch (e) {
+                throw (LOG.error(e), e);
             }
-            return true;
-        }
-        catch (e) {
-            throw (LOG.error(e), e);
-        }
-    }));
-    await chmodp(directory, 666);
-    return await rmdirp(directory);
+        }));
+        await chmodp(directory, 666);
+        return await rmdirp(directory);
+    }
+    catch (e) {
+        return Promise.resolve();
+    }
 };
 
 module.exports = {
