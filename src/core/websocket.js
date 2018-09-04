@@ -27,9 +27,7 @@ class CommsWebsocket {
         
         this._ws.on('connect', () => this._onConnected);
         this._ws.on('connect_error', e => {
-            console.error('Could not connect to upstream Load Balancer.');
-            console.error(e.stack);
-            process.exit(-5);
+            console.error('Connection attempt to Load Balancer failed.');
         });
         this._ws.on('reconnect', this._onConnected);
         this._ws.on('disconnect', this._onDisconnect);
