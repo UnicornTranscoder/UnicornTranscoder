@@ -102,26 +102,41 @@ class CommsWebsocket {
         return promise;
     }
 
+    async getPath(id) {
+        return (await this.sendWait('path', {
+            downloadId: id
+        })).data;
+    }
+
     async getSession(id) {
         return await this.sendWait('session', {
-
+            sessionId: id
         });
     }
 
     async getByKeyPattern(pattern) {
-
+        return await this.sendWait('get_pattern', {
+            pattern: pattern
+        });
     }
     
     async getByKey(key) {
-
+        return await this.sendWait('get_key', {
+            key: key
+        });
     }
     
     async updateKey(key, val) {
-
+        return await this.sendWait('update_key', {
+            key: key,
+            val: val
+        });
     }
     
     async deleteKeys(keys) {
-
+        return await this.sendWait('delete_key', {
+            keys: keys
+        });
     }
 }
 

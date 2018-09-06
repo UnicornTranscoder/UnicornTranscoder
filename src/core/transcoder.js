@@ -35,7 +35,7 @@ class Transcoder {
                 this.timeout = void (0);
 
                 this.redisClient.unsubscribe("__keyspace@" + this._config.redis_db + "__:" + this.sessionId);
-                this._ws.updateKey(this.sessionId + ":last", 0);
+                await this._ws.updateKey(this.sessionId + ":last", 0);
                 const session = await this._ws.getByKey(this.sessionId);
                 this.transcoderStarter(session);
             });
