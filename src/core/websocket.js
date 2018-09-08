@@ -1,9 +1,9 @@
 const io = require('socket.io-client');
 const crypto = require('crypto');
-const sleep = require('../utils/sleep');
 
 class CommsWebsocket {
     constructor(config) {
+        super();
         this._config = config;
         this._sendQueue = [];
         this._connected = false;
@@ -12,6 +12,7 @@ class CommsWebsocket {
         this._onConnected = this._onConnected.bind(this);
         this._onDisconnect = this._onDisconnect.bind(this);
         this._onMessage = this._onMessage.bind(this);
+        this._ws = null;
         this._connect();
     }
 
@@ -72,6 +73,10 @@ class CommsWebsocket {
                 item.reject();
             }
         }
+    }
+
+    once(eventName, callback) {
+        return this._ws.once(eventName, callback);
     }
 
     send(eventName, data) {
