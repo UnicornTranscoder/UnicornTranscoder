@@ -89,9 +89,12 @@ const fileSize = file => {
     });
 };
 
+const mkdir = promisify(fs.mkdir);
+
 module.exports = {
     deleteDirectory,
     filesInDirectory,
     fileExists,
-    fileSize
+    fileSize,
+    mkdir
 };

@@ -1,9 +1,12 @@
 const fs = require('fs');
 const path = require('path');
+const { promisify } = require('util');
+
+const readFilep = promisify(fs.readFile);
 
 module.exports = () => {
     try {
-        const data = fs.readFileSync(path.join(process.cwd(), 'config.json'), 'utf8');
+        const data = await readFilep(path.join(process.cwd(), 'config.json'), 'utf8');
         return JSON.parse(data.replace(/^\uFEFF/, ''));
     }
     catch(e) {

@@ -1,5 +1,4 @@
 const child_process = require('child_process');
-const fs = require('fs');
 const path = require('path');
 const request = require('request');
 const pad = require('../utils/pad');
@@ -64,7 +63,7 @@ class Transcoder {
         const sessionCache = path.join(this._plexTranscoderCache, this._sessionId);
         await deleteDirectory(sessionCache);
         try {
-            fs.mkdirSync(sessionCache);
+            await mkdir(sessionCache);
         }
         catch (e) {
             console.error('Cannot create transcoder cache directory.');
