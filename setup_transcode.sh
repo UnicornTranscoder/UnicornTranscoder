@@ -6,7 +6,7 @@ then
     exit 1
 fi
 
-transcodepath=`pwd`
+transcodepath=$(pwd)
 cwd="/tmp/plex-$$/"
 mkdir $cwd
 
@@ -19,7 +19,7 @@ then
     exit 1
 fi
 
-filename=`ls $cwd`
+filename=$(ls $cwd)
 
 cd $cwd
 ar x $filename
