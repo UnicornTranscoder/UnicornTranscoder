@@ -296,13 +296,11 @@ class Transcoder {
     async _waitChunk(chunkId, streamId, callback) {
         if (this._transcoding) {
             let timeout = setTimeout(() => {
-                redis.end(false);
                 callback(this._alive ? -2 : -1);
             }, 10000);
 
             redis.on("message", () => {
                 clearTimeout(timeout);
-                redis.end(false);
                 callback(this._alive ? chunkId : -1);
             });
             redis.subscribe(`__keyspace@${this._config.redis_db}__:${this._sessionId}:${streamId}:${chunkId === 'init' ? chunkId : pad(chunkId, 5)}`)

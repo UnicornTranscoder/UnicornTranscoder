@@ -78,8 +78,20 @@ const deleteDirectory = async(directory) => {
     }
 };
 
+/**
+ * Gets the size of a file in bytes.
+ * @param {string} file the file to get the size of
+ * @returns {Promise} promise of either the size of the file, or null if the file does not exist 
+ */
+const fileSize = file => {
+    return new Promise(resolve => {
+        fs.stat(file, (err, stats) => resolve(err ? null : stats.size));
+    });
+};
+
 module.exports = {
-    deleteDirectory: deleteDirectory,
-    filesInDirectory: filesInDirectory,
-    fileExists: fileExists
+    deleteDirectory,
+    filesInDirectory,
+    fileExists,
+    fileSize
 };
