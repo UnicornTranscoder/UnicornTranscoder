@@ -1,5 +1,5 @@
 const { promisify } = require('util');
-const { rmdir, chmod, readdir, unlink, lstat } = require('fs');
+const { rmdir, chmod, readdir, unlink, lstat, mkdir, stat } = require('fs');
 
 const rmdirp = promisify(rmdir);
 const chmodp = promisify(chmod);
@@ -85,16 +85,14 @@ const deleteDirectory = async(directory) => {
  */
 const fileSize = file => {
     return new Promise(resolve => {
-        fs.stat(file, (err, stats) => resolve(err ? null : stats.size));
+        stat(file, (err, stats) => resolve(err ? null : stats.size));
     });
 };
-
-const mkdir = promisify(fs.mkdir);
 
 module.exports = {
     deleteDirectory,
     filesInDirectory,
     fileExists,
     fileSize,
-    mkdir
+    mkdir: promisify(mkdir)
 };
