@@ -113,14 +113,14 @@ class FFMPEG {
             let prev = null;
             let segmentTime = 5;
             for (let i = 0; i < parsed.args.length; i++) {
-                if (prev === "-min_seg_duration") {
+                if (prev === '-min_seg_duration') {
                     segmentTime = parsed.args[i] / 1000000;
                     break;
                 }
                 prev = parsed.args[i];
             }
 
-            const savedChunks = await this._ws.getByKeyPattern(req.params.sessionId + ":[0-9]:*");
+            const savedChunks = await this._ws.getByKeyPattern(req.params.sessionId + ':[0-9]:*');
             const mpd = await this._parseXmlString(req.body);
 
             let last = -1;
@@ -129,16 +129,16 @@ class FFMPEG {
             for (let adaptationSet of mpd.MPD.Period[0].AdaptationSet) {
                 let c = 0;
                 let i = 0;
-                let streamId = adaptationSet.Representation[0]["$"].id;
-                let timeScale = adaptationSet.Representation[0].SegmentTemplate[0]["$"].timescale;
+                let streamId = adaptationSet.Representation[0]['$'].id;
+                let timeScale = adaptationSet.Representation[0].SegmentTemplate[0]['$'].timescale;
 
                 for (let s of adaptationSet.Representation[0].SegmentTemplate[0].SegmentTimeline[0].S) {
-                    if (s["$"].t !== void (0) && streamId === 0) {
-                        offset = Math.round((s["$"].t / timeScale) / segmentTime);
+                    if (s['$'].t !== void (0) && streamId === 0) {
+                        offset = Math.round((s['$'].t / timeScale) / segmentTime);
                     }
-                    for (i = c; i < c + (s["$"].r !== void (0) ? parseInt(s["$"].r) + 1 : 1); i++) {
-                        if (savedChunks.indexOf(req.params.sessionId + ":" + streamId + ":" + pad(i + offset, 5)) === -1) {
-                            this._ws.updateKey(req.params.sessionId + ":" + streamId + ":" + pad(i + offset, 5), s["$"].d);
+                    for (i = c; i < c + (s['$'].r !== void (0) ? parseInt(s['$'].r) + 1 : 1); i++) {
+                        if (savedChunks.indexOf(req.params.sessionId + ':' + streamId + ':' + pad(i + offset, 5)) === -1) {
+                            this._ws.updateKey(req.params.sessionId + ':' + streamId + ':' + pad(i + offset, 5), s['$'].d);
                         }
                         if (i + offset > last) {
                             last = i + offset;
@@ -148,9 +148,9 @@ class FFMPEG {
                 }
 
                 if (last !== -1) {
-                    this._ws.updateKey(req.params.sessionId + ":" + streamId + ":00000", 0);
+                    this._ws.updateKey(req.params.sessionId + ':' + streamId + ':00000', 0);
                     if (streamId === 0) {
-                        this._ws.updateKey(req.params.sessionId + ":last", last);
+                        this._ws.updateKey(req.params.sessionId + ':last', last);
                     }
                 }
             }

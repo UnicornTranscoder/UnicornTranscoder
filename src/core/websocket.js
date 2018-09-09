@@ -81,7 +81,7 @@ class CommsWebsocket {
 
     send(eventName, data) {
         const event = Object.assign({
-            eventId: crypto.randomBytes(16).toString("hex"),
+            eventId: crypto.randomBytes(16).toString('hex'),
             event: eventName
         }, data);
         if (this._connected) {

@@ -19,21 +19,23 @@ class Stream {
             this._universal.sessions[req.query['X-Plex-Session-Identifier']] = sessionId;
         }
 
-        if (this._universal.getCache(sessionId) === void(0)) {
-            console.log('create session ' + sessionId + ' ' + req.query.offset);
+        if (this._universal.getCache(sessionId) === void (0)) {
+            console.log(`create session ${sessionId} ${req.query.offset}`);
             this._createTranscoder(req, res);
-        } else {
+        }
+        else {
             transcoder = this._universal.getCache(sessionId);
-            console.log('session found ' + sessionId);
+            console.log(`session found ${sessionId}`);
 
             if (req.query.offset !== void (0)) {
                 let newOffset = parseInt(req.query.offset);
 
                 if (newOffset < transcoder.streamOffset) {
-                    console.log('Offset (' + newOffset + ') lower than transcoding (' + transcoder.streamOffset + ') instance, restarting...');
+                    console.log(`Offset (${newOffset}) lower than transcoding (${transcoder.streamOffset}) instance, restarting...`);
                     await transcoder.killInstance(false);
                     this._createTranscoder(req, res, newOffset);
-                } else {
+                }
+                else {
                     this._chunkRetriever(req, res, transcoder, newOffset);
                 }
             } else {
@@ -60,14 +62,14 @@ class Stream {
     }
 
     async _chunkRetriever(req, res, transcoder, newOffset) {
-        console.log('Offset found ' + newOffset + ', attempting to resume (transcoder: ' + transcoder.streamOffset + ')');
+        console.log(`Offset found ${newOffset}, attempting to resume (transcoder: ${transcoder.streamOffset})`);
         try {
-            const chunk = await this._ws.getByKey(transcoder.sessionId + ':timecode:' + newOffset);
+            const chunk = await this._ws.getByKey(`${transcoder.sessionId}:timecode:${newOffset}`);
             if (chunk === null) {
                 throw new Error('Chunk cannot be null');
             }
             let chunkId = parseInt(chunk);
-            console.log('Chunk ' + chunkId + ' found for offset ' + newOffset);
+            console.log(`Chunk ${chunkId} found for offset ${newOffset}`);
             this._rangeParser(req);
             this._serveHeader(req, res, transcoder, chunkId, false);
         }
@@ -82,13 +84,13 @@ class Stream {
         let transcoder;
         let sessionId = req.query.session.toString();
 
-        if (this._universal.getCache(req.query.session) === void(0)) {
-            console.log(" subtitle session " + sessionId + " not found");
-            res.status(404).send("Session not found");
+        if (this._universal.getCache(req.query.session) === void (0)) {
+            console.log(` subtitle session ${sessionId} not found`);
+            res.status(404).send('Session not found');
             return;
         }
 
-        console.log("serve subtitles " + sessionId);
+        console.log(`serve subtitles ${sessionId}`);
         transcoder = this._universal.getCache(req.query.session);
 
         this._serveHeader(req, res, transcoder, 0, true);
@@ -97,37 +99,36 @@ class Stream {
     _rangeParser(req) {
         let range = req.range(500 * (1024 * 1024 * 1024));
 
-        if (typeof range === "object") {
-            if (range.type !== "bytes") {
-                console.log("WARNING range type " + range.type);
+        if (typeof range === 'object') {
+            if (range.type !== 'bytes') {
+                console.log(`WARNING range type ${range.type}`);
             }
             if (range.length > 0) {
                 req.parsedRange = range[0];
                 req.streamCursor = 0;
-                console.log('range found ' + req.parsedRange.start + '-' + req.parsedRange.end)
+                console.log(`range found ${req.parsedRange.start}-${req.parsedRange.end}`);
             }
         }
     }
 
-    _serveHeader(req, res, transcoder, offset, isSubtitle) {
-        transcoder.getChunk(offset, async(chunkId) => {
-            switch (chunkId) {
-                case -1:
-                    this._endConnection(req, res, isSubtitle);
-                    return;
+    async _serveHeader(req, res, transcoder, offset, isSubtitle) {
+        const chunkId = await transcoder.getChunk(offset, (isSubtitle ? 'sub' : '0'), true);
+        switch (chunkId) {
+            case -1:
+                this._endConnection(req, res, isSubtitle);
+                return;
 
-                case -2:
-                    this._serveHeader(req, res, transcoder, offset, isSubtitle);
-                    return;
+            case -2:
+                await this._serveHeader(req, res, transcoder, offset, isSubtitle);
+                return;
 
-                default:
-                    await this._streamBuilder(req, res, isSubtitle, -1);
-                    this.serveChunk(req, res, transcoder, isSubtitle, offset);
-            }
-        }, (isSubtitle ? 'sub' : '0'), true)
+            default:
+                await this._streamBuilder(req, res, isSubtitle, -1);
+                await this.serveChunk(req, res, transcoder, isSubtitle, offset);
+        }
     }
 
-    async serveChunk(req, res, transcoder, isSubtitle, chunkId) {
+    async serveChunk(req, res, transcoder, isSubtitle, inputChunkId) {
         if (req.connection.destroyed) {
             this._endConnection(req, res, isSubtitle);
             return;
@@ -135,27 +136,26 @@ class Stream {
 
         await this._universal.updateTimeout(req.query.session);
 
-        transcoder.getChunk(chunkId, async(chunkId) => {
-            switch (chunkId) {
-                case -1:
-                    this._endConnection(req, res, isSubtitle);
-                    return;
+        const chunkId = await transcoder.getChunk(inputChunkId, (isSubtitle ? 'sub' : '0'), true);
+        switch (chunkId) {
+            case -1:
+                this._endConnection(req, res, isSubtitle);
+                return;
 
-                case -2:
-                    this.serveChunk(req, res, transcoder, isSubtitle, chunkId);
-                    return;
+            case -2:
+                await this.serveChunk(req, res, transcoder, isSubtitle, chunkId);
+                return;
 
-                default:
-                    await this._streamBuilder(req, res, isSubtitle, chunkId);
-                    this.serveChunk(req, res, transcoder, isSubtitle, chunkId + 1);
-            }
-        }, (isSubtitle ? 'sub' : '0'), true)
+            default:
+                await this._streamBuilder(req, res, isSubtitle, chunkId);
+                await this.serveChunk(req, res, transcoder, isSubtitle, chunkId + 1);
+        }
     }
 
     async _streamBuilder(req, res, isSubtitle, chunkId) {
         //Build the chunk Path
         const chunkPath = path.join(this._config.plex.transcoder,
-            "Cache",
+            'Cache',
             req.query.session,
             (isSubtitle ? 'sub-' : '') + (chunkId === -1 ? 'header' : 'chunk-' + pad(chunkId, 5)));
 
@@ -165,7 +165,7 @@ class Stream {
             let sizeToRead;
 
             //Check if we have to skip some data
-            if (req.parsedRange !== void (0) && typeof(req.parsedRange.start) === "number" && (req.parsedRange.start - req.streamCursor) > 0) {
+            if (req.parsedRange !== void (0) && typeof (req.parsedRange.start) === 'number' && (req.parsedRange.start - req.streamCursor) > 0) {
                 let toSkip = req.parsedRange.start - req.streamCursor;
 
                 //Skip the whole file
@@ -188,7 +188,7 @@ class Stream {
 
             let complete = null;
             const completePromise = new Promise(resolve => complete = resolve);
-            if (req.parsedRange !== void (0) && typeof(req.parsedRange.end) === "number" && req.parsedRange.end < (req.streamCursor + sizeToRead)) {
+            if (req.parsedRange !== void (0) && typeof (req.parsedRange.end) === 'number' && req.parsedRange.end < (req.streamCursor + sizeToRead)) {
                 //Extract data and push it to the stream
                 fileStream.on('readable', () => {
                     let buffer;
@@ -215,7 +215,7 @@ class Stream {
                 fileStream.pipe(res, { end: false });
                 fileStream.on('end', () => {
                     req.streamCursor += sizeToRead;
-                    if (req.parsedRange !== void (0) && typeof(req.parsedRange.end) === "number" && req.parsedRange.end === req.streamCursor) {
+                    if (req.parsedRange !== void (0) && typeof (req.parsedRange.end) === 'number' && req.parsedRange.end === req.streamCursor) {
                         this._endConnection(req, res, isSubtitle);
                     }
                     else {
@@ -228,7 +228,7 @@ class Stream {
             }
             await completePromise;
         }
-        catch(e) {
+        catch (e) {
             this._endConnection(req, res, isSubtitle);
         }
     }
@@ -236,7 +236,7 @@ class Stream {
     _endConnection(req, res, isSubtitle) {
         if (!req.connection.destroyed) {
             res.end();
-            console.log(req.query.session + (isSubtitle ? ' subtitles' : '') + ' end');
+            console.log(`${req.query.session}${isSubtitle ? ' subtitles' : ''} end`);
         }
     }
 }

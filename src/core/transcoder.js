@@ -1,8 +1,8 @@
-const child_process = require('child_process');
+const childProcess = require('child_process');
 const path = require('path');
 const request = require('request');
 const pad = require('../utils/pad');
-const { deleteDirectory, fileExists } = require('../utils/files');
+const { deleteDirectory, fileExists, mkdir } = require('../utils/files');
 const sleep = require('../utils/sleep');
 
 class Transcoder {
@@ -14,14 +14,15 @@ class Transcoder {
         this._timeout = null;
         this._transcoderArgs = null;
         this._transcoderEnv = null;
+        this._plexRequest = null;
         this._config = config;
         this._ws = websocket;
         this._universal = universal;
 
         this._plexTranscoderDir = this._config.plex.transcoder;
-        this._plexTranscoderResources = path.join(this._plexTranscoderDir, "Resources");
-        this._plexTranscoderBinaries = path.join(this._plexTranscoderResources, "Plex Transcoder");
-        this._plexTranscoderCache = path.join(this._plexTranscoderDir, "Cache");
+        this._plexTranscoderResources = path.join(this._plexTranscoderDir, 'Resources');
+        this._plexTranscoderBinaries = path.join(this._plexTranscoderResources, 'Plex Transcoder');
+        this._plexTranscoderCache = path.join(this._plexTranscoderDir, 'Cache');
 
         this._init(req, streamOffset);
     }
@@ -29,7 +30,7 @@ class Transcoder {
     async _init(req, streamOffset) {
         if (req !== void (0) && streamOffset === void (0)) {
             console.log(`Create session ${this._sessionId}`);
-            this._timeout = setTimeout(this._PMSTimeout.bind(this), 20000);
+            this._timeout = setTimeout(this._pmsTimeout.bind(this), 20000);
 
             this._ws.once(`session-${this._sessionId}`, async () => {
                 console.log(`Callback ${this._sessionId}`);
@@ -40,8 +41,10 @@ class Transcoder {
                 await this._transcoderStarter(session);
             });
 
-            this.plexRequest = request(this._config.server.loadBalancer + '/' + req.url).on('error', (err) => { console.log(err) })
-        } else {
+            this._plexRequest = request(`${this._config.server.loadBalancer}/${req.url}`)
+                .on('error', err => console.log(err));
+        }
+        else {
             console.log(`Restarting session ${this._sessionId}`);
 
             this.streamOffset = streamOffset;
@@ -53,9 +56,9 @@ class Transcoder {
     }
 
     async _transcoderStarter(reply) {
-        const keys = await this._ws.getByKeyPattern(this._sessionId + ':*');
+        let keys = await this._ws.getByKeyPattern(this._sessionId + ':*');
         if (keys !== void (0)) {
-            keys = keys.filter(k => !k.endsWith("last"));
+            keys = keys.filter(k => !k.endsWith('last'));
             if (keys.length > 0) {
                 await this._ws.deleteKeys(keys);
             }
@@ -70,31 +73,29 @@ class Transcoder {
             process.exit(-4);
         }
 
-        let parsed = JSON.parse(reply);
+        const parsed = JSON.parse(reply);
         if (parsed === null) {
             console.log(reply);
             return;
         }
 
-        this._transcoderArgs = parsed.args.map(arg => {
-            return arg
-                .replace('{URL}', "http://127.0.0.1:" + this._config.server.port)
-                .replace('{SEGURL}', "http://127.0.0.1:" + this._config.server.port)
-                .replace('{PROGRESSURL}', this._config.server.loadBalancer)
-                .replace('{PATH}', this._config.plex.mount)
-                .replace('{SRTSRV}', this._config.server.loadBalancer + '/rhino/sessions')
-                .replace(/\{USRPLEX\}/g, this._plexTranscoderResources)
-        });
+        this._transcoderArgs = parsed.args.map(arg => arg
+            .replace('{URL}', `http://127.0.0.1:${this._config.server.port}`)
+            .replace('{SEGURL}', `http://127.0.0.1:${this._config.server.port}`)
+            .replace('{PROGRESSURL}', this._config.server.loadBalancer)
+            .replace('{PATH}', this._config.plex.mount)
+            .replace('{SRTSRV}', `${this._config.server.loadBalancer}/rhino/sessions`)
+            .replace(/\{USRPLEX\}/g, this._plexTranscoderResources));
 
-        if (this.chunkOffset !== void (0) || this.streamOffset !== void (0)) {
-            this._patchArgs(this.chunkOffset);
+        if (this._chunkOffset !== void (0) || this.streamOffset !== void (0)) {
+            this._patchArgs(this._chunkOffset);
         }
 
         this._transcoderEnv = Object.create(process.env);
         this._transcoderEnv.LD_LIBRARY_PATH = this._plexTranscoderDir;
-        this._transcoderEnv.FFMPEG_EXTERNAL_LIBS = path.join(this._plexTranscoderDir, "Codecs/");
+        this._transcoderEnv.FFMPEG_EXTERNAL_LIBS = path.join(this._plexTranscoderDir, 'Codecs/');
         this._transcoderEnv.XDG_CACHE_HOME = this._plexTranscoderCache;
-        this._transcoderEnv.XDG_DATA_HOME = path.join(this._plexTranscoderResources, "Resources/");
+        this._transcoderEnv.XDG_DATA_HOME = path.join(this._plexTranscoderResources, 'Resources/');
         this._transcoderEnv.EAE_ROOT = this._plexTranscoderCache;
         this._transcoderEnv.X_PLEX_TOKEN = parsed.env.X_PLEX_TOKEN;
 
@@ -110,26 +111,27 @@ class Transcoder {
         console.log(`Spawn ${this._sessionId}`);
         this._transcoding = true;
         try {
-            this._ffmpeg = child_process.spawn(
+            this._ffmpeg = childProcess.spawn(
                 this._plexTranscoderBinaries,
                 this._transcoderArgs,
                 {
                     env: this._transcoderEnv,
                     cwd: path.join(this._config.plex.transcoder, `Cache${this._sessionId}/`)
                 });
-            this._ffmpeg.on("exit", () => {
+            this._ffmpeg.on('exit', () => {
                 console.log(`FFMPEG stopped ${this._sessionId}`);
-                this._transcoding = false
+                this._transcoding = false;
             });
 
             await this._updateLastChunk();
-        } catch (e) {
+        }
+        catch (e) {
             console.log(`Failed to start FFMPEG for session ${this._sessionId}`);
             console.log(e.toString());
         }
     }
 
-    async _PMSTimeout() {
+    async _pmsTimeout() {
         console.log(`Timeout ${this._sessionId}`);
         this._timeout = null;
         await this.killInstance();
@@ -145,19 +147,19 @@ class Transcoder {
     }
 
     async killInstance(fullClean = false) {
-        console.log('Killing ' + this._sessionId);
+        console.log(`Killing ${this._sessionId}`);
         this._alive = false;
 
-        if (this.plexRequest !== void (0)) {
-            this.plexRequest.abort();
+        if (this._plexRequest !== void (0)) {
+            this._plexRequest.abort();
         }
 
         if (this._timeout !== null) {
-            clearTimeout(this._timeout)
+            clearTimeout(this._timeout);
         }
 
         if (this.sessionTimeout !== void (0)) {
-            clearTimeout(this.sessionTimeout)
+            clearTimeout(this.sessionTimeout);
         }
 
         if (this._ffmpeg !== null && this._transcoding) {
@@ -183,7 +185,7 @@ class Transcoder {
     }
 
     _patchArgs(chunkId) {
-        if (this._transcoderArgs.includes("chunk-%05d")) {
+        if (this._transcoderArgs.includes('chunk-%05d')) {
             console.log('Patching long polling SS');
             this._patchSS(this.streamOffset);
             return;
@@ -224,8 +226,8 @@ class Transcoder {
             prev = this._transcoderArgs[i];
         }
 
-        if (this._transcoderArgs.indexOf("-vsync") !== -1) {
-            this._transcoderArgs.splice(this._transcoderArgs.indexOf("-vsync"), 2)
+        if (this._transcoderArgs.indexOf('-vsync') !== -1) {
+            this._transcoderArgs.splice(this._transcoderArgs.indexOf('-vsync'), 2);
         }
 
         this._patchSS((parseInt(chunkId) + offset) * segmentDuration);
@@ -234,12 +236,12 @@ class Transcoder {
     _patchSS(time, accurate) {
         let prev = '';
 
-        if (this._transcoderArgs.indexOf("-ss") === -1) {
+        if (this._transcoderArgs.indexOf('-ss') === -1) {
             if (accurate) {
-                this._transcoderArgs.splice(this._transcoderArgs.indexOf("-i"), 0, "-ss", time, "-noaccurate_seek");
+                this._transcoderArgs.splice(this._transcoderArgs.indexOf('-i'), 0, '-ss', time, '-noaccurate_seek');
             }
             else {
-                this._transcoderArgs.splice(this._transcoderArgs.indexOf("-i"), 0, "-ss", time);
+                this._transcoderArgs.splice(this._transcoderArgs.indexOf('-i'), 0, '-ss', time);
             }
         }
         else {
@@ -254,16 +256,19 @@ class Transcoder {
         }
     }
 
-    async _segmentJumper(chunkId, streamId, callback) {
+    async _segmentJumper(chunkId, streamId) {
+        const lastNum = parseInt(last);
+        const chunkIdNum = parseInt(chunkId);
+        const key = `${this._sessionId}:last`;
         try {
-            const last = await this._ws.getByKey(`${this._sessionId}:last`);
-            if (last === null || parseInt(last) > parseInt(chunkId) || parseInt(last) < parseInt(chunkId) - 10) {
+            const last = await this._ws.getByKey(key);
+            if (last === null || lastNum > chunkIdNum || lastNum < chunkIdNum - 10) {
                 throw new Error();
             }
-            this._waitChunk(chunkId, streamId, callback);
+            await this._waitChunk(chunkId, streamId);
         }
         catch (e) {
-            this._ws.updateKey(`${this._sessionId}:last`, parseInt(chunkId));
+            this._ws.updateKey(key, chunkId);
 
             if (this._ffmpeg !== null) {
                 this._ffmpeg.removeAllListeners('exit');
@@ -273,39 +278,43 @@ class Transcoder {
                 await this._startFFMPEG();
             }
             else {
-                this.chunkOffset = parseInt(chunkId);
+                this._chunkOffset = chunkIdNum;
             }
         }
     }
 
-    async getChunk(chunkId, callback, streamId = '0', noJump = false) {
+    async getChunk(chunkId, streamId = '0', noJump = false) {
         const chunk = await this._ws.getByKey(`${this._sessionId}:${streamId}:${chunkId === 'init' ? chunkId : pad(chunkId, 5)}`);
         if (chunk === null) {
             if (streamId === '0' && noJump === false) {
-                await this._segmentJumper(chunkId, streamId, callback);
+                await this._segmentJumper(chunkId, streamId);
             }
             else {
-                await this._waitChunk(chunkId, streamId, callback);
+                await this._waitChunk(chunkId, streamId);
             }
-        } else {
-            callback(this._alive ? chunkId : -1);
+            return null;
+        }
+        else {
+            return this._alive ? chunkId : -1;
         }
     }
 
-    async _waitChunk(chunkId, streamId, callback) {
-        if (this._transcoding) {
-            let timeout = setTimeout(() => {
-                callback(this._alive ? -2 : -1);
-            }, 10000);
-
-            redis.on("message", () => {
-                clearTimeout(timeout);
-                callback(this._alive ? chunkId : -1);
-            });
-            redis.subscribe(`__keyspace@${this._config.redis_db}__:${this._sessionId}:${streamId}:${chunkId === 'init' ? chunkId : pad(chunkId, 5)}`)
-        } else {
-            callback(-1);
-        }
+    _waitChunk(chunkId, streamId) {
+        return new Promise(resolve => {
+            if (this._transcoding) {
+                let timeout = setTimeout(() => {
+                    resolve(this._alive ? -2 : -1);
+                }, 10000);
+    
+                redis.on('message', () => {
+                    clearTimeout(timeout);
+                    resolve(this._alive ? chunkId : -1);
+                });
+                redis.subscribe(`__keyspace@${this._config.redis_db}__:${this._sessionId}:${streamId}:${chunkId === 'init' ? chunkId : pad(chunkId, 5)}`)
+            } else {
+                resolve(-1);
+            }
+        });
     }
 }
 

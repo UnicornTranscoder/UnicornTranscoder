@@ -24,9 +24,9 @@ class Universal {
     }
 
     async stopTranscoder(req, res) {
-        if (this._cache[req.query.session] !== void(0)) {
-            console.log('Stop ' + req.query.session);
-            if (this._cache[req.query.session] !== void(0)) {
+        if (this._cache[req.query.session] !== void (0)) {
+            console.log(`Stop ${req.query.session}`);
+            if (this._cache[req.query.session] !== void (0)) {
                 await this._cache[req.query.session].killInstance();
             }
         }
@@ -34,27 +34,28 @@ class Universal {
     }
 
     async updateTimeout(sessionId) {
-        if (sessionId !== void(0) && this._cache[sessionId] !== void(0) && this._cache[sessionId].alive) {
-            if (this._cache[sessionId].sessionTimeout !== void(0)) {
+        if (sessionId !== void (0) && this._cache[sessionId] !== void (0) && this._cache[sessionId].alive) {
+            if (this._cache[sessionId].sessionTimeout !== void (0)) {
                 clearTimeout(this._cache[sessionId].sessionTimeout);
             }
-            this._cache[sessionId].sessionTimeout = setTimeout(async() => {
-                console.log(sessionId + ' timed out');
-                if (this._cache[sessionId] !== void(0)) {
+            this._cache[sessionId].sessionTimeout = setTimeout(async () => {
+                console.log(`${sessionId} timed out`);
+                if (this._cache[sessionId] !== void (0)) {
                     await this._cache[sessionId].killInstance();
                 }
-            }, this._config.plex.transcoderDecayTime * 1000)
-        } else if (sessionId !== void(0) && this._sessions[sessionId] !== void(0) && sessionId !== this._sessions[sessionId]) {
-            await this.updateTimeout(this._sessions[sessionId])
+            }, this._config.plex.transcoderDecayTime * 1000);
+        }
+        else if (sessionId !== void (0) && this._sessions[sessionId] !== void (0) && sessionId !== this._sessions[sessionId]) {
+            await this.updateTimeout(this._sessions[sessionId]);
         }
     }
 
-    async ping(req, res) {
+    async ping(req) {
         await this.updateTimeout(req.query.session);
     }
 
-    async timeline(req, res) {
-        await this.updateTimeout(req.query["X-Plex-Session-Identifier"]);
+    async timeline(req) {
+        await this.updateTimeout(req.query['X-Plex-Session-Identifier']);
     }
 
     async _stats() {
@@ -64,39 +65,39 @@ class Universal {
             sessions: 0,
             transcoding: 0
         };
-    
+
         for (let key of Object.keys(this._cache)) {
             let stream = this._cache[key];
-    
+
             streams.sessions++;
-    
-            if (stream.transcoderArgs === void(0)) {
+
+            if (stream.transcoderArgs === void (0)) {
                 continue;
             }
-    
+
             for (let i = 0; i < stream.transcoderArgs.length; i++) {
-                if (typeof(stream.transcoderArgs[i].startsWith) === "function") {
+                if (typeof (stream.transcoderArgs[i].startsWith) === 'function') {
                     if (stream.transcoderArgs[i].startsWith(this._config.plex.mount)) {
                         streams.files.push(stream.transcoderArgs[i]);
                         i = stream.transcoderArgs.length;
                     }
                 }
             }
-    
-            if (stream.transcoding == true) {
+
+            if (stream.transcoding === true) {
                 streams.transcoding++;
-    
+
                 if (stream.transcoderArgs.lastIndexOf('-codec:0') >= 0) {
-                    if (stream.transcoderArgs[stream.transcoderArgs.lastIndexOf('-codec:0') + 1] == "copy") {
-                        if (streams.codecs["copy"] === void(0)) {
-                            streams.codecs["copy"] = 1;
+                    if (stream.transcoderArgs[stream.transcoderArgs.lastIndexOf('-codec:0') + 1] === 'copy') {
+                        if (streams.codecs['copy'] === void (0)) {
+                            streams.codecs['copy'] = 1;
                         }
                         else {
-                            streams.codecs["copy"]++;
+                            streams.codecs['copy']++;
                         }
                     } else {
-                        if (stream.transcoderArgs[0].startsWith("-codec:")) {
-                            if (streams.codecs[stream.transcoderArgs[1]] === void(0)) {
+                        if (stream.transcoderArgs[0].startsWith('-codec:')) {
+                            if (streams.codecs[stream.transcoderArgs[1]] === void (0)) {
                                 streams.codecs[stream.transcoderArgs[1]] = 1;
                             }
                             else {
@@ -121,12 +122,12 @@ class Universal {
                 }
             }
         }
-    
+
         streams.downloads = this._downloads;
         streams.config = this._config.load;
         streams.ip = this._ip;
-    
-        this._ws.send("load", streams);
+
+        this._ws.send('load', streams);
     }
 }
 
