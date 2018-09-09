@@ -301,16 +301,19 @@ class Transcoder {
     _waitChunk(chunkId, streamId) {
         return new Promise(resolve => {
             if (this._transcoding) {
-                const timeout = setTimeout(() => {
-                    resolve(this._alive ? -2 : -1);
-                }, 10000);
-
-                redis.on('message', () => {
-                    clearTimeout(timeout);
-                    resolve(this._alive ? chunkId : -1);
-                });
-                redis.subscribe(`__keyspace@${this._config.redis_db}__:${this._sessionId}:${streamId}:${chunkId === 'init' ? chunkId : pad(chunkId, 5)}`)
-            } else {
+                const timeout = setTimeout(() => resolve(this._alive ? -2 : -1), 10000);
+                const handler = data => {
+                    if (data.streamId === streamId && data.chunkId === chunkId === 'init' ? chunkId : pad(chunkId, 5)) {
+                        clearTimeout(timeout);
+                        resolve(this._alive ? chunkId : -1);
+                    }
+                    else {
+                        this._ws.once(`session-${this._sessionId}`, handler);
+                    }
+                };
+                this._ws.once(`session-${this._sessionId}`, handler);
+            }
+            else {
                 resolve(-1);
             }
         });

@@ -45,14 +45,19 @@ class CommsWebsocket {
         this._connected = false;
     }
 
+    _cleanQueueItem(i) {
+        const item = this._sendQueue[i];
+        if (Date.now() - item.time > this._config.server.queueTimeout) {
+            this._sendQueue.splice(i, 1);
+            item.reject();
+            return i - 1;
+        }
+        return i;
+    }
+
     _queueCheck() {
         for (let i = 0; i < this._sendQueue.length; i++) {
-            const item = this._sendQueue[i];
-            if (Date.now() - item.time > this._config.server.queueTimeout) {
-                this._sendQueue.splice(i, 1);
-                i--;
-                item.reject();
-            }
+            i = this._cleanQueueItem(i);
         }
     }
 
@@ -60,16 +65,14 @@ class CommsWebsocket {
         for (let i = 0; i < this._sendQueue.length; i++) {
             const item = this._sendQueue[i];
             if (item.eventId === json.eventId) {
-                this._sendQueue.splice(i, 1);
-                i--;
                 delete json.eventId;
                 delete json.event;
-                item.resolve(json);
-            }
-            else if (Date.now() - item.time > this._config.server.queueTimeout) {
                 this._sendQueue.splice(i, 1);
                 i--;
-                item.reject();
+                item.resolve(json);
+            }
+            else {
+                i = this._cleanQueueItem(i);
             }
         }
     }

@@ -43,15 +43,8 @@ class Stream {
 
     async _createTranscoder(req, res, streamOffset) {
         const sessionId = req.query.session.toString();
-        const transcoder = this._universal.putCache(sessionId, new Transcoder(this._config, this._ws, this._universal, sessionId, req, streamOffset));
-        if (req.query.offset !== void (0)) {
-            transcoder.streamOffset = parseInt(req.query.offset);
-        }
-        else {
-            transcoder.streamOffset = 0;
-        }
-        await this._universal.updateTimeout(sessionId);
-
+        const transcoder = this._universal.forceNewTranscoder(sessionId,
+            new Transcoder(this._config, this._ws, this._universal, sessionId, req, streamOffset || 0));
         this._rangeParser(req);
         this._serveHeader(req, res, transcoder, 0, false);
     }
@@ -103,19 +96,29 @@ class Stream {
         }
     }
 
-    async _serveHeader(req, res, transcoder, offset, isSubtitle) {
+    async _serveCommon(req, res, transcoder, offset, isSubtitle, isHeader) {
         const chunkId = await transcoder.getChunk(offset, (isSubtitle ? 'sub' : '0'), true);
         switch (chunkId) {
             case -1:
                 this._endConnection(req, res, isSubtitle);
-                return;
+                break;
             case -2:
-                await this._serveHeader(req, res, transcoder, offset, isSubtitle);
-                return;
+                if (isHeader) {
+                    await this._serveHeader(req, res, transcoder, offset, isSubtitle);
+                }
+                else {
+                    await this.serveChunk(req, res, transcoder, isSubtitle, chunkId);
+                }
+                break;
             default:
-                await this._streamBuilder(req, res, isSubtitle, -1);
-                await this.serveChunk(req, res, transcoder, isSubtitle, offset);
+                await this._streamBuilder(req, res, isSubtitle, isHeader ? -1 : chunkId);
+                await this.serveChunk(req, res, transcoder, isSubtitle, isHeader ? offset : chunkId + 1);
+                break;
         }
+    }
+
+    async _serveHeader(req, res, transcoder, offset, isSubtitle) {
+        return await this._serveCommon(req, res, transcoder, offset, isSubtitle, true);
     }
 
     async serveChunk(req, res, transcoder, isSubtitle, inputChunkId) {
@@ -125,21 +128,7 @@ class Stream {
         }
 
         await this._universal.updateTimeout(req.query.session);
-
-        const chunkId = await transcoder.getChunk(inputChunkId, (isSubtitle ? 'sub' : '0'), true);
-        switch (chunkId) {
-            case -1:
-                this._endConnection(req, res, isSubtitle);
-                return;
-
-            case -2:
-                await this.serveChunk(req, res, transcoder, isSubtitle, chunkId);
-                return;
-
-            default:
-                await this._streamBuilder(req, res, isSubtitle, chunkId);
-                await this.serveChunk(req, res, transcoder, isSubtitle, chunkId + 1);
-        }
+        return await this._serveCommon(req, res, transcoder, inputChunkId, isSubtitle, false);
     }
 
     async _streamBuilder(req, res, isSubtitle, chunkId) {
@@ -156,7 +145,7 @@ class Stream {
 
             //Check if we have to skip some data
             if (req.parsedRange !== void (0) && typeof (req.parsedRange.start) === 'number' && (req.parsedRange.start - req.streamCursor) > 0) {
-                let toSkip = req.parsedRange.start - req.streamCursor;
+                const toSkip = req.parsedRange.start - req.streamCursor;
 
                 //Skip the whole file
                 if (toSkip > size) {

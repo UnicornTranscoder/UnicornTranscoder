@@ -19,7 +19,7 @@ class Universal {
         delete this._cache[id];
     }
 
-    putCache(id, val) {
+    _putCache(id, val) {
         this._cache[id] = val;
         return val;
     }
@@ -35,7 +35,7 @@ class Universal {
         if (cacheVal !== void(0)) {
             await cacheVal.killInstance();
         }
-        this.putCache(sessionId, transcoder);
+        this._putCache(sessionId, transcoder);
         this.updatePlexSessionId(plexSessionId, plexSessionValue);
         await this.updateTimeout(sessionId);
     }
