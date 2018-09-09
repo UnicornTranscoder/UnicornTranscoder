@@ -3,7 +3,6 @@ const crypto = require('crypto');
 
 class CommsWebsocket {
     constructor(config) {
-        super();
         this._config = config;
         this._sendQueue = [];
         this._connected = false;
@@ -38,7 +37,7 @@ class CommsWebsocket {
 
     _onConnected() {
         console.log('Connected to upstream Load Balancer');
-        this._connected = true
+        this._connected = true;
     }
 
     _onDisconnect() {
@@ -90,18 +89,18 @@ class CommsWebsocket {
         return event;
     }
 
-    sendWait(event, data) {
+    sendWait(eventName, data) {
         let resolve;
         let reject;
         const promise = new Promise((res, rej) => {
             resolve = res;
             reject = rej;
         });
-        const event = this.send(event, data);
+        const event = this.send(eventName, data);
         this._sendQueue.push({
             eventId: event.eventId,
-            resolve: resolve,
-            reject: reject,
+            resolve,
+            reject,
             time: Date.now()
         });
         return promise;
@@ -121,26 +120,26 @@ class CommsWebsocket {
 
     async getByKeyPattern(pattern) {
         return await this.sendWait('get_pattern', {
-            pattern: pattern
+            pattern
         });
     }
     
     async getByKey(key) {
         return await this.sendWait('get_key', {
-            key: key
+            key
         });
     }
     
     async updateKey(key, val) {
         return await this.sendWait('update_key', {
-            key: key,
-            val: val
+            key,
+            val
         });
     }
     
     async deleteKeys(keys) {
         return await this.sendWait('delete_key', {
-            keys: keys
+            keys
         });
     }
 }

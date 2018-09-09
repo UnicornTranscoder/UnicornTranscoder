@@ -75,57 +75,7 @@ class Universal {
         await this.updateTimeout(req.query['X-Plex-Session-Identifier']);
     }
 
-    async _stats() {
-        const streams = {
-            files: [],
-            codecs: {},
-            sessions: 0,
-            transcoding: 0
-        };
-
-        for (let key of Object.keys(this._cache)) {
-            let stream = this._cache[key];
-
-            streams.sessions++;
-
-            if (stream.transcoderArgs === void (0)) {
-                continue;
-            }
-
-            for (let i = 0; i < stream.transcoderArgs.length; i++) {
-                if (typeof (stream.transcoderArgs[i].startsWith) === 'function') {
-                    if (stream.transcoderArgs[i].startsWith(this._config.plex.mount)) {
-                        streams.files.push(stream.transcoderArgs[i]);
-                        i = stream.transcoderArgs.length;
-                    }
-                }
-            }
-
-            if (stream.transcoding === true) {
-                streams.transcoding++;
-
-                if (stream.transcoderArgs.lastIndexOf('-codec:0') >= 0) {
-                    if (stream.transcoderArgs[stream.transcoderArgs.lastIndexOf('-codec:0') + 1] === 'copy') {
-                        if (streams.codecs['copy'] === void (0)) {
-                            streams.codecs['copy'] = 1;
-                        }
-                        else {
-                            streams.codecs['copy']++;
-                        }
-                    } else {
-                        if (stream.transcoderArgs[0].startsWith('-codec:')) {
-                            if (streams.codecs[stream.transcoderArgs[1]] === void (0)) {
-                                streams.codecs[stream.transcoderArgs[1]] = 1;
-                            }
-                            else {
-                                streams.codecs[stream.transcoderArgs[1]]++;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
+    _getPublicIp() {
         if (this._ip === null) {
             try {
                 this._ip = await publicIp.v4();
@@ -139,12 +89,49 @@ class Universal {
                 }
             }
         }
+        return this._ip;
+    }
 
-        streams.downloads = this._downloads;
-        streams.config = this._config.load;
-        streams.ip = this._ip;
+    async _stats() {
+        const codecs = {};
+        const files = [];
+        let sessions = 0;
+        let transcoding = 0;
+        for (const stream of Object.keys(this._cache).map(k => this._cache[k])) {
+            sessions++;
+            if (stream.transcoderArgs === void(0)) {
+                continue;
+            }
 
-        this._ws.send('load', streams);
+            for (let i = 0; i < stream.transcoderArgs.length; i++) {
+                if (typeof (stream.transcoderArgs[i].startsWith) === 'function' && stream.transcoderArgs[i].startsWith(this._config.plex.mount)) {
+                    files.push(stream.transcoderArgs[i]);
+                    i = stream.transcoderArgs.length;
+                }
+            }
+
+            if (stream.transcoding === true) {
+                transcoding++;
+                const last = stream.transcoderArgs.lastIndexOf('-codec:0');
+                if (last >= 0) {
+                    if (stream.transcoderArgs[last + 1] === 'copy') {
+                        streams.codecscopy = (streams.codecscopy || 0) + 1;
+                    }
+                    else if (stream.transcoderArgs[0].startsWith('-codec:')) {
+                        codecs[stream.transcoderArgs[1]] = (codecs[stream.transcoderArgs[1]] || 0) + 1;
+                    }
+                }
+            }
+        }
+
+        this._ws.send('load', {
+            codecs,
+            sessions,
+            transcoding,
+            ip: this._getPublicIp(),
+            downloads: this._downloads,
+            config: this._config.load
+        });
     }
 }
 

@@ -1,11 +1,13 @@
 const { promisify } = require('util');
 const { rmdir, chmod, readdir, unlink, lstat, mkdir, stat } = require('fs');
+const { join } = require('path');
 
 const rmdirp = promisify(rmdir);
 const chmodp = promisify(chmod);
 const readdirp = promisify(readdir);
 const unlinkp = promisify(unlink);
 const lstatp = promisify(lstat);
+const mkdirp = promisify(mkdir);
 
 /**
  * Determines if a file system entry exists, and if it does, what it is.
@@ -55,7 +57,7 @@ const filesInDirectory = async(directory) => {
 const deleteDirectory = async(directory) => {
     try {
         await Promise.all((await filesInDirectory(directory)).map(async(file) => {
-            file = path.join(directory, file);
+            file = join(directory, file);
             try {
                 if (await fileExists(file) === 'directory') {
                     await deleteDirectory(file);
@@ -67,7 +69,7 @@ const deleteDirectory = async(directory) => {
                 return true;
             }
             catch (e) {
-                throw (LOG.error(e), e);
+                throw (console.error(e), e);
             }
         }));
         await chmodp(directory, 666);
@@ -94,5 +96,5 @@ module.exports = {
     filesInDirectory,
     fileExists,
     fileSize,
-    mkdir: promisify(mkdir)
+    mkdir: mkdirp
 };

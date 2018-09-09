@@ -17,7 +17,7 @@ const loadConfig = require('./utils/config');
     app.listen(config.server.port,
         () => console.log(`Listening on port ${config.server.port}`));
     
-    process.on('unhandledRejection', (reason) => {
+    process.on('unhandledRejection', reason => {
         console.log(reason.stack);
     });
 })();

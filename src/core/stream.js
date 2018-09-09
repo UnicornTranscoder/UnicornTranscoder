@@ -63,7 +63,7 @@ class Stream {
             if (chunk === null) {
                 throw new Error('Chunk cannot be null');
             }
-            let chunkId = parseInt(chunk);
+            const chunkId = parseInt(chunk);
             console.log(`Chunk ${chunkId} found for offset ${newOffset}`);
             this._rangeParser(req);
             this._serveHeader(req, res, transcoder, chunkId, false);
@@ -76,9 +76,7 @@ class Stream {
     }
 
     serveSubtitles(req, res) {
-        let transcoder;
-        let sessionId = req.query.session.toString();
-
+        const sessionId = req.query.session.toString();
         if (this._universal.getCache(req.query.session) === void (0)) {
             console.log(` subtitle session ${sessionId} not found`);
             res.status(404).send('Session not found');
@@ -86,13 +84,12 @@ class Stream {
         }
 
         console.log(`serve subtitles ${sessionId}`);
-        transcoder = this._universal.getCache(req.query.session);
-
+        const transcoder = this._universal.getCache(req.query.session);
         this._serveHeader(req, res, transcoder, 0, true);
     }
 
     _rangeParser(req) {
-        let range = req.range(500 * (1024 * 1024 * 1024));
+        const range = req.range(500 * (1024 * 1024 * 1024));
 
         if (typeof range === 'object') {
             if (range.type !== 'bytes') {
@@ -112,11 +109,9 @@ class Stream {
             case -1:
                 this._endConnection(req, res, isSubtitle);
                 return;
-
             case -2:
                 await this._serveHeader(req, res, transcoder, offset, isSubtitle);
                 return;
-
             default:
                 await this._streamBuilder(req, res, isSubtitle, -1);
                 await this.serveChunk(req, res, transcoder, isSubtitle, offset);
@@ -152,7 +147,7 @@ class Stream {
         const chunkPath = path.join(this._config.plex.transcoder,
             'Cache',
             req.query.session,
-            (isSubtitle ? 'sub-' : '') + (chunkId === -1 ? 'header' : 'chunk-' + pad(chunkId, 5)));
+            `${isSubtitle ? 'sub-' : ''}${chunkId === -1 ? 'header' : `chunk-${pad(chunkId, 5)}`}`);
 
         try {
             const size = await fileSize(chunkPath);

@@ -43,7 +43,7 @@ class M3U8 {
 
         const chunkId = await tr.getChunk(req.params.partId, type);
         const file = path.join(this._plexCachePath, sessionId, `media-${req.params.partId}.${extension}`);
-        if (chunkId == -2) {
+        if (chunkId === -2) {
             if (!res.headersSent) {
                 res.status(404).send(`Callback ${chunkId}`);
             }
@@ -51,7 +51,7 @@ class M3U8 {
                 res.status(200);
             }
         }
-        else if (chunkId == -1 && !(await fileExists(file))) {
+        else if (chunkId === -1 && !(await fileExists(file))) {
             console.log(`Serving fake ${logType} ${req.params.partId} for session ${sessionId}`);
             res.sendFile(path.join(this._plexResourcesPath, 'Resources', `empty.${extension}`));
         }
