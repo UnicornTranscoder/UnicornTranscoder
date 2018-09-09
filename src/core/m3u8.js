@@ -14,11 +14,8 @@ class M3U8 {
 
     async serve(req) {
         console.log(`M3U8 ${req.params.sessionId}`);
-        if (this._universal.getCache(req.params.sessionId) !== void (0)) {
-            await this._universal.getCache(req.params.sessionId).killInstance();
-        }
-        this._universal.putCache(req.params.sessionId, new Transcoder(this._config, this._ws, this._universal, req.params.sessionId, req));
-        await this._universal.updateTimeout(req.params.sessionId);
+        await this._universal.forceNewTranscoder(req.params.sessionId,
+            new Transcoder(this._config, this._ws, this._universal, req.params.sessionId, req));
     }
 
     async serveChunk(req, res) {
@@ -37,9 +34,8 @@ class M3U8 {
 
         const tr = this._universal.getCache(sessionId);
         if (tr === void (0) || tr.alive === false) {
-            console.log(`${sessionId} not found`);
-            this._universal.putCache(sessionId, new Transcoder(this._config, this._ws, this._universal, sessionId));
-            await this._universal.updateTimeout(sessionId);
+            console.log(`M3U8 ${sessionId} not found`);
+            this._universal.forceNewTranscoder(sessionId, new Transcoder(this._config, this._ws, this._universal, sessionId));
             await sleep(10000);
             res.status(404).send('Restarting session');
             return;
@@ -47,7 +43,7 @@ class M3U8 {
 
         const chunkId = await tr.getChunk(req.params.partId, type);
         const file = path.join(this._plexCachePath, sessionId, `media-${req.params.partId}.${extension}`);
-        if (chunkId === -2) {
+        if (chunkId == -2) {
             if (!res.headersSent) {
                 res.status(404).send(`Callback ${chunkId}`);
             }
@@ -55,7 +51,7 @@ class M3U8 {
                 res.status(200);
             }
         }
-        else if (chunkId === -1 && !(await fileExists(file))) {
+        else if (chunkId == -1 && !(await fileExists(file))) {
             console.log(`Serving fake ${logType} ${req.params.partId} for session ${sessionId}`);
             res.sendFile(path.join(this._plexResourcesPath, 'Resources', `empty.${extension}`));
         }
@@ -67,9 +63,7 @@ class M3U8 {
     }
 
     saveSession(req) {
-        if (req.query['X-Plex-Session-Identifier'] !== void (0)) {
-            this._universal.sessions[req.query['X-Plex-Session-Identifier']] = req.query.session.toString();
-        }
+        this._universal.updatePlexSessionId(req.query['X-Plex-Session-Identifier'], req.query.session);
     }
 }
 

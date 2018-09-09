@@ -12,6 +12,8 @@ class Transcoder {
         this._transcoding = true;
         this._sessionId = sessionId;
         this._timeout = null;
+        this._sessionTimeout = null;
+        this._streamOffset = streamOffset;
         this._transcoderArgs = null;
         this._transcoderEnv = null;
         this._plexRequest = null;
@@ -24,11 +26,11 @@ class Transcoder {
         this._plexTranscoderBinaries = path.join(this._plexTranscoderResources, 'Plex Transcoder');
         this._plexTranscoderCache = path.join(this._plexTranscoderDir, 'Cache');
 
-        this._init(req, streamOffset);
+        this._init(req);
     }
 
-    async _init(req, streamOffset) {
-        if (req !== void (0) && streamOffset === void (0)) {
+    async _init(req) {
+        if (req !== void (0) && this._streamOffset === void(0)) {
             console.log(`Create session ${this._sessionId}`);
             this._timeout = setTimeout(this._pmsTimeout.bind(this), 20000);
 
@@ -46,9 +48,6 @@ class Transcoder {
         }
         else {
             console.log(`Restarting session ${this._sessionId}`);
-
-            this.streamOffset = streamOffset;
-
             await this._ws.updateKey(`${this._sessionId}:last`, 0);
             const session = await this._ws.getByKey(this._sessionId);
             await this._transcoderStarter(session);
@@ -87,7 +86,7 @@ class Transcoder {
             .replace('{SRTSRV}', `${this._config.server.loadBalancer}/rhino/sessions`)
             .replace(/\{USRPLEX\}/g, this._plexTranscoderResources));
 
-        if (this._chunkOffset !== void (0) || this.streamOffset !== void (0)) {
+        if (this._chunkOffset !== void (0) || this._streamOffset !== void (0)) {
             this._patchArgs(this._chunkOffset);
         }
 
@@ -158,8 +157,8 @@ class Transcoder {
             clearTimeout(this._timeout);
         }
 
-        if (this.sessionTimeout !== void (0)) {
-            clearTimeout(this.sessionTimeout);
+        if (this._sessionTimeout !== void (0)) {
+            clearTimeout(this._sessionTimeout);
         }
 
         if (this._ffmpeg !== null && this._transcoding) {
@@ -187,7 +186,7 @@ class Transcoder {
     _patchArgs(chunkId) {
         if (this._transcoderArgs.includes('chunk-%05d')) {
             console.log('Patching long polling SS');
-            this._patchSS(this.streamOffset);
+            this._patchSS(this._streamOffset);
             return;
         }
 

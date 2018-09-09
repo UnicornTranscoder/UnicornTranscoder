@@ -13,10 +13,7 @@ class Stream {
 
     async serve(req, res) {
         const sessionId = req.query.session.toString();
-
-        if (req.query['X-Plex-Session-Identifier'] !== void (0)) {
-            this._universal.sessions[req.query['X-Plex-Session-Identifier']] = sessionId;
-        }
+        this._universal.updatePlexSessionId(req.query['X-Plex-Session-Identifier'], sessionId);
 
         if (this._universal.getCache(sessionId) === void (0)) {
             console.log(`create session ${sessionId} ${req.query.offset}`);

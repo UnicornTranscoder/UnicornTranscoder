@@ -13,17 +13,11 @@ class Dash {
     }
 
     async serve(req, res) {
-        console.log(req.query.session);
-
-        if (this._universal.getCache(req.params.sessionId) !== void (0)) {
-            await this._universal.getCache(req.params.sessionId).killInstance();
-        }
-        this._universal.putCache(req.query.session, new Transcoder(this._config, this._ws, this._universal, req.query.session, req));
-
-        if (req.query['X-Plex-Session-Identifier'] !== void (0)) {
-            this._universal.sessions[req.query['X-Plex-Session-Identifier']] = req.query.session.toString();
-        }
-        await this._universal.updateTimeout(req.query.session);
+        console.log(`Dash ${req.params.sessionId}`);
+        await this._universal.forceNewTranscoder(req.params.sessionId,
+            new Transcoder(this._config, this._ws, this._universal, req.params.sessionId, req),
+            req.query['X-Plex-Session-Identifier'],
+            req.query.session);
         res.status(200).json({success: true});
     }
 
@@ -72,9 +66,8 @@ class Dash {
             await this._universal.updateTimeout(sessionId);
         }
         else {
-            console.log(`${sessionId} not found`);
-            this._universal.putCache(sessionId, new Transcoder(this._config, this._ws, this._universal, sessionId));
-            await this._universal.updateTimeout(sessionId);
+            console.log(`Dash ${sessionId} not found`);
+            this._universal.forceNewTranscoder(sessionId, new Transcoder(this._config, this._ws, this._universal, sessionId));
             await sleep(10000);
             res.status(404).send('Restarting session');
         }
