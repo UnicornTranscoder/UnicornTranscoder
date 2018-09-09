@@ -56,7 +56,7 @@ class Transcoder {
     }
 
     async _transcoderStarter(reply) {
-        let keys = await this._ws.getByKeyPattern(this._sessionId + ':*');
+        let keys = await this._ws.getByKeyPattern(`${this._sessionId}:*`);
         if (keys !== void (0)) {
             keys = keys.filter(k => !k.endsWith('last'));
             if (keys.length > 0) {
@@ -257,11 +257,11 @@ class Transcoder {
     }
 
     async _segmentJumper(chunkId, streamId) {
-        const lastNum = parseInt(last);
         const chunkIdNum = parseInt(chunkId);
         const key = `${this._sessionId}:last`;
         try {
             const last = await this._ws.getByKey(key);
+            const lastNum = parseInt(last);
             if (last === null || lastNum > chunkIdNum || lastNum < chunkIdNum - 10) {
                 throw new Error();
             }
@@ -302,10 +302,10 @@ class Transcoder {
     _waitChunk(chunkId, streamId) {
         return new Promise(resolve => {
             if (this._transcoding) {
-                let timeout = setTimeout(() => {
+                const timeout = setTimeout(() => {
                     resolve(this._alive ? -2 : -1);
                 }, 10000);
-    
+
                 redis.on('message', () => {
                     clearTimeout(timeout);
                     resolve(this._alive ? chunkId : -1);

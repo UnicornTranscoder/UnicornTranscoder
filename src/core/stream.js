@@ -12,8 +12,7 @@ class Stream {
     }
 
     async serve(req, res) {
-        let transcoder;
-        let sessionId = req.query.session.toString();
+        const sessionId = req.query.session.toString();
 
         if (req.query['X-Plex-Session-Identifier'] !== void (0)) {
             this._universal.sessions[req.query['X-Plex-Session-Identifier']] = sessionId;
@@ -24,12 +23,11 @@ class Stream {
             this._createTranscoder(req, res);
         }
         else {
-            transcoder = this._universal.getCache(sessionId);
+            const transcoder = this._universal.getCache(sessionId);
             console.log(`session found ${sessionId}`);
 
             if (req.query.offset !== void (0)) {
-                let newOffset = parseInt(req.query.offset);
-
+                const newOffset = parseInt(req.query.offset);
                 if (newOffset < transcoder.streamOffset) {
                     console.log(`Offset (${newOffset}) lower than transcoding (${transcoder.streamOffset}) instance, restarting...`);
                     await transcoder.killInstance(false);
@@ -47,8 +45,8 @@ class Stream {
     }
 
     async _createTranscoder(req, res, streamOffset) {
-        let sessionId = req.query.session.toString();
-        let transcoder = this._universal.putCache(sessionId, new Transcoder(this._config, this._ws, this._universal, sessionId, req, streamOffset));
+        const sessionId = req.query.session.toString();
+        const transcoder = this._universal.putCache(sessionId, new Transcoder(this._config, this._ws, this._universal, sessionId, req, streamOffset));
         if (req.query.offset !== void (0)) {
             transcoder.streamOffset = parseInt(req.query.offset);
         }
