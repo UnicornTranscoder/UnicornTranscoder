@@ -5,7 +5,6 @@ class CommsWebsocket {
     constructor(config) {
         this._config = config;
         this._sendQueue = [];
-        this._connected = false;
         this._queueInterval = setInterval(this._queueCheck.bind(this), config.server.queueTimeout);
 
         this._onConnected = this._onConnected.bind(this);
@@ -37,12 +36,10 @@ class CommsWebsocket {
 
     _onConnected() {
         console.log('Connected to upstream Load Balancer');
-        this._connected = true;
     }
 
     _onDisconnect() {
         console.error('Cannot reach upstream Load Balancer.');
-        this._connected = false;
     }
 
     _cleanQueueItem(i) {
@@ -86,8 +83,11 @@ class CommsWebsocket {
             eventId: crypto.randomBytes(16).toString('hex'),
             event: eventName
         }, data);
-        if (this._connected) {
+        if (this._ws.connected) {
             this._ws.binary(true).compress(true).emit('message', event);
+        }
+        else {
+            console.error('Socket not connected, cannot send status information.');
         }
         return event;
     }

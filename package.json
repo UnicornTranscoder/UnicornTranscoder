@@ -10,6 +10,7 @@
     "cluster-node-cache": "^0.1.4",
     "express": "^4.16.3",
     "leaky-bucket": "^2.1.1",
+    "morgan": "^1.9.1",
     "public-ip": "^2.4.0",
     "request": "^2.81.0",
     "socket.io-client": "^2.1.1",

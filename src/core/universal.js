@@ -124,11 +124,15 @@ class Universal {
             }
         }
 
+        const publicIp = await this._getPublicIp();
+        const accessUrl = this._config.server.accessUrl || `http://${publicIp}:${this._config.server.port}`;
+
         this._ws.send('load', {
             codecs,
             sessions,
             transcoding,
-            ip: await this._getPublicIp(),
+            ip: publicIp,
+            accessUrl,
             downloads: this._downloads,
             config: this._config.load
         });

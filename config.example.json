@@ -2,8 +2,10 @@
     "server": {
         "port": 3241,
         "loadBalancer": "https://myplex.com",
+        "accessUrl": "https://transcoder1.myplex.com",
         "password": "my_new_transcoder_node_password",
-        "queueTimeout": 20000
+        "queueTimeout": 20000,
+        "loadUpdateInterval": 2000
     },
     "plex": {
         "mount": "/mnt/plex",
