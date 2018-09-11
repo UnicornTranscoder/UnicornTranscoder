@@ -92,7 +92,7 @@ class FFMPEG {
         }
     }
 
-    manifestParser(req, res) {
+    async manifestParser(req, res) {
         if (!(await this._createBucket(req.params.sessionId, res))) {
             return;
         }

@@ -4,7 +4,7 @@ const { promisify } = require('util');
 
 const readFilep = promisify(fs.readFile);
 
-module.exports = () => {
+module.exports = async() => {
     try {
         const data = await readFilep(path.join(process.cwd(), 'config.json'), 'utf8');
         return JSON.parse(data.replace(/^\uFEFF/, ''));

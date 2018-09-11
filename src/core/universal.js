@@ -75,7 +75,7 @@ class Universal {
         await this.updateTimeout(req.query['X-Plex-Session-Identifier']);
     }
 
-    _getPublicIp() {
+    async _getPublicIp() {
         if (this._ip === null) {
             try {
                 this._ip = await publicIp.v4();
@@ -128,7 +128,7 @@ class Universal {
             codecs,
             sessions,
             transcoding,
-            ip: this._getPublicIp(),
+            ip: await this._getPublicIp(),
             downloads: this._downloads,
             config: this._config.load
         });
