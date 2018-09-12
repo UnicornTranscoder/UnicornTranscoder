@@ -24,7 +24,7 @@ class Universal {
         return val;
     }
 
-    async updatePlexSessionId(id, value) {
+    updatePlexSessionId(id, value) {
         if (id !== void(0)) {
             this._sessions[id] = value.toString();
         }
@@ -32,7 +32,7 @@ class Universal {
 
     async forceNewTranscoder(sessionId, transcoder, plexSessionId = void(0), plexSessionValue = void(0)) {
         const cacheVal = this.getCache(sessionId);
-        if (cacheVal !== void(0)) {
+        if (cacheVal !== void(0) && cacheVal !== null) {
             await cacheVal.killInstance();
         }
         this._putCache(sessionId, transcoder);

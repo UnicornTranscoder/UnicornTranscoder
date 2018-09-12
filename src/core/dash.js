@@ -31,8 +31,8 @@ class Dash {
 
     async _serveCommon(req, res, type) {
         const sessionId = req.params.sessionId;
-        if (this._universal.getCache(sessionId) !== void (0) && this._universal.getCache(sessionId).alive === true) {
-
+        const session = this._universal.getCache(sessionId);
+        if (session !== void(0) && session.alive === true) {
             let noJump;
             let startIndex;
             let servedFileName;
@@ -47,7 +47,7 @@ class Dash {
                 servedFileName = `chunk-stream${req.params.streamId}-${pad(startIndex, 5)}.m4s`;
             }
 
-            const chunkId = await this._universal.getCache(sessionId).getChunk(startIndex, req.params.streamId, noJump);
+            const chunkId = await session.getChunk(startIndex, req.params.streamId, noJump);
             const file = path.join(this._plexCachePath, sessionId, servedFileName);
 
             if (chunkId === -2 || (chunkId === -1 && !(await fileExists(file)))) {
@@ -66,9 +66,8 @@ class Dash {
             await this._universal.updateTimeout(sessionId);
         }
         else {
-            console.log(`Dash ${sessionId} not found`);
-            this._universal.forceNewTranscoder(sessionId, new Transcoder(this._config, this._ws, this._universal, sessionId));
-            await sleep(10000);
+            console.log(`Dash sessionId=${sessionId} not found`);
+            await this._universal.forceNewTranscoder(sessionId, new Transcoder(this._config, this._ws, this._universal, sessionId));
             res.status(404).send('Restarting session');
         }
     }

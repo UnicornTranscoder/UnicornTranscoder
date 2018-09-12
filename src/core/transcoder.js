@@ -149,7 +149,7 @@ class Transcoder {
         console.log(`Killing ${this._sessionId}`);
         this._alive = false;
 
-        if (this._plexRequest !== void (0)) {
+        if (this._plexRequest !== void(0) && this._plexRequest !== null) {
             this._plexRequest.abort();
         }
 
