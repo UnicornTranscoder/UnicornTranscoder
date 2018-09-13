@@ -46,7 +46,7 @@ class CommsWebsocket {
         const item = this._sendQueue[i];
         if (Date.now() - item.time > this._config.server.queueTimeout) {
             this._sendQueue.splice(i, 1);
-            item.reject();
+            item.reject(new Error(`Queue Timeout on command=${JSON.stringify(item)}`));
             return i - 1;
         }
         return i;
@@ -104,7 +104,9 @@ class CommsWebsocket {
             eventId: event.eventId,
             resolve,
             reject,
-            time: Date.now()
+            time: Date.now(),
+            eventName,
+            data
         });
         return promise;
     }
@@ -124,7 +126,7 @@ class CommsWebsocket {
     async getByKeyPattern(pattern) {
         return await this.sendWait('get_pattern', {
             pattern
-        });
+        }).data;
     }
     
     async getByKey(key) {
@@ -137,7 +139,7 @@ class CommsWebsocket {
         return await this.sendWait('update_key', {
             key,
             val
-        });
+        }).data;
     }
     
     async deleteKeys(keys) {

@@ -1,9 +1,9 @@
-const childProcess = require('child_process');
 const path = require('path');
 const request = require('request');
+const childProcess = require('child_process');
 const pad = require('../utils/pad');
-const { deleteDirectory, fileExists, mkdir } = require('../utils/files');
 const sleep = require('../utils/sleep');
+const { deleteDirectory, fileExists, mkdir } = require('../utils/files');
 
 class Transcoder {
     constructor(config, websocket, universal, sessionId, req, streamOffset) {
@@ -43,8 +43,7 @@ class Transcoder {
                 await this._transcoderStarter(session);
             });
 
-            this._plexRequest = request(`${this._config.server.loadBalancer}/${req.url}`)
-                .on('error', err => console.log(err));
+            this._plexRequest = request(`${this._config.server.loadBalancer}/${req.url}`, err => console.error(err));
         }
         else {
             console.log(`Restarting session ${this._sessionId}`);
@@ -68,7 +67,7 @@ class Transcoder {
             await mkdir(sessionCache);
         }
         catch (e) {
-            console.error('Cannot create transcoder cache directory.');
+            console.error(`Cannot create transcoder cache directory (${sessionCache}).`);
             process.exit(-4);
         }
 
