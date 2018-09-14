@@ -109,18 +109,14 @@ class Transcoder {
         console.log(`Spawn ${this._sessionId}`);
         this._transcoding = true;
         try {
-            this._ffmpeg = childProcess.spawn(
-                this._plexTranscoderBinaries,
-                this._transcoderArgs,
-                {
-                    env: this._transcoderEnv,
-                    cwd: path.join(this._config.plex.transcoder, `Cache${this._sessionId}/`)
-                });
+            this._ffmpeg = childProcess.spawn(this._plexTranscoderBinaries, this._transcoderArgs, {
+                env: this._transcoderEnv,
+                cwd: path.join(this._plexTranscoderCache, this._sessionId)
+            });
             this._ffmpeg.on('exit', () => {
                 console.log(`FFMPEG stopped ${this._sessionId}`);
                 this._transcoding = false;
             });
-
             await this._updateLastChunk();
         }
         catch (e) {
