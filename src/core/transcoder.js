@@ -22,10 +22,11 @@ class Transcoder {
         this._universal = universal;
 
         this._plexTranscoderDir = this._config.plex.transcoder;
-        this._plexTranscoderResources = path.join(this._plexTranscoderDir, 'Resources');
-        this._plexTranscoderBinaries = path.join(this._plexTranscoderResources, 'Plex Transcoder');
         this._plexTranscoderCache = path.join(this._plexTranscoderDir, 'Cache');
-
+        this._plexTranscoderResources = path.join(this._config.plex.transcoderResources || this._plexTranscoderDir, 'Resources');
+        this._plexTranscoderBinaries = path.join(this._config.plex.transcoderBin || this._plexTranscoderResources, 'Plex Transcoder');
+        const exeName = this._config.plex.transcoderExe || (process.platform === 'win32' ? 'PlexTranscoder.exe' : 'Plex Transcoder');
+        this._plexTranscoderBinaries = path.join(this._config.plex.transcoderBin || this._plexTranscoderResources, exeName);
         this._init(req);
     }
 
@@ -71,13 +72,12 @@ class Transcoder {
             process.exit(-4);
         }
 
-        const parsed = JSON.parse(reply);
-        if (parsed === null) {
+        if (!reply) {
             console.log(reply);
             return;
         }
 
-        this._transcoderArgs = parsed.args.map(arg => arg
+        this._transcoderArgs = reply.args.map(arg => arg
             .replace('{URL}', `http://127.0.0.1:${this._config.server.port}`)
             .replace('{SEGURL}', `http://127.0.0.1:${this._config.server.port}`)
             .replace('{PROGRESSURL}', this._config.server.loadBalancer)
@@ -95,7 +95,7 @@ class Transcoder {
         this._transcoderEnv.XDG_CACHE_HOME = this._plexTranscoderCache;
         this._transcoderEnv.XDG_DATA_HOME = path.join(this._plexTranscoderResources, 'Resources/');
         this._transcoderEnv.EAE_ROOT = this._plexTranscoderCache;
-        this._transcoderEnv.X_PLEX_TOKEN = parsed.env.X_PLEX_TOKEN;
+        this._transcoderEnv.X_PLEX_TOKEN = reply.env.X_PLEX_TOKEN;
 
         await this._startFFMPEG();
     }
