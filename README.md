@@ -24,7 +24,7 @@ This software is a remote transcoder for `Plex Media Server`. It is able to hand
 
 ### 1. Needed Softwares
 
-* Redis server
+* Redis server with [Keyspace Notifications](https://redis.io/topics/notifications) enabled
 * Plex Media Server
 * NodeJS
 * npm
