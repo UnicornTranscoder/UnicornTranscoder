@@ -147,6 +147,7 @@ class Transcoder {
 
         rimraf(config.xdg_cache_home + this.sessionId, {}, () => {
             this.chunkStore.destroy();
+            callback();
         });
     }
 
