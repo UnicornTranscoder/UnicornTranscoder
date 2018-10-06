@@ -14,6 +14,7 @@ const ChunkStore = require('../utils/chunkStore');
 
 class Transcoder {
     constructor(sessionId, req, res, streamOffset) {
+        this.uuid = null;
         this.alive = true;
         this.ffmpeg = null;
         this.transcoding = true;
@@ -68,6 +69,13 @@ class Transcoder {
         }
 
         this.transcoderArgs = parsed.args.map((arg) => {
+            if (arg.indexOf('/manifest') !== -1)
+                this.uuid = arg.replace(/.*transcode\/session\/[a-zA-Z0-9\-]+\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/manifest/, '$1');
+
+            if (arg.indexOf('/seglist') !== -1)
+                this.uuid = arg.replace(/.*transcode\/session\/[a-zA-Z0-9\-]+\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/seglist/, '$1');
+            debug('FFMPEG UUID: ' + this.uuid.toString());
+
             return arg
                 .replace('{URL}', "http://127.0.0.1:" + config.port)
                 .replace('{SEGURL}', "http://127.0.0.1:" + config.port)

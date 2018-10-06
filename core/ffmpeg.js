@@ -24,6 +24,11 @@ class FFMPEG {
             let last = -1;
             if (req.params.sessionId in universal.cache) {
                 cs = universal.cache[req.params.sessionId].chunkStore;
+
+                if (req.params.uuid !== universal.cache[req.params.sessionId].uuid) {
+                    res.end();
+                    return;
+                }
             } else {
                 res.end();
                 return;
@@ -96,6 +101,11 @@ class FFMPEG {
             if (req.params.sessionId in universal.cache) {
                 transcoder = universal.cache[req.params.sessionId];
                 cs = universal.cache[req.params.sessionId].chunkStore;
+
+                if (req.params.uuid !== transcoder.uuid) {
+                    res.end();
+                    return;
+                }
             } else {
                 res.end();
                 return;
