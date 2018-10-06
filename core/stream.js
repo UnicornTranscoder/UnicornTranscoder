@@ -61,13 +61,13 @@ class Stream {
     static chunkRetriever(req, res, transcoder, newOffset) {
         debug('Offset found ' + newOffset + ', attempting to resume (transcoder: ' + transcoder.streamOffset + ')');
 
-        if (transcoder.cs.getChunk('timecode', newOffset) === null) {
+        if (transcoder.chunkStore.getChunk('timecode', newOffset) === null) {
             debug('Offset not found, restarting...');
             transcoder.killInstance(false, () => {
                 Stream.createTranscoder(req, res, newOffset);
             });
         } else {
-            let chunkId = transcoder.cs.getChunk('timecode', newOffset);
+            let chunkId = transcoder.chunkStore.getChunk('timecode', newOffset);
             debug('Chunk ' + chunkId + ' found for offset ' + newOffset);
             Stream.rangeParser(req);
             Stream.serveHeader(req, res, transcoder, chunkId, false);
