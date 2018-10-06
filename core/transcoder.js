@@ -7,6 +7,7 @@ const debug = require('debug')('transcoder');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const request = require('request');
+const uuid = require('uuid/v4');
 const config = require('../config');
 const redis = require('../utils/redis');
 const proxy = require('./proxy');
@@ -69,11 +70,12 @@ class Transcoder {
         }
 
         this.transcoderArgs = parsed.args.map((arg) => {
+            this.uuid = uuid();
             if (arg.indexOf('/manifest') !== -1)
-                this.uuid = arg.replace(/.*transcode\/session\/[a-zA-Z0-9\-]+\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/manifest/, '$1');
+                arg = arg.replace(/(.*transcode\/session\/[a-zA-Z0-9\-]+\/)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(\/manifest)/, '$1' + this.uuid + '$2');
 
             if (arg.indexOf('/seglist') !== -1)
-                this.uuid = arg.replace(/.*transcode\/session\/[a-zA-Z0-9\-]+\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/seglist/, '$1');
+                arg = arg.replace(/(.*transcode\/session\/[a-zA-Z0-9\-]+\/)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(\/seglist)/, '$1' + this.uuid + '$2');
 
             return arg
                 .replace('{URL}', "http://127.0.0.1:" + config.port)
