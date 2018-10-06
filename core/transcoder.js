@@ -15,7 +15,7 @@ const ChunkStore = require('../utils/chunkStore');
 
 class Transcoder {
     constructor(sessionId, req, res, streamOffset) {
-        this.uuid = null;
+        this.uuid = uuid();
         this.alive = true;
         this.ffmpeg = null;
         this.transcoding = true;
@@ -70,13 +70,6 @@ class Transcoder {
         }
 
         this.transcoderArgs = parsed.args.map((arg) => {
-            this.uuid = uuid();
-            if (arg.indexOf('/manifest') !== -1)
-                arg = arg.replace(/(.*transcode\/session\/[a-zA-Z0-9\-]+\/)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(\/manifest)/, '$1' + this.uuid + '$2');
-
-            if (arg.indexOf('/seglist') !== -1)
-                arg = arg.replace(/(.*transcode\/session\/[a-zA-Z0-9\-]+\/)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(\/seglist)/, '$1' + this.uuid + '$2');
-
             return arg
                 .replace('{URL}', "http://127.0.0.1:" + config.port)
                 .replace('{SEGURL}', "http://127.0.0.1:" + config.port)
@@ -84,6 +77,8 @@ class Transcoder {
                 .replace('{PATH}', config.mount_point)
                 .replace('{SRTSRV}', config.base_url + '/api/sessions')
                 .replace(/\{USRPLEX\}/g, config.plex_ressources)
+                .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/seglist/, this.uuid + '/seglist')
+                .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/manifest/, this.uuid + '/manifest')
         });
 
         debug('FFMPEG UUID: ' + this.uuid);
