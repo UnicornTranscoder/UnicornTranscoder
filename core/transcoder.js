@@ -74,7 +74,6 @@ class Transcoder {
 
             if (arg.indexOf('/seglist') !== -1)
                 this.uuid = arg.replace(/.*transcode\/session\/[a-zA-Z0-9\-]+\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/seglist/, '$1');
-            debug('FFMPEG UUID: ' + this.uuid.toString());
 
             return arg
                 .replace('{URL}', "http://127.0.0.1:" + config.port)
@@ -84,6 +83,8 @@ class Transcoder {
                 .replace('{SRTSRV}', config.base_url + '/api/sessions')
                 .replace(/\{USRPLEX\}/g, config.plex_ressources)
         });
+
+        debug('FFMPEG UUID: ' + this.uuid);
 
         if (typeof this.chunkOffset !== 'undefined' || typeof this.streamOffset !== 'undefined')
             this.patchArgs(this.chunkOffset);
