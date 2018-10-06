@@ -95,6 +95,7 @@ universal.stats = function (req, res) {
 
     streams.downloads = universal.downloads;
     streams.config = config.public_config;
+    streams.routing = config.routing;
 
     res.setHeader('Content-Type', 'application/json');
     res.send(utils.toJSON(streams));

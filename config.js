@@ -39,3 +39,8 @@ module.exports.public_config = getenv.multi({
 	preferredMaxDownloads:    ['MAX_DOWNLOADS', 10, 'int'],
 	preferredMaxTranscodes:   ['MAX_TRANSCODES', 10, 'int']
 });
+
+//Allow to reroute via another URL from the country code
+module.exports.routing = {
+    'FR': 'https://fr.mytranscoder.myplex.com'
+};
