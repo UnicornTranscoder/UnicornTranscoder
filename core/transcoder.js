@@ -263,7 +263,7 @@ class Transcoder {
     }
 
     getChunk(chunkId, callback, streamId = '0', noJump = false) {
-        if (this.chunkStore.getChunk(streamId, chunkId) === null) {
+        if (this.chunkStore.getChunk(streamId, chunkId) !== null) {
             callback(this.alive ? chunkId : -1);
         } else {
             if (streamId === '0' && noJump === false) {
