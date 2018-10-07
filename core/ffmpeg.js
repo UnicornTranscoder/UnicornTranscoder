@@ -42,7 +42,7 @@ class FFMPEG {
                 if (chk.match(/^chunk-[0-9]{5}/)) {
                     let chunkId = chk.replace(/chunk-([0-9]{5})/, '$1');
 
-                    if (!cs.hasChunk('0', chunkId)) {
+                    if (cs.getChunk('0', chunkId) !== null) {
                         cs.saveChunk('0', chunkId, itm.toString());
 
                         //Create the table timecode->ChunkID for LongPolling

@@ -72,14 +72,6 @@ class ChunkStore {
         }
     }
 
-    hasChunk(streamId, chunkId) {
-        if (chunkId !== 'init')
-            chunkId = utils.pad(chunkId, 5);
-
-        return (streamId in this.chunkStore) && (chunkId in this.chunkStore[streamId]) &&
-            !(this.chunkStore[streamId][chunkId] instanceof EventEmitter);
-    }
-
     clean() {
         let oldCs = this.chunkStore;
         this.chunkStore = {};
