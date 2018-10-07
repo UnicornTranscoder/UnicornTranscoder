@@ -8,6 +8,7 @@ const fs = require('fs');
 const rimraf = require('rimraf');
 const request = require('request');
 const uuid = require('uuid/v4');
+const universal = require('./universal');
 const config = require('../config');
 const redis = require('../utils/redis');
 const proxy = require('./proxy');
@@ -153,6 +154,7 @@ class Transcoder {
 
         rimraf(config.xdg_cache_home + this.sessionId, {}, () => {
             this.chunkStore.destroy();
+            delete universal.cache[this.sessionId];
             callback();
         });
     }
