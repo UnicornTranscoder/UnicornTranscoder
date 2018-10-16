@@ -40,10 +40,8 @@ router.get('/:/timeline', universal.timeline);
 router.get('/library/parts/:id1/:id2/file.*', download.serve);
 
 //Transcoder progression
-router.post('/video/:/transcode/session/:sessionId/seglist', bodyParser.text({ type: function () {return true}, limit: '50mb' }), ffmpeg.seglistParser);
-router.post('/video/:/transcode/session/:sessionId/*/seglist', bodyParser.text({ type: function () {return true}, limit: '50mb' }), ffmpeg.seglistParser);
-router.post('/video/:/transcode/session/:sessionId/manifest', bodyParser.text({ type: function () {return true}, limit: '50mb' }), ffmpeg.manifestParser);
-router.post('/video/:/transcode/session/:sessionId/*/manifest', bodyParser.text({ type: function () {return true}, limit: '50mb' }), ffmpeg.manifestParser);
+router.post('/video/:/transcode/session/:sessionId/:uuid/seglist', bodyParser.text({ type: () => {return true}, limit: '50mb' }), ffmpeg.seglistParser);
+router.post('/video/:/transcode/session/:sessionId/:uuid/manifest', bodyParser.text({ type: () => {return true}, limit: '50mb' }), ffmpeg.manifestParser);
 
 //Transcoder stats
 router.get('/api/stats', universal.stats);
