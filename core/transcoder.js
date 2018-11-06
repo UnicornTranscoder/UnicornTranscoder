@@ -12,6 +12,7 @@ const config = require('../config');
 const redis = require('../utils/redis');
 const proxy = require('./proxy');
 const ChunkStore = require('../utils/chunkStore');
+const SessionManager =  require('./session-manager');
 
 class Transcoder {
     constructor(sessionId, req, res, streamOffset) {
@@ -128,7 +129,7 @@ class Transcoder {
     PMSTimeout() {
         debug('Timeout ' + this.sessionId);
         this.timeout = undefined;
-        this.killInstance();
+        SessionManager.killSession(this.sessionId);
     }
 
     killInstance(callback = () => {}) {
@@ -153,7 +154,6 @@ class Transcoder {
 
         rimraf(config.xdg_cache_home + this.sessionId, {}, () => {
             this.chunkStore.destroy();
-            delete universal.cache[this.sessionId];
             callback();
         });
     }
