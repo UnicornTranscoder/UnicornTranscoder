@@ -244,7 +244,7 @@ class Transcoder {
     }
 
     segmentJumper(chunkId, streamId, callback) {
-        let last = this.chunkStore.getLast();
+        let last = this.chunkStore.getLast('0');
 
         if (last > parseInt(chunkId) || last < parseInt(chunkId) - 10) {
             this.chunkStore.setLast('0', parseInt(chunkId));
