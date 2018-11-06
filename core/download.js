@@ -6,7 +6,7 @@ const debug = require('debug')('download');
 const path = require('path');
 const request = require('request');
 const config = require('../config');
-const universal = require('./universal');
+const universal = require('./session-manager');
 
 let download = {};
 

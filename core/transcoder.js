@@ -7,7 +7,6 @@ const debug = require('debug')('transcoder');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const request = require('request');
-const universal = require('./universal');
 const config = require('../config');
 const redis = require('../utils/redis');
 const utils = require('../utils/utils');
@@ -140,25 +139,7 @@ class Transcoder {
         this.killInstance();
     }
 
-    cleanFiles(fullClean, callback) {
-        rimraf(config.xdg_cache_home + this.sessionId, {}, () => {
-            let cleaner = redis.getClient();
-            cleaner.keys(this.sessionId + (fullClean ? '*' : ':*'), (err, keys) => {
-                if ((typeof keys !== 'undefined') && keys.length > 0)
-                    cleaner.del(keys, () => {
-                        delete universal.cache[this.sessionId];
-                        callback();
-                    });
-                else {
-                    delete universal.cache[this.sessionId];
-                    callback();
-                }
-                cleaner.quit();
-            });
-        });
-    }
-
-    killInstance(fullClean = false, callback = () => {}) {
+    killInstance(callback = () => {}) {
         debug('Killing ' + this.sessionId);
         this.redisClient.quit();
         this.alive = false;
@@ -176,9 +157,15 @@ class Transcoder {
 
         if (this.ffmpeg != null && this.transcoding) {
             this.ffmpeg.kill('SIGKILL');
-            setTimeout(this.cleanFiles.bind(this, fullClean, callback), 500);
+            setTimeout(() => {
+                rimraf(config.xdg_cache_home + this.sessionId, {}, () => {
+                    callback();
+                })
+            }, 500);
         } else {
-            this.cleanFiles(fullClean, callback);
+            rimraf(config.xdg_cache_home + this.sessionId, {}, () => {
+                callback();
+            })
         }
     }
 

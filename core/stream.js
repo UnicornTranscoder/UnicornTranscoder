@@ -6,7 +6,7 @@ const fs = require('fs');
 const debug = require('debug')('Stream');
 const Transcoder = require('./transcoder');
 const config = require('../config');
-const universal = require('./universal');
+const universal = require('./session-manager');
 const utils = require('../utils/utils');
 const redis = require('../utils/redis');
 

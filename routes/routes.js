@@ -10,9 +10,9 @@ const dash = require('../core/dash');
 const m3u8 = require('../core/m3u8');
 const stream = require('../core/stream');
 const download = require('../core/download');
-const universal = require('../core/universal');
 const ffmpeg = require('../core/ffmpeg');
 const proxy = require('../core/proxy');
+const SessionManager = require('../core/session-manager');
 
 //Dash routes
 router.get('/video/:/transcode/universal/start.mpd', dash.serve);
@@ -32,9 +32,8 @@ router.get('/video/:/transcode/universal/start', stream.serve);
 router.get('/video/:/transcode/universal/subtitles', stream.serveSubtitles);
 
 //Universal endpoints
-router.get('/video/:/transcode/universal/stop', universal.stopTranscoder);
-router.get('/video/:/transcode/universal/ping', universal.ping);
-router.get('/:/timeline', universal.timeline);
+router.get('/video/:/transcode/universal/stop', SessionManager.stopTranscoder);
+router.get('/video/:/transcode/universal/ping', SessionManager.ping);
 
 // Download files
 router.get('/library/parts/:id1/:id2/file.*', download.serve);
@@ -44,8 +43,5 @@ router.post('/video/:/transcode/session/:sessionId/seglist', bodyParser.text({ t
 router.post('/video/:/transcode/session/:sessionId/*/seglist', bodyParser.text({ type: function () {return true}, limit: '50mb' }), ffmpeg.seglistParser);
 router.post('/video/:/transcode/session/:sessionId/manifest', bodyParser.text({ type: function () {return true}, limit: '50mb' }), ffmpeg.manifestParser);
 router.post('/video/:/transcode/session/:sessionId/*/manifest', bodyParser.text({ type: function () {return true}, limit: '50mb' }), ffmpeg.manifestParser);
-
-//Transcoder stats
-router.get('/api/stats', universal.stats);
 
 module.exports = router;

@@ -5,7 +5,7 @@
 const debug = require('debug')('m3u8');
 const fs = require('fs');
 const Transcoder = require('./transcoder');
-const universal = require('./universal');
+const universal = require('./session-manager');
 const proxy = require('./proxy');
 const config = require('../config');
 
