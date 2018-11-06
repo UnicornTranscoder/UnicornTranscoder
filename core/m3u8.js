@@ -3,93 +3,64 @@
  */
 
 const debug = require('debug')('m3u8');
-const fs = require('fs');
 const Transcoder = require('./transcoder');
-const universal = require('./session-manager');
-const proxy = require('./proxy');
 const config = require('../config');
+const SessionManager = require('./session-manager');
 
-let m3u8 = {};
+class M3U8 {
+    static serve(req, res) {
+        let sessionId = req.params.sessionId;
 
-m3u8.serve = function (req, res) {
-    debug('M3U8 ' + req.params.sessionId);
+        if (typeof sessionId === 'undefined')
+            return res.status(400).send('Invalid session id');
+        debug(sessionId);
 
-    if (typeof universal.cache[req.params.sessionId] !== 'undefined')
-        universal.cache[req.params.sessionId].killInstance();
-
-    universal.cache[req.params.sessionId] = new Transcoder(req.params.sessionId, req, res);
-
-    universal.updateTimeout(req.params.sessionId);
-};
-
-m3u8.serveChunk = function (req, res) {
-    let sessionId = req.params.sessionId;
-    debug('Requesting ' + req.params.partId + ' for session ' + sessionId);
-
-    if ((typeof universal.cache[sessionId]) !== 'undefined' && universal.cache[sessionId].alive === true) {
-        universal.cache[sessionId].getChunk(req.params.partId, (chunkId) => {
-            let file = config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".ts";
-
-            if (chunkId == -2) {
-                if (!res.headersSent)
-                    res.status(404).send('Callback ' + chunkId);
-            } else if (chunkId == -1 && !fs.existsSync(file)) {
-                debug('Serving fake ' + req.params.partId + ' for session ' + sessionId);
-                res.sendFile(config.plex_ressources + 'Resources/empty.ts');
-            } else {
-                debug('Serving ' + req.params.partId + ' for session ' + sessionId);
-                res.sendFile(file);
-            }
-        });
-        universal.updateTimeout(sessionId);
-    } else {
-        debug(sessionId + ' not found');
-
-        universal.cache[sessionId] = new Transcoder(sessionId);
-        universal.updateTimeout(sessionId);
-
-        setTimeout(() => {
-            res.status(404).send('Restarting session');
-        }, 10000);}
-};
-
-m3u8.serveSubtitles = function (req, res) {
-    let sessionId = req.params.sessionId;
-    debug('Requesting subtitles ' + req.params.partId + ' for session ' + sessionId);
-
-    if ((typeof universal.cache[sessionId]) !== 'undefined' && universal.cache[sessionId].alive === true) {
-        universal.cache[sessionId].getChunk(req.params.partId, (chunkId) => {
-            let file = config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".vtt";
-
-            if (chunkId == -2) {
-                if (!res.headersSent)
-                    res.status(404).send('Callback ' + chunkId);
-            } else if (chunkId == -1 && !fs.existsSync(file)) {
-                debug('Serving fake subtitles ' + req.params.partId + ' for session ' + sessionId);
-                res.sendFile(config.plex_ressources + 'Resources/empty.vtt');
-            } else {
-                debug('Serving subtitles ' + req.params.partId + ' for session ' + sessionId);
-                res.sendFile(file);
-            }
-        }, 'sub');
-        universal.updateTimeout(sessionId);
-    } else {
-        debug(sessionId + ' not found');
-
-        universal.cache[sessionId] = new Transcoder(sessionId);
-        universal.updateTimeout(sessionId);
-
-        setTimeout(() => {
-            res.status(404).send('Restarting session');
-        }, 10000);
+        SessionManager.killSession(sessionId, () => {
+            SessionManager.saveSession(new Transcoder(sessionId, req, res));
+        })
     }
-};
 
-m3u8.saveSession = function (req, res) {
-    if (typeof req.query['X-Plex-Session-Identifier'] != 'undefined') {
-        universal.sessions[req.query['X-Plex-Session-Identifier']] = req.query.session.toString();
+    static serveChunk(req, res) {
+        let sessionId = req.params.sessionId;
+
+        let transcoder = SessionManager.getSession(sessionId);
+        if (transcoder !== null) {
+            SessionManager.updateTimeout(sessionId);
+            transcoder.getChunk(req.params.partId, (chunkId) => {
+                if (chunkId === -2 || chunkId === -1) {
+                    if (!res.headersSent)
+                        return res.status(404).send('Callback ' + chunkId);
+                } else {
+                    let file = config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".ts";
+                    debug('Serving ' + req.params.partId + ' for session ' + sessionId);
+                    res.sendFile(file);
+                }
+                });
+        } else {
+            SessionManager.restartSession(sessionId, 'HLS', res);
+        }
     }
-    proxy(req, res);
-};
 
-module.exports = m3u8;
+    static serveSubtitles(req, res) {
+        let sessionId = req.params.sessionId;
+
+        let transcoder = SessionManager.getSession(sessionId);
+        if (transcoder !== null) {
+            SessionManager.updateTimeout(sessionId);
+            transcoder.getChunk(req.params.partId, (chunkId) => {
+                if (chunkId === -2 || chunkId === -1) {
+                    if (!res.headersSent)
+                        return res.status(404).send('Callback ' + chunkId);
+                } else {
+                    let file = config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".vtt";
+                    debug('Serving subtitles ' + req.params.partId + ' for session ' + sessionId);
+                    res.sendFile(file);
+                }
+            }, 'sub', true);
+        } else {
+            SessionManager.restartSession(sessionId, 'HLS', res);
+        }
+    }
+}
+
+module.exports = M3U8;

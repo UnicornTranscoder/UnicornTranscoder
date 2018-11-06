@@ -2,6 +2,7 @@
  * Created by drouar_b on 15/08/2017.
  */
 
+const Transcoder = require('./transcoder');
 const debug = require('debug')('SessionManager');
 const config = require('../config');
 
@@ -62,6 +63,16 @@ class SessionManager {
         }
         return null;
     }
+
+    restartSession(sessionId, sessionType, res) {
+        debug(sessionId + ' not found, restarting ' + '(' + sessionType + ')');
+        SessionManager.saveSession(new Transcoder(sessionId));
+        if (typeof res !== 'undefined')
+            setTimeout(() => {
+                res.status(404).send('Restarting session');
+            }, 5000)
+    }
+
 }
 
 module.exports = new SessionManager();

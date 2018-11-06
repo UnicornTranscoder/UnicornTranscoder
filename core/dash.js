@@ -21,14 +21,6 @@ class Dash {
         })
     }
 
-    static restartSession(sessionId, res) {
-        debug(sessionId + ' not found');
-        SessionManager.saveSession(new Transcoder(sessionId));
-        setTimeout(() => {
-            res.status(404).send('Restarting session');
-        }, 5000)
-    }
-
     static serveInit(req, res) {
         let sessionId = req.params.sessionId;
 
@@ -48,7 +40,7 @@ class Dash {
                 }
             }, req.params.streamId, true);
         } else {
-            Dash.restartSession(sessionId, res);
+            SessionManager.restartSession(sessionId, 'DASH', res);
         }
     }
 
@@ -69,7 +61,7 @@ class Dash {
                 }
             }, req.params.streamId);
         } else {
-            Dash.restartSession(sessionId, res);
+            SessionManager.restartSession(sessionId, 'DASH', res);
         }
     }
 }
