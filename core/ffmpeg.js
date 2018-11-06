@@ -62,6 +62,8 @@ class FFMPEG {
 
             chunkList.forEach((itm) => {
                 itm = itm.split(',');
+                if (itm.length <= 1)
+                    return;
                 let chk = itm.shift();
 
                 //Parse chunkId
