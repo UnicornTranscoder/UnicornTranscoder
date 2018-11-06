@@ -34,7 +34,7 @@ class Transcoder {
                 this.timeout = undefined;
 
                 this.redisClient.unsubscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId);
-                this.chunkStore.setLast(0);
+                this.chunkStore.setLast('0', 0);
                 this.redisClient.get(this.sessionId, this.transcoderStarter.bind(this));
             });
 
@@ -50,7 +50,7 @@ class Transcoder {
 
             this.streamOffset = streamOffset;
 
-            this.chunkStore.setLast(0);
+            this.chunkStore.setLast('0', 0);
             this.redisClient.get(this.sessionId, this.transcoderStarter.bind(this));
         }
     }
@@ -171,7 +171,7 @@ class Transcoder {
             prev = this.transcoderArgs[i];
         }
 
-        this.chunkStore.setLast((last > 0 ? last - 1 : last));
+        this.chunkStore.setLast('0', (last > 0 ? last - 1 : last));
     }
 
     patchArgs(chunkId) {
@@ -247,7 +247,7 @@ class Transcoder {
         let last = this.chunkStore.getLast();
 
         if (last > parseInt(chunkId) || last < parseInt(chunkId) - 10) {
-            this.chunkStore.setLast(parseInt(chunkId));
+            this.chunkStore.setLast('0', parseInt(chunkId));
 
             if (this.ffmpeg != null) {
                 this.ffmpeg.removeAllListeners('exit');
