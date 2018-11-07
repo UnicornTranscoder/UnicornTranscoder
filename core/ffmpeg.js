@@ -5,7 +5,7 @@
 const debug = require('debug')('ffmpeg');
 const xml2js = require('xml2js');
 const LeakyBucket = require('leaky-bucket');
-const universal = require('./universal');
+const SessionManager = require('session-manager');
 
 let buckets = {};
 
@@ -21,22 +21,16 @@ class FFMPEG {
             if (err)
                 return res.end();
 
-            let cs;
             let regex;
             let last = -1;
             let streamId = '0';
             let saveTimecodes = false;
-            if (req.params.sessionId in universal.cache) {
-                cs = universal.cache[req.params.sessionId].chunkStore;
-
-                if (req.params.uuid !== universal.cache[req.params.sessionId].uuid) {
-                    res.end();
-                    return;
-                }
-            } else {
+            let transcoder = SessionManager.getSession(req.params.sessionId);
+            if (transcoder === null || transcoder.uuid !== req.params.uuid) {
                 res.end();
                 return;
             }
+            let cs = transcoder.chunkStore;
 
             if (req.body.match(/^chunk-[0-9]{5}/)) {
                 regex = /chunk-([0-9]{5})/;
@@ -105,20 +99,12 @@ class FFMPEG {
                 return res.end();
 
             //Find the transcoder session
-            let cs;
-            let transcoder;
-            if (req.params.sessionId in universal.cache) {
-                transcoder = universal.cache[req.params.sessionId];
-                cs = universal.cache[req.params.sessionId].chunkStore;
-
-                if (req.params.uuid !== transcoder.uuid) {
-                    res.end();
-                    return;
-                }
-            } else {
+            let transcoder = SessionManager.getSession(req.params.sessionId);
+            if (transcoder === null || transcoder.uuid !== req.params.uuid) {
                 res.end();
                 return;
             }
+            let cs = transcoder.chunkStore;
 
             //Parse arguments to find the segment duration
             let prev = null;
