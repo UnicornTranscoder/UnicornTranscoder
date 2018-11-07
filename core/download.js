@@ -6,23 +6,25 @@ const debug = require('debug')('download');
 const path = require('path');
 const request = require('request');
 const config = require('../config');
-const universal = require('./session-manager');
+const SessionManager = require('./session-manager');
 
-let download = {};
+class Download {
+    static serve(req, res) {
+        request(config.base_url + '/api/pathname/' + req.params.id1 + '/', (error, response, body) => {
+            if (!error && response.statusCode === 200) {
+                let result = JSON.parse(body);
+                if (typeof result.file === "undefined")
+                    return res.status(404).send('404 File not found');
+                debug(result.file);
+                SessionManager.startDownload(result.file);
+                res.download(result.file, path.basename(result.file), () => {
+                    SessionManager.stopDownload(result.file);
+                })
+            } else {
+                res.status(404).send('404 File not found')
+            }
+        })
+    }
+}
 
-download.serve = (req, res) => {
-    request(config.base_url + '/api/pathname/' + req.params.id1 + '/', (error, response, body) => {
-        if (!error && response.statusCode == 200) {
-            let result = JSON.parse(body);
-            debug(result.file);
-            universal.downloads++;
-            res.download(result.file, path.basename(result.file), () => {
-                universal.downloads--;
-            });
-        } else {
-            res.status(404).send('404 File not found')
-        }
-    })
-};
-
-module.exports = download;
+module.exports = Download;

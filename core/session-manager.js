@@ -8,6 +8,7 @@ const config = require('../config');
 
 class SessionManager {
     constructor() {
+        this.downloads = [];
         this.transcoderStore = {};
     }
 
@@ -44,6 +45,7 @@ class SessionManager {
     saveSession(transcoder) {
         this.transcoderStore[transcoder.sessionId] = transcoder;
         this.updateTimeout(transcoder.sessionId);
+        return this.transcoderStore[transcoder.sessionId];
     }
 
     killSession(sessionId, callback = () => {}) {
@@ -73,6 +75,16 @@ class SessionManager {
             }, 5000)
     }
 
+    startDownload(file) {
+        this.downloads.push(file);
+    }
+
+    stopDownload(file) {
+        let index = this.downloads.indexOf(file);
+        if (index !== -1) {
+            this.downloads.splice(index, 1);
+        }
+    }
 }
 
 module.exports = new SessionManager();
