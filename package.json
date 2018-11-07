@@ -3,15 +3,21 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "install": "node_modules/.bin/grunt",
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "ar": "0.0.1",
     "body-parser": "^1.18.3",
     "cluster-node-cache": "^0.1.4",
     "cors": "^2.8.4",
     "debug": "^4.1.0",
     "express": "^4.16.4",
     "getenv": "^0.7.0",
+    "grunt": "^1.0.3",
+    "grunt-mkdir": "^1.0.0",
+    "grunt-request-progress": "0.0.3",
+    "grunt-untar": "0.0.1",
     "http-proxy": "^1.16.2",
     "leaky-bucket": "^2.1.1",
     "redis": "^2.7.1",
