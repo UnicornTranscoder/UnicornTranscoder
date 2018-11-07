@@ -14,14 +14,18 @@ class FFMPEG {
         if (typeof buckets[req.params.sessionId] === "undefined")
             buckets[req.params.sessionId] = new LeakyBucket(1, 1, 1);
 
+        if (typeof req.body !== 'string')
+            return res.end();
+
         buckets[req.params.sessionId].reAdd(1, (err) => {
-            if (err) {
-                res.end();
-                return;
-            }
+            if (err)
+                return res.end();
 
             let cs;
+            let regex;
             let last = -1;
+            let streamId = '0';
+            let saveTimecodes = false;
             if (req.params.sessionId in universal.cache) {
                 cs = universal.cache[req.params.sessionId].chunkStore;
 
@@ -34,53 +38,59 @@ class FFMPEG {
                 return;
             }
 
-            req.body.split(/\r?\n/).forEach((itm) => {
+            if (req.body.match(/^chunk-[0-9]{5}/)) {
+                regex = /chunk-([0-9]{5})/;
+                saveTimecodes = true;
+            } else if (req.body.match(/^sub-chunk-[0-9]{5}/)) {
+                regex = /sub-chunk-([0-9]{5})/;
+                streamId = 'sub';
+            } else if (req.body.match(/^media-[0-9]{5}\.ts/)) {
+                regex = /media-([0-9]{5})\.ts/;
+            } else if (req.body.match(/^media-[0-9]{5}\.vtt/)) {
+                regex = /media-([0-9]{5})\.vtt/;
+                streamId = 'sub';
+            } else {
+                return res.end();
+            }
+
+            //Parse first chunkId and skip the n-first chunks
+            let chunkList = req.body.split(/\r?\n/);
+            let firstChunkId = parseInt(req.body.replace(regex, '$1'));
+            let toRemove = cs.getLast(streamId) - firstChunkId;
+            if (toRemove >= 0)
+                chunkList.splice(0, toRemove);
+
+            chunkList.forEach((itm) => {
                 itm = itm.split(',');
+                if (itm.length <= 1)
+                    return;
                 let chk = itm.shift();
 
-                //Long polling
-                if (chk.match(/^chunk-[0-9]{5}/)) {
-                    let chunkId = chk.replace(/chunk-([0-9]{5})/, '$1');
+                //Parse chunkId
+                let chunkId = chk.replace(regex, '$1');
 
-                    if (cs.getChunk('0', chunkId) === null) {
-                        cs.saveChunk('0', chunkId, itm.toString());
+                //If we should save timecodes
+                if (saveTimecodes && cs.getChunk('0', chunkId) === null) {
 
-                        //Create the table timecode->ChunkID for LongPolling
-                        let beginning = Math.ceil(parseFloat(itm[0]));
-                        let end = Math.floor(parseFloat(itm[1]));
+                    //Create the table timecode->ChunkID for LongPolling
+                    let beginning = Math.ceil(parseFloat(itm[0]));
+                    let end = Math.floor(parseFloat(itm[1]));
 
-                        //First chunk is alway 0-timecode
-                        if (beginning < end - 10)
-                            beginning = end - 10;
+                    //First chunk is alway 0-timecode
+                    if (beginning < end - 10)
+                        beginning = end - 10;
 
-                        for (let i = beginning; i < end + 1; i++)
-                            cs.saveChunk('timecode', i, parseInt(chunkId))
-                    }
-                    last = parseInt(chunkId);
+                    for (let i = beginning; i < end + 1; i++)
+                        cs.saveChunk('timecode', i, parseInt(chunkId))
                 }
 
-                //Subtitles chunks for LongPolling
-                if (chk.match(/^sub-chunk-[0-9]{5}/)) {
-                    let chunkId = chk.replace(/sub-chunk-([0-9]{5})/, '$1');
-                    cs.saveChunk('sub', chunkId, itm.toString());
-                }
-
-                //M3U8
-                if (chk.match(/^media-[0-9]{5}\.ts/)) {
-                    let chunkId = chk.replace(/media-([0-9]{5})\.ts/, '$1');
-                    cs.saveChunk('0', chunkId, itm.toString());
-                    last = parseInt(chunkId);
-                }
-                //VTT Subtitles (M3U8)
-                if (chk.match(/^media-[0-9]{5}\.vtt/)) {
-                    let chunkId = chk.replace(/media-([0-9]{5})\.vtt/, '$1');
-                    cs.saveChunk('sub', chunkId, itm.toString());
-                }
+                //Save chunks and parse last
+                cs.saveChunk(streamId, chunkId, itm.toString());
+                last = parseInt(chunkId);
             });
 
-            if (last !== -1) {
-                cs.setLast(last);
-            }
+            if (last !== -1)
+                cs.setLast(streamId, last);
 
             res.end();
         });
@@ -91,11 +101,10 @@ class FFMPEG {
             buckets[req.params.sessionId] = new LeakyBucket(1, 1, 1);
 
         buckets[req.params.sessionId].reAdd(1, (err) => {
-            if (err) {
-                res.end();
-                return;
-            }
+            if (err)
+                return res.end();
 
+            //Find the transcoder session
             let cs;
             let transcoder;
             if (req.params.sessionId in universal.cache) {
@@ -111,7 +120,7 @@ class FFMPEG {
                 return;
             }
 
-
+            //Parse arguments to find the segment duration
             let prev = null;
             let segmentTime = 5;
             for (let i = 0; i < transcoder.transcoderArgs.length; i++) {
@@ -122,7 +131,7 @@ class FFMPEG {
                 prev = transcoder.transcoderArgs[i];
             }
 
-
+            //Parse the MPD returned by FFMPEG
             xml2js.parseString(req.body, (err, mpd) => {
                 if (err)
                     return;
@@ -130,6 +139,7 @@ class FFMPEG {
                 try {
                     let last = -1;
 
+                    //For each adapatation set (audio/video)
                     let offset = 1;
                     mpd.MPD.Period[0].AdaptationSet.forEach((adaptationSet) => {
                         let c = 0;
@@ -137,11 +147,16 @@ class FFMPEG {
                         let streamId = parseInt(adaptationSet.Representation[0]["$"].id);
                         let timeScale = adaptationSet.Representation[0].SegmentTemplate[0]["$"].timescale;
 
+                        //For each segment (chunk of audio/video)
                         adaptationSet.Representation[0].SegmentTemplate[0].SegmentTimeline[0].S.forEach((s) => {
+                            //Calculate the offset of the first segment (if FFmpeg don't start from the beginning)
                             if (typeof s["$"].t !== 'undefined' && streamId === 0) {
                                 offset = Math.round((s["$"].t / timeScale) / segmentTime);
                             }
 
+                            //Sometimes multiple chunks are in the same MPD segement
+                            // c = number of the first chunk
+                            // s["$"].r = number of chunks in the segment
                             for (i = c; i < c + (typeof s["$"].r !== 'undefined' ? parseInt(s["$"].r) + 1 : 1); i++) {
 
                                 cs.saveChunk(streamId, i + offset, s["$"].d);
@@ -153,10 +168,9 @@ class FFMPEG {
                         });
 
                         if (last !== -1) {
+                            //Store chunkId 0 (MPD init chunk)
                             cs.saveChunk(streamId, 0, 0);
-                            if (streamId === 0) {
-                                cs.setLast(last);
-                            }
+                            cs.setLast(streamId, last);
                         }
                     });
                 } catch (e) { }
