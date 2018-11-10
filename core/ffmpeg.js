@@ -5,7 +5,7 @@
 const debug = require('debug')('ffmpeg');
 const xml2js = require('xml2js');
 const LeakyBucket = require('leaky-bucket');
-const SessionManager = require('session-manager');
+const SessionManager = require('./session-manager');
 
 let buckets = {};
 
