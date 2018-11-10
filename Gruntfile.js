@@ -3,10 +3,11 @@ const fs = require('fs');
 const path = require('path');
 const util = require('util');
 const config = require('./config');
+const PlexDirectories = require('./utils/plex-directories');
 
 module.exports = (grunt) => {
-    let codecsFolder = config.transcoder.codecs_folder + config.transcoder.codecs_build + '-linux-ubuntu-x86_64/';
-    let plexFolder = config.transcoder.plex_resources + config.transcoder.plex_build + '/';
+    let codecsFolder = PlexDirectories.getCodecFolder();
+    let plexFolder = PlexDirectories.getPlexBuildFolder();
 
     let gruntConfig = {
         'mkdir': {
