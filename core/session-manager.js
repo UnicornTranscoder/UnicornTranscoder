@@ -50,6 +50,8 @@ class SessionManager {
 
     killSession(sessionId, callback = () => {}) {
         if (sessionId in this.transcoderStore && this.transcoderStore[sessionId].alive) {
+            if (typeof  this.transcoderStore[sessionId].sessionTimeout !== 'undefined')
+                clearTimeout(this.transcoderStore[sessionId].sessionTimeout);
             this.transcoderStore[sessionId].killInstance(true, () => {
                 delete this.transcoderStore[sessionId];
                 callback();
