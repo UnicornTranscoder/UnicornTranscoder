@@ -5,9 +5,13 @@ const util = require('util');
 const config = require('./config');
 const PlexDirectories = require('./utils/plex-directories');
 
+const overwrite = false;
+
 module.exports = (grunt) => {
+    //TODO Multi-platform installer
     let codecsFolder = PlexDirectories.getCodecFolder();
     let plexFolder = PlexDirectories.getPlexBuildFolder();
+    let eaeFolder = PlexDirectories.getEAEFolder();
 
     let gruntConfig = {
         'mkdir': {
@@ -20,14 +24,31 @@ module.exports = (grunt) => {
                 options: {
                     create: [plexFolder]
                 }
+            },
+            eae: {
+                options: {
+                    create: [eaeFolder]
+                }
+            },
+            cache: {
+                options: {
+                    create: [path.resolve(config.transcoder.temp_folder)]
+                }
             }
         },
         'request-progress': {
             plex: {
                 options: {
-                    allowOverwrite: true,
+                    allowOverwrite: overwrite,
                     dst: plexFolder + 'plex.deb',
                     src: `https://downloads.plex.tv/plex-media-server/${config.transcoder.plex_build}/plexmediaserver_${config.transcoder.plex_build}_amd64.deb`
+                }
+            },
+            eae: {
+                options: {
+                    allowOverwrite: overwrite,
+                    dst: eaeFolder + 'eae.zip',
+                    src: `https://downloads.plex.tv/codecs/${config.transcoder.eae_version}/${config.transcoder.plex_arch}/EasyAudioEncoder-${config.transcoder.plex_arch}.zip`
                 }
             }
         },
@@ -46,11 +67,19 @@ module.exports = (grunt) => {
                     [plexFolder]: plexFolder + 'data.tar.gz',
                 }
             }
+        },
+        'unzip': {
+            eae: {
+                src: eaeFolder + 'eae.zip',
+                dest: eaeFolder
+            }
         }
     };
 
     //Generate codecs downloads
     // for f in *; do sed "s/\(.*\).so/'\1',/" <<< "$f"; done
+    //TODO Maybe use https://plex.tv/api/codecs/easyaudioencoder?build=linux-ubuntu-x86_64&deviceId=<UUID>&version=141
+    // https://plex.tv/api/codecs/h264_decoder?build=linux-ubuntu-x86_64&deviceId=<UUID>&version=e7828f1-1324
     const codecs = [
         'libaac_decoder',
         'libaac_encoder',
@@ -79,7 +108,7 @@ module.exports = (grunt) => {
     const codecTaskSample = {
             dst: codecsFolder,
             src: 'https://downloads.plex.tv/codecs/%s/linux-ubuntu-x86_64/%s.so',
-            allowOverwrite: true
+            allowOverwrite: overwrite
     };
     codecs.forEach((codec) => {
         let codecTask = { options: {...codecTaskSample}, };
@@ -103,9 +132,11 @@ module.exports = (grunt) => {
     grunt.loadNpmTasks('grunt-request-progress');
     grunt.loadNpmTasks('grunt-mkdir');
     grunt.loadNpmTasks('grunt-untar');
+    grunt.loadNpmTasks('grunt-zip');
 
     grunt.registerTask('plex', ['mkdir:plex', 'request-progress:plex', 'arx:plex', 'untar:plex']);
     grunt.registerTask('codecs', codecsTask);
-    grunt.registerTask('default', ['plex', 'codecs']);
-
+    grunt.registerTask('eae', ['mkdir:eae', 'request-progress:eae', 'unzip:eae']);
+    grunt.registerTask('cache', ['mkdir:cache']);
+    grunt.registerTask('default', ['plex', 'codecs', 'eae', 'cache']);
 };
