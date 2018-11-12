@@ -93,6 +93,7 @@ class SessionManager {
     generateStats() {
         let stats = {
             sessions: [],
+            name: config.instance_address,
             settings: config.performance,
             url: config.instance_address,
         };
