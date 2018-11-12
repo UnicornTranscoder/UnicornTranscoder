@@ -25,7 +25,7 @@ class Transcoder {
         Promise.all([
             //Proxy the request if not restarting
             (typeof req === 'undefined' && typeof streamOffset === 'undefined' ?
-                new Promise.resolve(null) : rp(`${config.loadbalancer_address}/api/plex${req.url}`)
+                    Promise.resolve(null) : rp(`${config.loadbalancer_address}/api/plex${req.url}`)
                         .then((body) => {
                             if (body !== null || typeof res !== 'undefined')
                                 res.send(body)
@@ -108,7 +108,8 @@ class Transcoder {
         }
     }
 
-    killInstance(callback = () => {}) {
+    killInstance(callback = () => {
+    }) {
         debug('Killing ' + this.sessionId);
         this.alive = false;
 
@@ -194,7 +195,7 @@ class Transcoder {
 
     patchSS(time, accurate) {
         let prev = '';
-        
+
         if (this.transcoderArgs.indexOf("-ss") === -1) {
             if (accurate)
                 this.transcoderArgs.splice(this.transcoderArgs.indexOf("-i"), 0, "-ss", time, "-noaccurate_seek");
