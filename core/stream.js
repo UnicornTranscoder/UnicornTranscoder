@@ -8,6 +8,7 @@ const Transcoder = require('./transcoder');
 const config = require('../config');
 const utils = require('../utils/utils');
 const SessionManager = require('./session-manager');
+const PlexDirectories = require('../utils/plex-directories');
 
 class Stream {
     static serve(req, res) {
@@ -141,7 +142,7 @@ class Stream {
 
     static streamBuilder(req, res, isSubtitle, chunkId, callback) {
         //Build the chunk Path
-        let chunkPath = config.xdg_cache_home + req.query.session + "/" + (isSubtitle ? 'sub-' : '') + (chunkId === -1 ? 'header' : 'chunk-' + utils.pad(chunkId, 5));
+        let chunkPath = PlexDirectories.getTemp() + req.query.session + "/" + (isSubtitle ? 'sub-' : '') + (chunkId === -1 ? 'header' : 'chunk-' + utils.pad(chunkId, 5));
 
         //Access the file to get the size
         fs.stat(chunkPath, (err, stats) => {

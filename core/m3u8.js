@@ -6,6 +6,7 @@ const debug = require('debug')('m3u8');
 const Transcoder = require('./transcoder');
 const config = require('../config');
 const SessionManager = require('./session-manager');
+const PlexDirectories = require('../utils/plex-directories');
 
 class M3U8 {
     static serve(req, res) {
@@ -31,7 +32,7 @@ class M3U8 {
                     if (!res.headersSent)
                         return res.status(404).send('Callback ' + chunkId);
                 } else {
-                    let file = config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".ts";
+                    let file = PlexDirectories.getTemp() + sessionId + "/media-" + req.params.partId + ".ts";
                     debug('Serving ' + req.params.partId + ' for session ' + sessionId);
                     res.sendFile(file);
                 }
@@ -52,7 +53,7 @@ class M3U8 {
                     if (!res.headersSent)
                         return res.status(404).send('Callback ' + chunkId);
                 } else {
-                    let file = config.xdg_cache_home + sessionId + "/media-" + req.params.partId + ".vtt";
+                    let file = PlexDirectories.getTemp() + sessionId + "/media-" + req.params.partId + ".vtt";
                     debug('Serving subtitles ' + req.params.partId + ' for session ' + sessionId);
                     res.sendFile(file);
                 }

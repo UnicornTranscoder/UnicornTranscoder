@@ -7,6 +7,7 @@ const Transcoder = require('./transcoder');
 const SessionManager = require('./session-manager');
 const config = require('../config');
 const utils = require('../utils/utils');
+const PlexDirectories = require('../utils/plex-directories');
 
 class Dash {
     static serve(req, res) {
@@ -35,7 +36,7 @@ class Dash {
                         return res.status(404).send('Callback ' + chunkId);
                 } else {
                     debug('Serving init-stream' + req.params.streamId + '.m4s for session ' + sessionId);
-                    let file = config.xdg_cache_home + sessionId + "/init-stream" + req.params.streamId + ".m4s";
+                    let file = PlexDirectories.getTemp() + sessionId + "/init-stream" + req.params.streamId + ".m4s";
                     res.sendFile(file);
                 }
             }, req.params.streamId, true);
@@ -55,7 +56,7 @@ class Dash {
                     if (!res.headersSent)
                         return res.status(404).send('Callback ' + chunkId);
                 } else {
-                    let file = config.xdg_cache_home + sessionId + "/chunk-stream" + req.params.streamId + "-" + utils.pad(parseInt(req.params.partId) + 1, 5) + ".m4s";
+                    let file = PlexDirectories.getTemp() + sessionId + "/chunk-stream" + req.params.streamId + "-" + utils.pad(parseInt(req.params.partId) + 1, 5) + ".m4s";
                     debug('Serving chunk-stream' + req.params.streamId + "-" + utils.pad(parseInt(req.params.partId) + 1, 5) + '.m4s for session ' + sessionId);
                     res.sendFile(file);
                 }
