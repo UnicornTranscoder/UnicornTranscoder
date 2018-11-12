@@ -2,7 +2,7 @@
  * Created by drouar_b on 08/09/2017.
  */
 
-const debug = require('debug')('ffmpeg');
+const debug = require('debug')('UnicornTranscoder:FFmpeg');
 const xml2js = require('xml2js');
 const LeakyBucket = require('leaky-bucket');
 const SessionManager = require('./session-manager');

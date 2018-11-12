@@ -4,7 +4,7 @@
 
 const request = require('request');
 const Transcoder = require('./transcoder');
-const debug = require('debug')('SessionManager');
+const debug = require('debug')('UnicornTranscoder:SessionManager');
 const config = require('../config');
 
 class SessionManager {

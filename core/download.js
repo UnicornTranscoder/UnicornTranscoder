@@ -2,7 +2,7 @@
  * Created by drouar_b on 27/04/2017.
  */
 
-const debug = require('debug')('download');
+const debug = require('debug')('UnicornTranscoder:Download');
 const path = require('path');
 const request = require('request');
 const config = require('../config');

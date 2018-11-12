@@ -2,7 +2,7 @@
  * Created by drouar_b on 18/08/2017.
  */
 
-const debug = require('debug')('Dash');
+const debug = require('debug')('UnicornTranscoder:Dash');
 const Transcoder = require('./transcoder');
 const SessionManager = require('./session-manager');
 const config = require('../config');

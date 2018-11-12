@@ -2,7 +2,7 @@
  * Created by drouar_b on 27/04/2017.
  */
 
-const debug = require('debug')('m3u8');
+const debug = require('debug')('UnicornTranscoder:M3U8');
 const Transcoder = require('./transcoder');
 const config = require('../config');
 const SessionManager = require('./session-manager');

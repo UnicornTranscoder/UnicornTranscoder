@@ -3,7 +3,7 @@
  */
 
 const fs = require('fs');
-const debug = require('debug')('Stream');
+const debug = require('debug')('UnicornTranscoder:Stream');
 const Transcoder = require('./transcoder');
 const config = require('../config');
 const utils = require('../utils/utils');

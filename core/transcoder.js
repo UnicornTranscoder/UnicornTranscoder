@@ -3,7 +3,7 @@
  */
 
 const child_process = require('child_process');
-const debug = require('debug')('transcoder');
+const debug = require('debug')('UnicornTranscoder:Transcoder');
 const fs = require('fs');
 const rp = require('request-promise-native');
 const uuid = require('uuid/v4');
