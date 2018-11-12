@@ -2,6 +2,7 @@
  * Created by drouar_b on 15/08/2017.
  */
 
+const request = require('request');
 const Transcoder = require('./transcoder');
 const debug = require('debug')('SessionManager');
 const config = require('../config');
@@ -10,6 +11,7 @@ class SessionManager {
     constructor() {
         this.downloads = [];
         this.transcoderStore = {};
+        this.sendStats();
     }
 
     stopTranscoder(req, res) {
@@ -70,7 +72,7 @@ class SessionManager {
 
     restartSession(sessionId, sessionType, res) {
         debug(sessionId + ' not found, restarting ' + '(' + sessionType + ')');
-        SessionManager.saveSession(new Transcoder(sessionId));
+        this.saveSession(new Transcoder(sessionId));
         if (typeof res !== 'undefined')
             setTimeout(() => {
                 res.status(404).send('Restarting session');
@@ -86,6 +88,60 @@ class SessionManager {
         if (index !== -1) {
             this.downloads.splice(index, 1);
         }
+    }
+
+    generateStats() {
+        let stats = {
+            sessions: [],
+            settings: config.performance
+        };
+
+        //Transcoding session
+        Object.keys(this.transcoderStore).map((key) => {
+            let transcoder = this.transcoderStore[key];
+
+            let session = {
+                id: key,
+                status: (transcoder.transcoding ? 'TRANSCODE' : 'DONE')
+            };
+            if (transcoder.transcoderArgs.lastIndexOf('-codec:0') >= 0) {
+                if (transcoder.transcoderArgs[transcoder.transcoderArgs.lastIndexOf('-codec:0') + 1] === "copy") {
+                    session.codec = 'copy';
+                } else {
+                    if (transcoder.transcoderArgs[0].startsWith("-codec:")) {
+                        session.codec = transcoder.transcoderArgs[1];
+                    }
+                }
+            }
+            stats.sessions.push(session);
+        });
+
+        //Download sessions
+        this.downloads.forEach((dl) => {
+            stats.sessions.push({
+                id: dl,
+                status: 'DOWNLOAD'
+            })
+        });
+
+        return stats;
+    }
+
+    stats(req, res) {
+        res.send(this.generateStats());
+    }
+
+    sendStats() {
+        if (typeof this.statsTimeout !== 'undefined')
+            clearTimeout(this.statsTimeout);
+
+        request({
+            uri: config.loadbalancer_address + '/api/update',
+            method: 'POST',
+            json: JSON.stringify(this.generateStats())
+        }, () => {
+            this.statsTimeout = setTimeout(this.sendStats.bind(this), config.ping_frequency * 1000)
+        });
     }
 }
 

@@ -10,6 +10,7 @@ module.exports = {
     mount_point:           env.string('MOUNT_POINT',           '/media'),
     transcoder_decay_time: env.int   ('TRANSCODER_DECAY_TIME', 120),
     loadbalancer_address:  env.url   ('LOADBALANCER_ADDRESS',  'https://unicornloadbalancer.myplex.com'),
+    ping_frequency:        env.int   ('PING_FREQUENCY',        10),
 
     transcoder: {
         plex_arch:         env.string('PLEX_ARCH',             'linux-ubuntu-x86_64'),
@@ -20,5 +21,14 @@ module.exports = {
         codecs_folder:     env.string('CODECS_FOLDER',         'codecs/'),
         plex_transcoder:   env.string('PLEX_TRANSCODER',       'Plex Transcoder'),
         eae_version:       env.string('EAE_VERSION',           '141'),
-    }
+    },
+
+    performance: {
+        maxSessions:        env.int('MAX_SESSIONS',           10),
+        maxDownloads:       env.int('MAX_DOWNLOADS',          10),
+        maxTranscodes:      env.int('MAX_TRANSCODE',          10),
+    },
+
+    routing: {
+    },
 };
