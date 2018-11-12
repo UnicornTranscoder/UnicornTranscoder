@@ -29,6 +29,10 @@ class PlexDirectories {
     static getEAE() {
         return path.resolve(this.getEAEFolder(), 'EasyAudioEncoder', 'EasyAudioEncoder')
     }
+
+    static getTemp() {
+        return path.resolve(config.transcoder.temp_folder) + '/';
+    }
 }
 
 module.exports = PlexDirectories;

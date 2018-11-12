@@ -52,9 +52,9 @@ class Transcoder {
                     this.transcoderEnv = Object.create(process.env);
                     this.transcoderEnv.LD_LIBRARY_PATH = PlexDirectories.getPlexFolder();
                     this.transcoderEnv.FFMPEG_EXTERNAL_LIBS = PlexDirectories.getCodecFolder();
-                    this.transcoderEnv.XDG_CACHE_HOME = config.transcoder.temp_folder;
+                    this.transcoderEnv.XDG_CACHE_HOME = PlexDirectories.getTemp();
                     this.transcoderEnv.XDG_DATA_HOME = PlexDirectories.getPlexResources();
-                    this.transcoderEnv.EAE_ROOT = config.transcoder.temp_folder;
+                    this.transcoderEnv.EAE_ROOT = PlexDirectories.getTemp();
                     this.transcoderEnv.X_PLEX_TOKEN = parsed.env.X_PLEX_TOKEN;
                 })
                 .then(() => {
