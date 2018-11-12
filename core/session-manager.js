@@ -102,6 +102,9 @@ class SessionManager {
         Object.keys(this.transcoderStore).map((key) => {
             let transcoder = this.transcoderStore[key];
 
+            if (typeof transcoder.transcoderArgs === 'undefined')
+                return;
+
             let session = {
                 id: key,
                 status: (transcoder.transcoding ? 'TRANSCODE' : 'DONE')
