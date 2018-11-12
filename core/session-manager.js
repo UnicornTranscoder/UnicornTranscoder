@@ -45,8 +45,8 @@ class SessionManager {
     }
 
     saveSession(transcoder) {
-        debug('save ')
         if (transcoder.alive) {
+            debug('save ' + transcoder.sessionId);
             transcoder.sessionManager = this;
             this.transcoderStore[transcoder.sessionId] = transcoder;
             this.updateTimeout(transcoder.sessionId);
@@ -56,6 +56,7 @@ class SessionManager {
 
     killSession(sessionId, callback = () => {}) {
         if (sessionId in this.transcoderStore && this.transcoderStore[sessionId].alive) {
+            debug('kill ' + sessionId);
             if (typeof  this.transcoderStore[sessionId].sessionTimeout !== 'undefined')
                 clearTimeout(this.transcoderStore[sessionId].sessionTimeout);
             this.transcoderStore[sessionId].killInstance(() => {
