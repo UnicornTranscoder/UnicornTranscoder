@@ -93,7 +93,8 @@ class SessionManager {
     generateStats() {
         let stats = {
             sessions: [],
-            settings: config.performance
+            settings: config.performance,
+            url: config.instance_address,
         };
 
         //Transcoding session
@@ -141,6 +142,13 @@ class SessionManager {
             json: JSON.stringify(this.generateStats())
         }, () => {
             this.statsTimeout = setTimeout(this.sendStats.bind(this), config.ping_frequency * 1000)
+        });
+    }
+
+    resolve(req, res) {
+        res.send({
+            client: config.instance_address,
+            ping: config.instance_address
         });
     }
 }

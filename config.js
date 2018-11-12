@@ -11,6 +11,7 @@ module.exports = {
     transcoder_decay_time: env.int   ('TRANSCODER_DECAY_TIME', 120),
     loadbalancer_address:  env.url   ('LOADBALANCER_ADDRESS',  'https://unicornloadbalancer.myplex.com'),
     ping_frequency:        env.int   ('PING_FREQUENCY',        10),
+    instance_address:      env.string('INSTANCE_ADDRESS',      'https://unicorntranscoder.myplex.com'),
 
     transcoder: {
         plex_arch:         env.string('PLEX_ARCH',             'linux-ubuntu-x86_64'),

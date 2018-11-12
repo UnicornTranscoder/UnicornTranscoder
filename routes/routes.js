@@ -43,5 +43,6 @@ router.post('/video/:/transcode/session/:sessionId/:uuid/manifest', bodyParser.t
 
 //UnicornTranscoder API
 router.get('/api/sessions', SessionManager.stats.bind(SessionManager));
+router.get('/api/resolve', SessionManager.resolve.bind(SessionManager));
 
 module.exports = router;
