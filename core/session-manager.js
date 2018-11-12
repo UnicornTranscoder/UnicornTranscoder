@@ -45,6 +45,7 @@ class SessionManager {
     }
 
     saveSession(transcoder) {
+        debug('save ')
         if (transcoder.alive) {
             transcoder.sessionManager = this;
             this.transcoderStore[transcoder.sessionId] = transcoder;

@@ -21,6 +21,7 @@ class Transcoder {
         this.streamOffset = streamOffset;
         this.chunkStore = new ChunkStore();
         this.sessionId = sessionId = sessionId.replace('/', '-');
+        debug('Create transcoder ' + this.sessionId);
 
         Promise.all([
             //Proxy the request if not restarting

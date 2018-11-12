@@ -30,10 +30,6 @@ router.get('/video/:/transcode/universal/session/:sessionId/:fileType/:partId.vt
 router.get('/video/:/transcode/universal/start', stream.serve);
 router.get('/video/:/transcode/universal/subtitles', stream.serveSubtitles);
 
-//Universal endpoints
-router.get('/video/:/transcode/universal/stop', SessionManager.stopTranscoder.bind(SessionManager));
-router.get('/video/:/transcode/universal/ping', SessionManager.ping.bind(SessionManager));
-
 // Download files
 router.get('/library/parts/:id1/:id2/file.*', download.serve);
 
@@ -44,5 +40,7 @@ router.post('/video/:/transcode/session/:sessionId/:uuid/manifest', bodyParser.t
 //UnicornTranscoder API
 router.get('/api/sessions', SessionManager.stats.bind(SessionManager));
 router.get('/api/resolve', SessionManager.resolve.bind(SessionManager));
+router.get('/api/stop', SessionManager.stopTranscoder.bind(SessionManager));
+router.get('/api/ping', SessionManager.ping.bind(SessionManager));
 
 module.exports = router;
