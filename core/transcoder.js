@@ -82,31 +82,21 @@ class Transcoder {
     }
 
     startFFMPEG() {
-        if (fs.existsSync(config.transcoder_path)) {
-            debug('Spawn ' + this.sessionId);
-            this.transcoding = true;
-            try {
-                this.ffmpeg = child_process.spawn(
-                    config.transcoder_path,
-                    this.transcoderArgs,
-                    {
-                        env: this.transcoderEnv,
-                        cwd: config.xdg_cache_home + this.sessionId + "/"
-                    });
-                this.ffmpeg.on("exit", () => {
-                    debug('FFMPEG stopped ' + this.sessionId);
-                    this.transcoding = false
-                });
+        debug('Spawn ' + this.sessionId);
+        this.transcoding = true;
+        this.ffmpeg = child_process.spawn(
+            PlexDirectories.getPlexTranscoderPath(),
+            this.transcoderArgs,
+            {
+                env: this.transcoderEnv,
+                cwd: `${config.transcoder.temp_folder}/${this.sessionId}`
+            });
+        this.ffmpeg.on("exit", () => {
+            debug('FFMPEG stopped ' + this.sessionId);
+            this.transcoding = false
+        });
 
-                this.updateLastChunk();
-            } catch (e) {
-                debug('Failed to start FFMPEG for session ' + this.sessionId);
-                debug(e.toString());
-                this.startFFMPEG();
-            }
-        } else {
-            setTimeout(this.startFFMPEG.bind(this), 1000);
-        }
+        this.updateLastChunk();
     }
 
     killInstance(callback = () => {
