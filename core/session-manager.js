@@ -140,7 +140,7 @@ class SessionManager {
         request({
             uri: config.loadbalancer_address + '/api/update',
             method: 'POST',
-            json: JSON.stringify(this.generateStats())
+            json: this.generateStats()
         }, () => {
             this.statsTimeout = setTimeout(this.sendStats.bind(this), config.ping_frequency * 1000)
         });
