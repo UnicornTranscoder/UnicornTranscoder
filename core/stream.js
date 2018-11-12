@@ -26,7 +26,7 @@ class Stream {
             Stream.createTranscoder(req, res);
         } else {
             debug('session found ' + sessionId);
-            if (offset === -1) {
+            if (offset !== -1) {
                 if (offset < transcoder.streamOffset) {
                     debug('Offset (' + offset + ') lower than transcoding (' + transcoder.streamOffset + ') instance, restarting...');
                     Stream.createTranscoder(req, res, offset);
