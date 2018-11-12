@@ -9,7 +9,6 @@ const rp = require('request-promise-native');
 const uuid = require('uuid/v4');
 const config = require('../config');
 const ChunkStore = require('../utils/chunkStore');
-const SessionManager =  require('./session-manager');
 const rmfr = require('rmfr');
 const PlexDirectories = require('../utils/plex-directories');
 
@@ -73,7 +72,11 @@ class Transcoder {
             this.startFFMPEG();
         }).catch((e) => {
             debug(`Failed to start ${sessionId}: ${e.toString()}`);
-            SessionManager.killSession(this.sessionId)
+            if (typeof this.sessionManager !== 'undefined') {
+                this.sessionManager.killSession(this.sessionId)
+            } else {
+                this.killInstance();
+            }
         });
     }
 
