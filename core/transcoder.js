@@ -25,12 +25,12 @@ class Transcoder {
 
         Promise.all([
             //Proxy the request if not restarting
-            (typeof req === 'undefined' && typeof streamOffset === 'undefined' ?
-                    Promise.resolve(null) : rp(`${config.loadbalancer_address}/api/plex${req.url}`)
+            (typeof req !== 'undefined' && typeof streamOffset === 'undefined' ?
+                    rp(`${config.loadbalancer_address}/api/plex${req.url}`)
                         .then((body) => {
-                            if (body !== null || typeof res !== 'undefined')
+                            if (body !== null && typeof res !== 'undefined')
                                 res.send(body)
-                        })
+                        }) : Promise.resolve(null)
             ),
             //Get args
             rp(`${config.loadbalancer_address}/api/session/${sessionId}`)
