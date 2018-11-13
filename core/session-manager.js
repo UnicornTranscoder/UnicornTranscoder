@@ -17,8 +17,9 @@ class SessionManager {
     stopTranscoder(req, res) {
         if (typeof req.query.session !== 'undefined' && req.query.session in this.transcoderStore) {
             debug('Stop ' + req.query.session);
-            this.transcoderStore[req.query.session].killInstance();
-            return res.send('');
+            return this.killSession(req.query.session, () => {
+                res.send('');
+            });
         }
         res.status(400).send('Invalid session id');
     }
@@ -38,8 +39,7 @@ class SessionManager {
 
             this.transcoderStore[sessionId].sessionTimeout = setTimeout(() => {
                 debug(sessionId + ' timed out');
-                if (sessionId in this.transcoderStore)
-                    this.transcoderStore[sessionId].killInstance()
+                this.killSession(sessionId);
             }, config.transcoder_decay_time * 1000)
         }
     }
