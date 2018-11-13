@@ -11,13 +11,13 @@ let buckets = {};
 
 class FFMPEG {
     static seglistParser(req, res) {
-        if (typeof buckets[req.params.sessionId] === "undefined")
-            buckets[req.params.sessionId] = new LeakyBucket(1, 1, 1);
+        if (typeof buckets["seglist-" + req.params.sessionId] === "undefined")
+            buckets["seglist-" + req.params.sessionId] = new LeakyBucket(1, 1, 1);
 
         if (typeof req.body !== 'string')
             return res.end();
 
-        buckets[req.params.sessionId].reAdd(1, (err) => {
+        buckets["seglist-" + req.params.sessionId].reAdd(1, (err) => {
             if (err)
                 return res.end();
 
@@ -91,10 +91,10 @@ class FFMPEG {
     }
 
     static manifestParser(req, res) {
-        if (typeof buckets[req.params.sessionId] === "undefined")
-            buckets[req.params.sessionId] = new LeakyBucket(1, 1, 1);
+        if (typeof buckets["manifest-" + req.params.sessionId] === "undefined")
+            buckets["manifest-" + req.params.sessionId] = new LeakyBucket(1, 1, 1);
 
-        buckets[req.params.sessionId].reAdd(1, (err) => {
+        buckets["manifest-" + req.params.sessionId].reAdd(1, (err) => {
             if (err)
                 return res.end();
 
