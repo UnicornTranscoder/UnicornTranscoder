@@ -91,8 +91,8 @@ class Transcoder {
                 env: this.transcoderEnv,
                 cwd: `${config.transcoder.temp_folder}/${this.sessionId}`
             });
-        this.ffmpeg.on("exit", () => {
-            debug('FFMPEG stopped ' + this.sessionId);
+        this.ffmpeg.on("exit", (code, sig) => {
+            debug('FFMPEG stopped ' + this.sessionId + ' ' + code + ' ' + sig);
             this.transcoding = false
         });
 
