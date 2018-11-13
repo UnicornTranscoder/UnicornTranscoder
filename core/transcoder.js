@@ -212,10 +212,10 @@ class Transcoder {
 
             if (this.ffmpeg != null) {
                 this.ffmpeg.removeAllListeners('exit');
+                this.patchArgs(chunkId);
+                this.ffmpeg.on("exit", this.startFFMPEG);
                 this.ffmpeg.kill('SIGKILL');
 
-                this.patchArgs(chunkId);
-                this.startFFMPEG();
             } else {
                 this.chunkOffset = parseInt(chunkId);
             }
