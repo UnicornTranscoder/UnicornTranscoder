@@ -213,7 +213,7 @@ class Transcoder {
             if (this.ffmpeg != null) {
                 this.ffmpeg.removeAllListeners('exit');
                 this.patchArgs(chunkId);
-                this.ffmpeg.on("exit", this.startFFMPEG);
+                this.ffmpeg.on("exit", this.startFFMPEG.bind(this));
                 this.ffmpeg.kill('SIGKILL');
 
             } else {
