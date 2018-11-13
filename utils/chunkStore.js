@@ -34,8 +34,11 @@ class ChunkStore {
     }
 
     getChunk(streamId, chunkId, callback) {
-        if (this.destroying)
-            return callback('destroyed');
+        if (this.destroying) {
+            if (typeof callback === 'function')
+                callback('destroyed');
+            return null;
+        }
 
         if (chunkId !== 'init')
             chunkId = utils.pad(chunkId, 5);
