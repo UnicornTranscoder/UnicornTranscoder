@@ -69,8 +69,11 @@ class Transcoder {
                         })
                     })
                 })
+                .then(() => {
+                    this.startFFMPEG();
+                })
         ]).then(() => {
-            this.startFFMPEG();
+            debug(`session ${sessionId} started`)
         }).catch((e) => {
             debug(`Failed to start ${sessionId}: ${e.toString()}`);
             if (typeof this.sessionManager !== 'undefined') {
