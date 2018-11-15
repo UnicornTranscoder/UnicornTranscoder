@@ -50,6 +50,7 @@ class SessionManager {
             transcoder.sessionManager = this;
             this.transcoderStore[transcoder.sessionId] = transcoder;
             this.updateTimeout(transcoder.sessionId);
+            this.sendStats();
         }
         return transcoder;
     }
@@ -62,6 +63,7 @@ class SessionManager {
             this.transcoderStore[sessionId].killInstance(() => {
                 delete this.transcoderStore[sessionId];
                 callback();
+                this.sendStats();
             })
         } else {
             callback();
@@ -86,12 +88,14 @@ class SessionManager {
 
     startDownload(file) {
         this.downloads.push(file);
+        this.sendStats();
     }
 
     stopDownload(file) {
         let index = this.downloads.indexOf(file);
         if (index !== -1) {
             this.downloads.splice(index, 1);
+            this.sendStats();
         }
     }
 
