@@ -12,6 +12,7 @@ const stream = require('../core/stream');
 const download = require('../core/download');
 const ffmpeg = require('../core/ffmpeg');
 const proxy = require('../core/proxy');
+const progress = require('../core/progress');
 const SessionManager = require('../core/session-manager');
 
 //Dash routes
@@ -42,5 +43,9 @@ router.get('/api/sessions', SessionManager.stats.bind(SessionManager));
 router.get('/api/resolve', SessionManager.resolve.bind(SessionManager));
 router.get('/api/stop', SessionManager.stopTranscoder.bind(SessionManager));
 router.get('/api/ping', SessionManager.ping.bind(SessionManager));
+
+//Plex Progress URL
+router.all('/video/:/transcode/session/:sessionId/:uuid/progress', progress.progress);
+router.all('/video/:/transcode/session/:sessionId/:uuid/progress/*', progress.progress);
 
 module.exports = router;
