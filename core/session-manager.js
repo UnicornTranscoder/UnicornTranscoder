@@ -3,6 +3,7 @@
  */
 
 const request = require('request');
+const geoip = require('geoip-lite');
 const Transcoder = require('./transcoder');
 const debug = require('debug')('UnicornTranscoder:SessionManager');
 const config = require('../config');
@@ -159,10 +160,37 @@ class SessionManager {
     }
 
     resolve(req, res) {
+        if (typeof req.query.ip === 'undefined' || typeof config.routing === 'undefined') {
+            res.send({
+                client: config.instance_address,
+                ping: config.instance_address
+            });
+            if (typeof config.routing !== 'undefined')
+                debug('Undefined IP, sending default route');
+            return;
+        }
+        let resolved = geoip.lookup(req.query.ip);
+        if (resolved === null) {
+            res.send({
+                client: config.instance_address,
+                ping: config.instance_address
+            });
+            debug(`Invalid ip '${req.query.ip}', sending default route`);
+            return;
+        }
+        if (resolved.country in config.routing) {
+            res.send({
+                client: config.routing[resolved.country],
+                ping: config.instance_address
+            });
+            debug(`Routing ${req.query.ip} to ${resolved.country} gateway`);
+            return;
+        }
         res.send({
             client: config.instance_address,
             ping: config.instance_address
         });
+        debug(`Routing ${req.query.ip} to default gateway`);
     }
 }
 

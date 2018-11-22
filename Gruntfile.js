@@ -73,7 +73,14 @@ module.exports = (grunt) => {
                 src: eaeFolder + 'eae.zip',
                 dest: eaeFolder
             }
-        }
+        },
+        'run': {
+            'geoip': {
+            cmd: 'node',
+            args: [
+                './node_modules/geoip-lite/scripts/updatedb.js'
+            ]
+        }}
     };
 
     //Generate codecs downloads
@@ -133,10 +140,12 @@ module.exports = (grunt) => {
     grunt.loadNpmTasks('grunt-mkdir');
     grunt.loadNpmTasks('grunt-untar');
     grunt.loadNpmTasks('grunt-zip');
+    grunt.loadNpmTasks('grunt-run');
 
     grunt.registerTask('plex', ['mkdir:plex', 'request-progress:plex', 'arx:plex', 'untar:plex']);
     grunt.registerTask('codecs', codecsTask);
     grunt.registerTask('eae', ['mkdir:eae', 'request-progress:eae', 'unzip:eae']);
     grunt.registerTask('cache', ['mkdir:cache']);
-    grunt.registerTask('default', ['plex', 'codecs', 'eae', 'cache']);
+    grunt.registerTask('geoip', ['run:geoip']);
+    grunt.registerTask('default', ['plex', 'codecs', 'eae', 'cache', 'geoip']);
 };

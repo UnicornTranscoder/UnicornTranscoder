@@ -30,6 +30,7 @@ module.exports = {
         maxTranscodes:      env.int('MAX_TRANSCODE',          10),
     },
 
-    routing: {
-    },
+    //routing: {
+    //    'US': 'http://usgateway.myplex.com'
+    //},
 };
