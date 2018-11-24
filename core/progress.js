@@ -10,7 +10,7 @@ class Progress {
 
         rp({
             method: req.method,
-            url: `${config.loadbalancer_address}/api/plex${req.url}`,
+            url: `${config.loadbalancer_address}${req.url}`,
             headers: req.headers
         })
             .then(() => {
