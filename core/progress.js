@@ -4,6 +4,10 @@ const config = require('../config');
 
 class Progress {
     static progress(req, res) {
+        if (typeof req.headers === 'object')
+            if ('host' in req.headers)
+                delete req.headers.host;
+
         rp({
             method: req.method,
             url: `${config.loadbalancer_address}/api/plex${req.url}`,
