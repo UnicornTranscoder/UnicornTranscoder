@@ -18,7 +18,6 @@ class Progress {
                     res.send('');
             })
             .catch((err) => {
-                debug(err);
                 if (!req.connection.destroyed)
                     res.send('');
             });
