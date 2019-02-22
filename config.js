@@ -7,7 +7,6 @@ const env = require('getenv');
 module.exports = {
     port:                  env.int   ('SERVER_PORT',           3000),
     host:                  env.string('SERVER_LISTEN',         '127.0.0.1'),
-    mount_point:           env.string('MOUNT_POINT',           '/media'),
     transcoder_decay_time: env.int   ('TRANSCODER_DECAY_TIME', 120),
     loadbalancer_address:  env.string('LOADBALANCER_ADDRESS',  'https://unicornloadbalancer.myplex.com'),
     ping_frequency:        env.int   ('PING_FREQUENCY',        10),
