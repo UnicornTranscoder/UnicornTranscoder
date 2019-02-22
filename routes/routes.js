@@ -47,5 +47,6 @@ router.get('/api/ping', SessionManager.ping.bind(SessionManager));
 //Plex Progress URL
 router.all('/video/:/transcode/session/:sessionId/:uuid/progress', bodyParser.text({ type: () => {return true}, limit: '50mb' }), progress.progress);
 router.all('/video/:/transcode/session/:sessionId/:uuid/progress/*', bodyParser.text({ type: () => {return true}, limit: '50mb' }), progress.progress);
+router.all('/log', bodyParser.text({ type: () => {return true}, limit: '50mb' }), progress.log);
 
 module.exports = router;
