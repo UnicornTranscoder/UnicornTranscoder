@@ -89,6 +89,7 @@ module.exports = (grunt) => {
     // https://plex.tv/api/codecs/h264_decoder?build=linux-ubuntu-x86_64&deviceId=<UUID>&version=e7828f1-1324
     const codecs = [
         'libaac_decoder',
+	'libaac_lc_decoder',
         'libaac_encoder',
         'libac3_decoder',
         'libac3_encoder',
