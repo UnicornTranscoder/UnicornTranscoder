@@ -6,7 +6,8 @@ const EventEmitter = require('events');
 const utils = require('./utils');
 
 class ChunkStore {
-    constructor(last = 0) {
+    constructor() {
+        this.last = {};
         this.chunkStore = {};
         this.destroying = false;
     }
@@ -33,8 +34,11 @@ class ChunkStore {
     }
 
     getChunk(streamId, chunkId, callback) {
-        if (this.destroying)
-            return callback('destroyed');
+        if (this.destroying) {
+            if (typeof callback === 'function')
+                callback('destroyed');
+            return null;
+        }
 
         if (chunkId !== 'init')
             chunkId = utils.pad(chunkId, 5);
@@ -56,8 +60,7 @@ class ChunkStore {
             let timeout = null;
 
             let eventCb = (...args) => {
-                if (timeout !== null)
-                    clearTimeout(timeout);
+                clearTimeout(timeout);
                 chunk.removeListener('event', eventCb);
                 callback(...args);
             };
@@ -75,6 +78,7 @@ class ChunkStore {
     clean() {
         let oldCs = this.chunkStore;
         this.chunkStore = {};
+        this.last = {};
 
         Object.keys(oldCs).forEach((streamId) => {
             Object.keys(oldCs[streamId]).forEach((chunkId) => {
@@ -98,15 +102,16 @@ class ChunkStore {
             })
         });
 
+        this.last = {};
         this.chunkStore = {};
     }
 
-    getLast() {
-        return this.last;
+    getLast(streamId) {
+        return this.last[streamId] || 0;
     }
 
-    setLast(last) {
-        this.last = last;
+    setLast(streamId, last) {
+        this.last[streamId] = last;
     }
 }
 

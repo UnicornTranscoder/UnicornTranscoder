@@ -3,16 +3,14 @@
  */
 
 const child_process = require('child_process');
-const debug = require('debug')('transcoder');
+const debug = require('debug')('UnicornTranscoder:Transcoder');
 const fs = require('fs');
-const rimraf = require('rimraf');
-const request = require('request');
+const rp = require('request-promise-native');
 const uuid = require('uuid/v4');
-const universal = require('./universal');
 const config = require('../config');
-const redis = require('../utils/redis');
-const proxy = require('./proxy');
 const ChunkStore = require('../utils/chunkStore');
+const rmfr = require('rmfr');
+const PlexDirectories = require('../utils/plex-directories');
 
 class Transcoder {
     constructor(sessionId, req, res, streamOffset) {
@@ -20,143 +18,112 @@ class Transcoder {
         this.alive = true;
         this.ffmpeg = null;
         this.transcoding = true;
-        this.sessionId = sessionId;
+        this.streamOffset = streamOffset;
         this.chunkStore = new ChunkStore();
-        this.redisClient = redis.getClient();
+        this.sessionId = sessionId = sessionId.replace('/', '-');
+        debug('Create transcoder ' + this.sessionId);
 
-        if (typeof req !== 'undefined' && typeof streamOffset === 'undefined') {
-            debug('Create session ' + this.sessionId);
-            this.timeout = setTimeout(this.PMSTimeout.bind(this), 20000);
+        Promise.all([
+            //Proxy the request if not restarting
+            (typeof req !== 'undefined' && typeof streamOffset === 'undefined' ?
+                    rp(`${config.loadbalancer_address}/api/plex${req.url}`)
+                        .then((body) => {
+                            if (body !== null && typeof res !== 'undefined')
+                                res.send(body)
+                        }) : Promise.resolve(null)
+            ),
+            //Get args
+            rp(`${config.loadbalancer_address}/api/session/${sessionId}`)
+                .then((body) => {
+                    return JSON.parse(body)
+                })
+                .then((parsed) => {
+                    this.transcoderArgs = parsed.args.map((arg) => {
+                        // Hack to replace aac_lc by aac because FFMPEG don't recognise the codec aac_lc
+                        if (arg === 'aac_lc')
+                            return 'aac';
+                        return arg
+                            .replace('{INTERNAL_TRANSCODER}', "http://127.0.0.1:" + config.port + '/')
+                            .replace('{INTERNAL_RESOURCES}', PlexDirectories.getPlexResources())
+                            .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/seglist/, this.uuid + '/seglist')
+                            .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/manifest/, this.uuid + '/manifest')
+                    });
 
-            this.redisClient.on("message", () => {
-                debug('Callback ' + this.sessionId);
-                clearTimeout(this.timeout);
-                this.timeout = undefined;
+                    if (typeof this.chunkOffset !== 'undefined' || typeof this.streamOffset !== 'undefined')
+                        this.patchArgs(this.chunkOffset);
 
-                this.redisClient.unsubscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId);
-                this.chunkStore.setLast(0);
-                this.redisClient.get(this.sessionId, this.transcoderStarter.bind(this));
-            });
-
-            this.redisClient.subscribe("__keyspace@" + config.redis_db + "__:" + sessionId);
-
-            if (typeof res !== 'undefined') {
-                proxy(req, res)
+                    this.transcoderEnv = Object.create(process.env);
+                    this.transcoderEnv.LD_LIBRARY_PATH = PlexDirectories.getPlexFolder();
+                    this.transcoderEnv.FFMPEG_EXTERNAL_LIBS = PlexDirectories.getCodecFolder();
+                    this.transcoderEnv.XDG_CACHE_HOME = PlexDirectories.getTemp();
+                    this.transcoderEnv.XDG_DATA_HOME = PlexDirectories.getPlexResources();
+                    this.transcoderEnv.EAE_ROOT = PlexDirectories.getTemp();
+                    this.transcoderEnv.X_PLEX_TOKEN = parsed.env.X_PLEX_TOKEN;
+                })
+                .then(() => {
+                    return rmfr(`${config.transcoder.temp_folder}/${sessionId}`)
+                })
+                .then(() => {
+                    return new Promise((resolve, reject) => {
+                        fs.mkdir(`${config.transcoder.temp_folder}/${sessionId}`, (err) => {
+                            if (err)
+                                return reject(err);
+                            resolve();
+                        })
+                    })
+                })
+                .then(() => {
+                    this.startFFMPEG();
+                })
+        ]).then(() => {
+            debug(`session ${sessionId} started`)
+        }).catch((e) => {
+            debug(`Failed to start ${sessionId}: ${e.toString()}`);
+            if (typeof this.sessionManager !== 'undefined') {
+                this.sessionManager.killSession(this.sessionId)
             } else {
-                this.plexRequest = request(config.plex_url + req.url).on('error', (err) => { console.log(err) })
+                this.killInstance();
             }
-        } else {
-            debug('Restarting session ' + this.sessionId);
-
-            this.streamOffset = streamOffset;
-
-            this.chunkStore.setLast(0);
-            this.redisClient.get(this.sessionId, this.transcoderStarter.bind(this));
-        }
-    }
-
-    transcoderStarter(err, reply) {
-        if (err)
-            return;
-
-        this.chunkStore.clean();
-
-        rimraf.sync(config.xdg_cache_home + this.sessionId);
-        fs.mkdirSync(config.xdg_cache_home + this.sessionId);
-
-        let parsed = JSON.parse(reply);
-        if (parsed == null) {
-            debug(reply);
-            return;
-        }
-
-        this.transcoderArgs = parsed.args.map((arg) => {
-            return arg
-                .replace('{URL}', "http://127.0.0.1:" + config.port)
-                .replace('{SEGURL}', "http://127.0.0.1:" + config.port)
-                .replace('{PROGRESSURL}', config.plex_url)
-                .replace('{PATH}', config.mount_point)
-                .replace('{SRTSRV}', config.base_url + '/api/sessions')
-                .replace(/\{USRPLEX\}/g, config.plex_ressources)
-                .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/seglist/, this.uuid + '/seglist')
-                .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/manifest/, this.uuid + '/manifest')
         });
-
-        debug('FFMPEG UUID: ' + this.uuid);
-
-        if (typeof this.chunkOffset !== 'undefined' || typeof this.streamOffset !== 'undefined')
-            this.patchArgs(this.chunkOffset);
-
-        this.transcoderEnv = Object.create(process.env);
-        this.transcoderEnv.LD_LIBRARY_PATH = config.ld_library_path;
-        this.transcoderEnv.FFMPEG_EXTERNAL_LIBS = config.ffmpeg_external_libs;
-        this.transcoderEnv.XDG_CACHE_HOME = config.xdg_cache_home;
-        this.transcoderEnv.XDG_DATA_HOME = config.xdg_data_home;
-        this.transcoderEnv.EAE_ROOT = config.eae_root;
-        this.transcoderEnv.X_PLEX_TOKEN = parsed.env.X_PLEX_TOKEN;
-
-        this.startFFMPEG();
     }
 
     startFFMPEG() {
-        if (fs.existsSync(config.transcoder_path)) {
-            debug('Spawn ' + this.sessionId);
-            this.transcoding = true;
-            try {
-                this.ffmpeg = child_process.spawn(
-                    config.transcoder_path,
-                    this.transcoderArgs,
-                    {
-                        env: this.transcoderEnv,
-                        cwd: config.xdg_cache_home + this.sessionId + "/"
-                    });
-                this.ffmpeg.on("exit", () => {
-                    debug('FFMPEG stopped ' + this.sessionId);
-                    this.transcoding = false
-                });
+        debug('Spawn ' + this.sessionId);
+        this.transcoding = true;
+        this.ffmpeg = child_process.spawn(
+            PlexDirectories.getPlexTranscoderPath(),
+            this.transcoderArgs,
+            {
+                env: this.transcoderEnv,
+                cwd: `${config.transcoder.temp_folder}/${this.sessionId}`
+            });
+        this.ffmpeg.on("exit", (code, sig) => {
+            debug('FFMPEG stopped ' + this.sessionId + ' ' + code + ' ' + sig);
+            this.transcoding = false
+        });
 
-                this.updateLastChunk();
-            } catch (e) {
-                debug('Failed to start FFMPEG for session ' + this.sessionId);
-                debug(e.toString());
-                this.startFFMPEG();
-            }
-        } else {
-            setTimeout(this.startFFMPEG.bind(this), 1000);
-        }
+        this.updateLastChunk();
     }
 
-    PMSTimeout() {
-        debug('Timeout ' + this.sessionId);
-        this.timeout = undefined;
-        this.killInstance();
-    }
-
-    killInstance(fullClean = false, callback = () => {}) {
+    killInstance(callback = () => {
+    }) {
         debug('Killing ' + this.sessionId);
-        this.redisClient.quit();
         this.alive = false;
-
-        if (typeof this.plexRequest !== 'undefined')
-            this.plexRequest.abort();
-
-        if (typeof this.timeout !== 'undefined') {
-            clearTimeout(this.timeout)
-        }
-
-        if (typeof this.sessionTimeout !== 'undefined') {
-            clearTimeout(this.sessionTimeout)
-        }
 
         if (this.ffmpeg != null) {
             this.ffmpeg.kill('SIGKILL');
         }
 
-        rimraf(config.xdg_cache_home + this.sessionId, {}, () => {
-            this.chunkStore.destroy();
-            delete universal.cache[this.sessionId];
-            callback();
-        });
+        this.chunkStore.destroy();
+
+        rmfr(`${config.transcoder.temp_folder}/${this.sessionId}`)
+            .then(() => {
+                callback();
+            })
+            .catch(() => {
+                debug(`Failed to remove ${this.sessionId}`);
+                callback();
+            });
     }
 
     updateLastChunk() {
@@ -171,7 +138,7 @@ class Transcoder {
             prev = this.transcoderArgs[i];
         }
 
-        this.chunkStore.setLast((last > 0 ? last - 1 : last));
+        this.chunkStore.setLast('0', (last > 0 ? last - 1 : last));
     }
 
     patchArgs(chunkId) {
@@ -225,7 +192,7 @@ class Transcoder {
 
     patchSS(time, accurate) {
         let prev = '';
-        
+
         if (this.transcoderArgs.indexOf("-ss") === -1) {
             if (accurate)
                 this.transcoderArgs.splice(this.transcoderArgs.indexOf("-i"), 0, "-ss", time, "-noaccurate_seek");
@@ -244,17 +211,17 @@ class Transcoder {
     }
 
     segmentJumper(chunkId, streamId, callback) {
-        let last = this.chunkStore.getLast();
+        let last = this.chunkStore.getLast('0');
 
         if (last > parseInt(chunkId) || last < parseInt(chunkId) - 10) {
-            this.chunkStore.setLast(parseInt(chunkId));
+            this.chunkStore.setLast('0', parseInt(chunkId));
 
             if (this.ffmpeg != null) {
                 this.ffmpeg.removeAllListeners('exit');
+                this.patchArgs(chunkId);
+                this.ffmpeg.on("exit", this.startFFMPEG.bind(this));
                 this.ffmpeg.kill('SIGKILL');
 
-                this.patchArgs(chunkId);
-                this.startFFMPEG();
             } else {
                 this.chunkOffset = parseInt(chunkId);
             }
