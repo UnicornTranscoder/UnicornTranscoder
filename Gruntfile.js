@@ -4,6 +4,7 @@ const path = require('path');
 const util = require('util');
 const config = require('./config');
 const PlexDirectories = require('./utils/plex-directories');
+const codecs = require('./utils/codecs-list');
 
 const overwrite = false;
 
@@ -83,36 +84,6 @@ module.exports = (grunt) => {
         }}
     };
 
-    //Generate codecs downloads
-    // for f in *; do sed "s/\(.*\).so/'\1',/" <<< "$f"; done
-    //TODO Maybe use https://plex.tv/api/codecs/easyaudioencoder?build=linux-ubuntu-x86_64&deviceId=<UUID>&version=141
-    // https://plex.tv/api/codecs/h264_decoder?build=linux-ubuntu-x86_64&deviceId=<UUID>&version=e7828f1-1324
-    const codecs = [
-        'libaac_decoder',
-	'libaac_lc_decoder',
-        'libaac_encoder',
-        'libac3_decoder',
-        'libac3_encoder',
-        'libcook_decoder',
-        'libdca_decoder',
-        'libflv_decoder',
-        'libh264_decoder',
-        'libhevc_decoder',
-        'liblibmp3lame_encoder',
-        'liblibx264_encoder',
-        'libmp2_decoder',
-        'libmp3_decoder',
-        'libmpeg2video_decoder',
-        'libmpeg4_decoder',
-        'libmsmpeg4v3_decoder',
-        'librv30_decoder',
-        'librv40_decoder',
-        'libvc1_decoder',
-        'libvp8_decoder',
-        'libvp9_decoder',
-        'libwmav2_decoder',
-        'libwmv2_decoder',
-    ];
     const codecTaskSample = {
             dst: codecsFolder,
             src: 'https://downloads.plex.tv/codecs/%s/linux-ubuntu-x86_64/%s.so',
