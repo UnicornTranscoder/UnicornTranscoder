@@ -2,167 +2,165 @@
  * Created by drouar_b on 08/09/2017.
  */
 
-const debug = require('debug')('ffmpeg');
+const debug = require('debug')('UnicornTranscoder:FFmpeg');
 const xml2js = require('xml2js');
-const redis = require('../utils/redis');
-const utils = require('../utils/utils');
 const LeakyBucket = require('leaky-bucket');
+const SessionManager = require('./session-manager');
 
 let buckets = {};
 
 class FFMPEG {
     static seglistParser(req, res) {
-        if (typeof buckets[req.params.sessionId] === "undefined")
-            buckets[req.params.sessionId] = new LeakyBucket(1, 1, 1);
+        if (typeof buckets["seglist-" + req.params.sessionId] === "undefined")
+            buckets["seglist-" + req.params.sessionId] = new LeakyBucket(1, 1, 1);
 
-        buckets[req.params.sessionId].reAdd(1, (err) => {
-            if (err) {
+        if (typeof req.body !== 'string')
+            return res.end();
+
+        buckets["seglist-" + req.params.sessionId].reAdd(1, (err) => {
+            if (err)
+                return res.end();
+
+            let regex;
+            let last = -1;
+            let streamId = '0';
+            let saveTimecodes = false;
+            let transcoder = SessionManager.getSession(req.params.sessionId);
+            if (transcoder === null || transcoder.uuid !== req.params.uuid) {
                 res.end();
                 return;
             }
+            let cs = transcoder.chunkStore;
 
-            let last = -1;
-            let rc = redis.getClient();
+            if (req.body.match(/^chunk-[0-9]{5}/)) {
+                regex = /chunk-([0-9]{5})/;
+                saveTimecodes = true;
+            } else if (req.body.match(/^sub-chunk-[0-9]{5}/)) {
+                regex = /sub-chunk-([0-9]{5})/;
+                streamId = 'sub';
+            } else if (req.body.match(/^media-[0-9]{5}\.ts/)) {
+                regex = /media-([0-9]{5})\.ts/;
+            } else if (req.body.match(/^media-[0-9]{5}\.vtt/)) {
+                regex = /media-([0-9]{5})\.vtt/;
+                streamId = 'sub';
+            } else {
+                return res.end();
+            }
 
-            rc.keys(req.params.sessionId + ":*", (err, savedChunks) => {
-                req.body.split(/\r?\n/).forEach((itm) => {
-                    itm = itm.split(',');
-                    let chk = itm.shift();
+            //Parse first chunkId and skip the n-first chunks
+            let chunkList = req.body.split(/\r?\n/);
+            let firstChunkId = parseInt(req.body.replace(regex, '$1'));
+            let toRemove = cs.getLast(streamId) - firstChunkId;
+            if (toRemove >= 0)
+                chunkList.splice(0, toRemove);
 
-                    //Long polling
-                    if (chk.match(/^chunk-[0-9]{5}/)) {
-                        let chunkId = chk.replace(/chunk-([0-9]{5})/, '$1');
+            chunkList.forEach((itm) => {
+                itm = itm.split(',');
+                if (itm.length <= 1)
+                    return;
+                let chk = itm.shift();
 
-                        if (savedChunks.indexOf(req.params.sessionId + ":0:" + chunkId) === -1) {
-                            rc.set(req.params.sessionId + ":0:" + chunkId, itm.toString());
+                //Parse chunkId
+                let chunkId = chk.replace(regex, '$1');
 
-                            let beginning = Math.ceil(parseFloat(itm[0]));
-                            let end = Math.floor(parseFloat(itm[1]));
+                //If we should save timecodes
+                if (saveTimecodes && cs.getChunk('0', chunkId) === null) {
 
-                            if (beginning < end - 10)
-                                beginning = end - 10;
-                            
-                            for (let i = beginning; i < end + 1; i++)
-                                rc.set(req.params.sessionId + ":timecode:" + i, chunkId);
-                        }
-                        last = parseInt(chunkId);
-                    }
-                    if (chk.match(/^sub-chunk-[0-9]{5}/)) {
-                        let chunkId = chk.replace(/sub-chunk-([0-9]{5})/, '$1');
+                    //Create the table timecode->ChunkID for LongPolling
+                    let beginning = Math.ceil(parseFloat(itm[0]));
+                    let end = Math.floor(parseFloat(itm[1]));
 
-                        if (savedChunks.indexOf(req.params.sessionId + ":sub:" + chunkId) === -1)
-                            rc.set(req.params.sessionId + ":sub:" + chunkId, itm.toString())
-                    }
+                    //First chunk is alway 0-timecode
+                    if (beginning < end - 10)
+                        beginning = end - 10;
 
-                    //M3U8
-                    if (chk.match(/^media-[0-9]{5}\.ts/)) {
-                        let chunkId = chk.replace(/media-([0-9]{5})\.ts/, '$1');
-
-                        if (savedChunks.indexOf(req.params.sessionId + ":0:" + chunkId) === -1)
-                            rc.set(req.params.sessionId + ":0:" + chunkId, itm.toString());
-                        last = parseInt(chunkId);
-                    }
-                    if (chk.match(/^media-[0-9]{5}\.vtt/)) {
-                        let chunkId = chk.replace(/media-([0-9]{5})\.vtt/, '$1');
-
-                        if (savedChunks.indexOf(req.params.sessionId + ":sub:" + chunkId) === -1)
-                            rc.set(req.params.sessionId + ":sub:" + chunkId, itm.toString())
-                    }
-                });
-
-                if (last !== -1) {
-                    rc.set(req.params.sessionId + ":last", last);
+                    for (let i = beginning; i < end + 1; i++)
+                        cs.saveChunk('timecode', i, parseInt(chunkId))
                 }
 
-                rc.quit();
-                res.end();
+                //Save chunks and parse last
+                cs.saveChunk(streamId, chunkId, itm.toString());
+                last = parseInt(chunkId);
             });
+
+            if (last !== -1)
+                cs.setLast(streamId, last);
+
+            res.end();
         });
     }
 
     static manifestParser(req, res) {
-        if (typeof buckets[req.params.sessionId] === "undefined")
-            buckets[req.params.sessionId] = new LeakyBucket(1, 1, 1);
+        if (typeof buckets["manifest-" + req.params.sessionId] === "undefined")
+            buckets["manifest-" + req.params.sessionId] = new LeakyBucket(1, 1, 1);
 
-        buckets[req.params.sessionId].reAdd(1, (err) => {
-            if (err) {
+        buckets["manifest-" + req.params.sessionId].reAdd(1, (err) => {
+            if (err)
+                return res.end();
+
+            //Find the transcoder session
+            let transcoder = SessionManager.getSession(req.params.sessionId);
+            if (transcoder === null || transcoder.uuid !== req.params.uuid) {
                 res.end();
                 return;
             }
+            let cs = transcoder.chunkStore;
 
-            let rc = redis.getClient();
+            //Parse arguments to find the segment duration
+            let prev = null;
+            let segmentTime = 5;
+            for (let i = 0; i < transcoder.transcoderArgs.length; i++) {
+                if (prev === "-min_seg_duration") {
+                    segmentTime = transcoder.transcoderArgs[i] / 1000000;
+                    break;
+                }
+                prev = transcoder.transcoderArgs[i];
+            }
 
-            rc.get(req.params.sessionId, (err, reply) => {
-                if (typeof reply == 'undefined') {
-                    rc.quit();
-                    res.end();
+            //Parse the MPD returned by FFMPEG
+            xml2js.parseString(req.body, (err, mpd) => {
+                if (err)
                     return;
-                }
 
-                let parsed = JSON.parse(reply);
-                if (parsed == null) {
-                    rc.quit();
-                    res.end();
-                    return;
-                }
+                try {
+                    let last = -1;
 
-                let prev = null;
-                let segmentTime = 5;
-                for (let i = 0; i < parsed.args.length; i++) {
-                    if (prev == "-min_seg_duration") {
-                        segmentTime = parsed.args[i] / 1000000;
-                        break;
-                    }
-                    prev = parsed.args[i];
-                }
+                    //For each adapatation set (audio/video)
+                    let offset = 1;
+                    mpd.MPD.Period[0].AdaptationSet.forEach((adaptationSet) => {
+                        let c = 0;
+                        let i = 0;
+                        let streamId = parseInt(adaptationSet.Representation[0]["$"].id);
+                        let timeScale = adaptationSet.Representation[0].SegmentTemplate[0]["$"].timescale;
 
+                        //For each segment (chunk of audio/video)
+                        adaptationSet.Representation[0].SegmentTemplate[0].SegmentTimeline[0].S.forEach((s) => {
+                            //Calculate the offset of the first segment (if FFmpeg don't start from the beginning)
+                            if (typeof s["$"].t !== 'undefined' && streamId === 0) {
+                                offset = Math.round((s["$"].t / timeScale) / segmentTime);
+                            }
 
-                rc.keys(req.params.sessionId + ":[0-9]:*", (err, savedChunks) => {
-                    xml2js.parseString(req.body, (err, mpd) => {
-                        if (err)
-                            return;
+                            //Sometimes multiple chunks are in the same MPD segement
+                            // c = number of the first chunk
+                            // s["$"].r = number of chunks in the segment
+                            for (i = c; i < c + (typeof s["$"].r !== 'undefined' ? parseInt(s["$"].r) + 1 : 1); i++) {
 
-                        try {
-                            let last = -1;
+                                cs.saveChunk(streamId, i + offset, s["$"].d);
 
-                            let offset = 1;
-                            mpd.MPD.Period[0].AdaptationSet.forEach((adaptationSet) => {
-                                let c = 0;
-                                let i = 0;
-                                let streamId = adaptationSet.Representation[0]["$"].id;
-                                let timeScale = adaptationSet.Representation[0].SegmentTemplate[0]["$"].timescale;
+                                if (i + offset > last)
+                                    last = i + offset;
+                            }
+                            c = i;
+                        });
 
-                                adaptationSet.Representation[0].SegmentTemplate[0].SegmentTimeline[0].S.forEach((s) => {
-                                    if (typeof s["$"].t != 'undefined' && streamId == 0) {
-                                        offset = Math.round((s["$"].t / timeScale) / segmentTime);
-                                    }
-
-                                    for (i = c; i < c + (typeof s["$"].r != 'undefined' ? parseInt(s["$"].r) + 1 : 1); i++) {
-
-                                        if (savedChunks.indexOf(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5)) == -1)
-                                        rc.set(req.params.sessionId + ":" + streamId + ":" + utils.pad(i + offset, 5), s["$"].d);
-
-                                        if (i + offset > last)
-                                            last = i + offset;
-                                    }
-                                    c = i;
-                                });
-
-                                if (last != -1) {
-                                    rc.set(req.params.sessionId + ":" + streamId + ":00000", 0);
-                                    if (streamId == 0) {
-                                        rc.set(req.params.sessionId + ":last", last);
-                                    }
-                                }
-                            });
-
-                            rc.quit();
-                        } catch (e) {
-                            rc.quit();
+                        if (last !== -1) {
+                            //Store chunkId 0 (MPD init chunk)
+                            cs.saveChunk(streamId, 0, 0);
+                            cs.setLast(streamId, last);
                         }
-                        res.end();
                     });
-                });
+                } catch (e) { }
+                res.end();
             });
         });
     }

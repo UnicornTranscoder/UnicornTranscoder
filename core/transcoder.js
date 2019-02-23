@@ -3,200 +3,142 @@
  */
 
 const child_process = require('child_process');
-const debug = require('debug')('transcoder');
+const debug = require('debug')('UnicornTranscoder:Transcoder');
 const fs = require('fs');
-const rimraf = require('rimraf');
-const request = require('request');
-const universal = require('./universal');
+const rp = require('request-promise-native');
+const uuid = require('uuid/v4');
 const config = require('../config');
-const redis = require('../utils/redis');
-const utils = require('../utils/utils');
-const proxy = require('./proxy');
+const ChunkStore = require('../utils/chunkStore');
+const rmfr = require('rmfr');
+const PlexDirectories = require('../utils/plex-directories');
 
 class Transcoder {
     constructor(sessionId, req, res, streamOffset) {
+        this.uuid = uuid();
         this.alive = true;
         this.ffmpeg = null;
         this.transcoding = true;
-        this.sessionId = sessionId;
-        this.redisClient = redis.getClient();
+        this.streamOffset = streamOffset;
+        this.chunkStore = new ChunkStore();
+        this.sessionId = sessionId = sessionId.replace('/', '-');
+        debug('Create transcoder ' + this.sessionId);
 
-        if (typeof req !== 'undefined' && typeof streamOffset === 'undefined') {
-            debug('Create session ' + this.sessionId);
-            this.timeout = setTimeout(this.PMSTimeout.bind(this), 20000);
-
-            this.redisClient.on("message", () => {
-                debug('Callback ' + this.sessionId);
-                clearTimeout(this.timeout);
-                this.timeout = undefined;
-
-                this.redisClient.unsubscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId);
-                this.redisClient.set(this.sessionId + ":last", 0);
-                this.redisClient.get(this.sessionId, this.transcoderStarter.bind(this));
-            });
-
-            this.redisClient.subscribe("__keyspace@" + config.redis_db + "__:" + sessionId);
-
-            if (typeof res != 'undefined') {
-                proxy(req, res)
-            } else {
-                this.plexRequest = request(config.plex_url + req.url).on('error', (err) => { console.log(err) })
-            }
-        } else {
-            debug('Restarting session ' + this.sessionId);
-
-            this.streamOffset = streamOffset;
-
-            this.redisClient.set(this.sessionId + ":last", 0);
-            this.redisClient.get(this.sessionId, this.transcoderStarter.bind(this));
-        }
-    }
-
-    transcoderStarter(err, reply) {
-        if (err)
-            return;
-
-        let cleaner = redis.getClient();
-        cleaner.keys(this.sessionId + ':*', (err, keys) => {
-            if (typeof keys !== 'undefined') {
-                keys = keys.filter((k) => {
-                    return !k.endsWith("last")
-                });
-                if (keys.length > 0)
-                    cleaner.del(keys, () => {
-                        cleaner.quit();
+        Promise.all([
+            //Proxy the request if not restarting
+            (typeof req !== 'undefined' && typeof streamOffset === 'undefined' ?
+                    rp(`${config.loadbalancer_address}/api/plex${req.url}`)
+                        .then((body) => {
+                            if (body !== null && typeof res !== 'undefined')
+                                res.send(body)
+                        }) : Promise.resolve(null)
+            ),
+            //Get args
+            rp(`${config.loadbalancer_address}/api/session/${sessionId}`)
+                .then((body) => {
+                    return JSON.parse(body)
+                })
+                .then((parsed) => {
+                    this.transcoderArgs = parsed.args.map((arg) => {
+                        // Hack to replace aac_lc by aac because FFMPEG don't recognise the codec aac_lc
+                        if (arg === 'aac_lc')
+                            return 'aac';
+                        return arg
+                            .replace('{INTERNAL_TRANSCODER}', "http://127.0.0.1:" + config.port + '/')
+                            .replace('{INTERNAL_RESOURCES}', PlexDirectories.getPlexResources())
+                            .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/seglist/, this.uuid + '/seglist')
+                            .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/manifest/, this.uuid + '/manifest')
                     });
-                else
-                    cleaner.quit();
+
+                    if (typeof this.chunkOffset !== 'undefined' || typeof this.streamOffset !== 'undefined')
+                        this.patchArgs(this.chunkOffset);
+
+                    this.transcoderEnv = Object.create(process.env);
+                    this.transcoderEnv.LD_LIBRARY_PATH = PlexDirectories.getPlexFolder();
+                    this.transcoderEnv.FFMPEG_EXTERNAL_LIBS = PlexDirectories.getCodecFolder();
+                    this.transcoderEnv.XDG_CACHE_HOME = PlexDirectories.getTemp();
+                    this.transcoderEnv.XDG_DATA_HOME = PlexDirectories.getPlexResources();
+                    this.transcoderEnv.EAE_ROOT = PlexDirectories.getTemp();
+                    this.transcoderEnv.X_PLEX_TOKEN = parsed.env.X_PLEX_TOKEN;
+                })
+                .then(() => {
+                    return rmfr(`${config.transcoder.temp_folder}/${sessionId}`)
+                })
+                .then(() => {
+                    return new Promise((resolve, reject) => {
+                        fs.mkdir(`${config.transcoder.temp_folder}/${sessionId}`, (err) => {
+                            if (err)
+                                return reject(err);
+                            resolve();
+                        })
+                    })
+                })
+                .then(() => {
+                    this.startFFMPEG();
+                })
+        ]).then(() => {
+            debug(`session ${sessionId} started`)
+        }).catch((e) => {
+            debug(`Failed to start ${sessionId}: ${e.toString()}`);
+            if (typeof this.sessionManager !== 'undefined') {
+                this.sessionManager.killSession(this.sessionId)
             } else {
-                cleaner.quit();
+                this.killInstance();
             }
         });
-
-        rimraf.sync(config.xdg_cache_home + this.sessionId);
-        fs.mkdirSync(config.xdg_cache_home + this.sessionId);
-
-        let parsed = JSON.parse(reply);
-        if (parsed == null) {
-            debug(reply);
-            return;
-        }
-
-        this.transcoderArgs = parsed.args.map((arg) => {
-            return arg
-                .replace('{URL}', "http://127.0.0.1:" + config.port)
-                .replace('{SEGURL}', "http://127.0.0.1:" + config.port)
-                .replace('{PROGRESSURL}', config.plex_url)
-                .replace('{PATH}', config.mount_point)
-                .replace('{SRTSRV}', config.base_url + '/api/sessions')
-                .replace(/\{USRPLEX\}/g, config.plex_ressources)
-        });
-
-        if (typeof this.chunkOffset !== 'undefined' || typeof this.streamOffset !== 'undefined')
-            this.patchArgs(this.chunkOffset);
-
-        this.transcoderEnv = Object.create(process.env);
-        this.transcoderEnv.LD_LIBRARY_PATH = config.ld_library_path;
-        this.transcoderEnv.FFMPEG_EXTERNAL_LIBS = config.ffmpeg_external_libs;
-        this.transcoderEnv.XDG_CACHE_HOME = config.xdg_cache_home;
-        this.transcoderEnv.XDG_DATA_HOME = config.xdg_data_home;
-        this.transcoderEnv.EAE_ROOT = config.eae_root;
-        this.transcoderEnv.X_PLEX_TOKEN = parsed.env.X_PLEX_TOKEN;
-
-        this.startFFMPEG();
     }
 
     startFFMPEG() {
-        if (fs.existsSync(config.transcoder_path)) {
-            debug('Spawn ' + this.sessionId);
-            this.transcoding = true;
-            try {
-                this.ffmpeg = child_process.spawn(
-                    config.transcoder_path,
-                    this.transcoderArgs,
-                    {
-                        env: this.transcoderEnv,
-                        cwd: config.xdg_cache_home + this.sessionId + "/"
-                    });
-                this.ffmpeg.on("exit", () => {
-                    debug('FFMPEG stopped ' + this.sessionId);
-                    this.transcoding = false
-                });
-
-                this.updateLastChunk();
-            } catch (e) {
-                debug('Failed to start FFMPEG for session ' + this.sessionId);
-                debug(e.toString());
-                this.startFFMPEG();
-            }
-        } else {
-            setTimeout(this.startFFMPEG.bind(this), 1000);
-        }
-    }
-
-    PMSTimeout() {
-        debug('Timeout ' + this.sessionId);
-        this.timeout = undefined;
-        this.killInstance();
-    }
-
-    cleanFiles(fullClean, callback) {
-        rimraf(config.xdg_cache_home + this.sessionId, {}, () => {
-            let cleaner = redis.getClient();
-            cleaner.keys(this.sessionId + (fullClean ? '*' : ':*'), (err, keys) => {
-                if ((typeof keys !== 'undefined') && keys.length > 0)
-                    cleaner.del(keys, () => {
-                        delete universal.cache[this.sessionId];
-                        callback();
-                    });
-                else {
-                    delete universal.cache[this.sessionId];
-                    callback();
-                }
-                cleaner.quit();
+        debug('Spawn ' + this.sessionId);
+        this.transcoding = true;
+        this.ffmpeg = child_process.spawn(
+            PlexDirectories.getPlexTranscoderPath(),
+            this.transcoderArgs,
+            {
+                env: this.transcoderEnv,
+                cwd: `${config.transcoder.temp_folder}/${this.sessionId}`
             });
+        this.ffmpeg.on("exit", (code, sig) => {
+            debug('FFMPEG stopped ' + this.sessionId + ' ' + code + ' ' + sig);
+            this.transcoding = false
         });
+
+        this.updateLastChunk();
     }
 
-    killInstance(fullClean = false, callback = () => {}) {
+    killInstance(callback = () => {
+    }) {
         debug('Killing ' + this.sessionId);
-        this.redisClient.quit();
         this.alive = false;
 
-        if (typeof this.plexRequest !== 'undefined')
-            this.plexRequest.abort();
-
-        if (typeof this.timeout !== 'undefined') {
-            clearTimeout(this.timeout)
-        }
-
-        if (typeof this.sessionTimeout !== 'undefined') {
-            clearTimeout(this.sessionTimeout)
-        }
-
-        if (this.ffmpeg != null && this.transcoding) {
+        if (this.ffmpeg != null) {
             this.ffmpeg.kill('SIGKILL');
-            setTimeout(this.cleanFiles.bind(this, fullClean, callback), 500);
-        } else {
-            this.cleanFiles(fullClean, callback);
         }
+
+        this.chunkStore.destroy();
+
+        rmfr(`${config.transcoder.temp_folder}/${this.sessionId}`)
+            .then(() => {
+                callback();
+            })
+            .catch(() => {
+                debug(`Failed to remove ${this.sessionId}`);
+                callback();
+            });
     }
 
     updateLastChunk() {
         let last = 0;
         let prev = null;
-        let rc = redis.getClient();
 
         for (let i = 0; i < this.transcoderArgs.length; i++) {
-            if (prev == '-segment_start_number' || prev == '-skip_to_segment') {
+            if (prev === '-segment_start_number' || prev === '-skip_to_segment') {
                 last = parseInt(this.transcoderArgs[i]);
                 break;
             }
             prev = this.transcoderArgs[i];
         }
 
-        rc.set(this.sessionId + ":last", (last > 0 ? last - 1 : last));
-        rc.quit();
+        this.chunkStore.setLast('0', (last > 0 ? last - 1 : last));
     }
 
     patchArgs(chunkId) {
@@ -210,7 +152,7 @@ class Transcoder {
 
         let prev = '';
         for (let i = 0; i < this.transcoderArgs.length; i++) {
-            if (prev == '-segment_start_number' || prev == '-skip_to_segment') {
+            if (prev === '-segment_start_number' || prev === '-skip_to_segment') {
                 this.transcoderArgs[i] = parseInt(chunkId);
                 break;
             }
@@ -221,11 +163,11 @@ class Transcoder {
         let offset = 0;
         let segmentDuration = 5;
         for (let i = 0; i < this.transcoderArgs.length; i++) {
-            if (prev == '-segment_time') {
+            if (prev === '-segment_time') {
                 segmentDuration = this.transcoderArgs[i];
                 break;
             }
-            if (prev == '-min_seg_duration') {
+            if (prev === '-min_seg_duration') {
                 offset = -1;
                 segmentDuration = this.transcoderArgs[i] / 1000000;
                 break;
@@ -241,7 +183,7 @@ class Transcoder {
             prev = this.transcoderArgs[i];
         }
 
-        if (this.transcoderArgs.indexOf("-vsync") != -1) {
+        if (this.transcoderArgs.indexOf("-vsync") !== -1) {
             this.transcoderArgs.splice(this.transcoderArgs.indexOf("-vsync"), 2)
         }
 
@@ -250,8 +192,8 @@ class Transcoder {
 
     patchSS(time, accurate) {
         let prev = '';
-        
-        if (this.transcoderArgs.indexOf("-ss") == -1) {
+
+        if (this.transcoderArgs.indexOf("-ss") === -1) {
             if (accurate)
                 this.transcoderArgs.splice(this.transcoderArgs.indexOf("-i"), 0, "-ss", time, "-noaccurate_seek");
             else
@@ -259,7 +201,7 @@ class Transcoder {
         } else {
             prev = '';
             for (let i = 0; i < this.transcoderArgs.length; i++) {
-                if (prev == '-ss') {
+                if (prev === '-ss') {
                     this.transcoderArgs[i] = time;
                     break;
                 }
@@ -268,58 +210,48 @@ class Transcoder {
         }
     }
 
-    segmentJumper(chunkId, streamId, rc, callback) {
-        rc.get(this.sessionId + ":last", (err, last) => {
-            if (err || last == null || parseInt(last) > parseInt(chunkId) || parseInt(last) < parseInt(chunkId) - 10) {
-                rc.set(this.sessionId + ":last", parseInt(chunkId));
+    segmentJumper(chunkId, streamId, callback) {
+        let last = this.chunkStore.getLast('0');
 
-                if (this.ffmpeg != null) {
-                    this.ffmpeg.removeAllListeners('exit');
-                    this.ffmpeg.kill('SIGKILL');
+        if (last > parseInt(chunkId) || last < parseInt(chunkId) - 10) {
+            this.chunkStore.setLast('0', parseInt(chunkId));
 
-                    this.patchArgs(chunkId);
-                    this.startFFMPEG();
-                } else {
-                    this.chunkOffset = parseInt(chunkId);
-                }
+            if (this.ffmpeg != null) {
+                this.ffmpeg.removeAllListeners('exit');
+                this.patchArgs(chunkId);
+                this.ffmpeg.on("exit", this.startFFMPEG.bind(this));
+                this.ffmpeg.kill('SIGKILL');
+
+            } else {
+                this.chunkOffset = parseInt(chunkId);
             }
-            this.waitChunk(chunkId, streamId, rc, callback)
-        });
+        }
+        this.waitChunk(chunkId, streamId, callback)
     }
 
     getChunk(chunkId, callback, streamId = '0', noJump = false) {
-        let rc = redis.getClient();
-
-        rc.get(this.sessionId + ":" + streamId + ":" + (chunkId == 'init' ? chunkId : utils.pad(chunkId, 5)), (err, chunk) => {
-            if (chunk == null) {
-                if (streamId == '0' && noJump == false)
-                    this.segmentJumper(chunkId, streamId, rc, callback);
-                else
-                    this.waitChunk(chunkId, streamId, rc, callback);
-
+        if (this.chunkStore.getChunk(streamId, chunkId) !== null) {
+            callback(this.alive ? chunkId : -1);
+        } else {
+            if (streamId === '0' && noJump === false) {
+                this.segmentJumper(chunkId, streamId, callback);
             } else {
-                callback(this.alive ? chunkId : -1);
-                rc.quit();
+                this.waitChunk(chunkId, streamId, callback);
             }
-        });
+        }
     }
 
-    waitChunk(chunkId, streamId, rc, callback) {
+    waitChunk(chunkId, streamId, callback) {
         if (this.transcoding) {
-            let timeout = setTimeout(() => {
-                    rc.end(false);
+            this.chunkStore.getChunk(streamId, chunkId, (res) => {
+                if (res === 'timeout' || res === 'destroyed' || res === 'clean') {
                     callback(this.alive ? -2 : -1);
-                }, 10000);
-
-            rc.on("message", () => {
-                clearTimeout(timeout);
-                rc.end(false);
-                callback(this.alive ? chunkId : -1);
+                } else {
+                    callback(this.alive ? chunkId : -1);
+                }
             });
-            rc.subscribe("__keyspace@" + config.redis_db + "__:" + this.sessionId + ":" + streamId + ":" + (chunkId == 'init' ? chunkId : utils.pad(chunkId, 5)))
         } else {
             callback(-1);
-            rc.quit();
         }
     }
 }

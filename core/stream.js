@@ -3,39 +3,35 @@
  */
 
 const fs = require('fs');
-const debug = require('debug')('Stream');
+const debug = require('debug')('UnicornTranscoder:Stream');
 const Transcoder = require('./transcoder');
 const config = require('../config');
-const universal = require('./universal');
 const utils = require('../utils/utils');
-const redis = require('../utils/redis');
+const SessionManager = require('./session-manager');
+const PlexDirectories = require('../utils/plex-directories');
 
 class Stream {
     static serve(req, res) {
-        let transcoder;
-        let sessionId = req.query.session.toString();
+        let offset = -1;
+        if (!Number.isNaN(parseInt(req.query.offset)))
+            offset = parseInt(req.query.offset);
+        let sessionId = req.query.session;
 
-        if (typeof req.query['X-Plex-Session-Identifier'] !== 'undefined') {
-            universal.sessions[req.query['X-Plex-Session-Identifier']] = sessionId;
-        }
+        if (typeof sessionId === 'undefined')
+            return res.status(400).send('Invalid session id');
+        debug(sessionId);
 
-        if (typeof universal.cache[sessionId] === 'undefined') {
-            debug('create session ' + sessionId + ' ' + req.query.offset);
+        let transcoder = SessionManager.getSession(sessionId);
+        if (transcoder === null) {
             Stream.createTranscoder(req, res);
         } else {
-            transcoder = universal.cache[sessionId];
             debug('session found ' + sessionId);
-
-            if (typeof req.query.offset !== 'undefined') {
-                let newOffset = parseInt(req.query.offset);
-
-                if (newOffset < transcoder.streamOffset) {
-                    debug('Offset (' + newOffset + ') lower than transcoding (' + transcoder.streamOffset + ') instance, restarting...');
-                    transcoder.killInstance(false, () => {
-                        Stream.createTranscoder(req, res, newOffset);
-                    });
+            if (offset !== -1) {
+                if (offset < transcoder.streamOffset) {
+                    debug('Offset (' + offset + ') lower than transcoding (' + transcoder.streamOffset + ') instance, restarting...');
+                    Stream.createTranscoder(req, res, offset);
                 } else {
-                    Stream.chunkRetriever(req, res, transcoder, newOffset);
+                    Stream.chunkRetriever(req, res, transcoder, offset);
                 }
             } else {
                 debug('Offset not found, resuming from beginning');
@@ -46,51 +42,41 @@ class Stream {
     }
 
     static createTranscoder(req, res, streamOffset) {
-        let sessionId = req.query.session.toString();
-        let transcoder = universal.cache[sessionId] = new Transcoder(sessionId, req, undefined, streamOffset);
-        if (typeof req.query.offset !== 'undefined')
-            transcoder.streamOffset = parseInt(req.query.offset);
-        else
-            transcoder.streamOffset = 0;
-
-        universal.updateTimeout(sessionId);
-
-        Stream.rangeParser(req);
-        Stream.serveHeader(req, res, transcoder, 0, false);
+        let sessionId = req.query.session;
+        SessionManager.killSession(req.query.session, () => {
+            let transcoder = SessionManager.saveSession(new Transcoder(sessionId, req, undefined, streamOffset));
+            Stream.rangeParser(req);
+            Stream.serveHeader(req, res, transcoder, 0, false);
+        });
     }
 
     static chunkRetriever(req, res, transcoder, newOffset) {
         debug('Offset found ' + newOffset + ', attempting to resume (transcoder: ' + transcoder.streamOffset + ')');
 
-        let rc = redis.getClient();
-        rc.get(transcoder.sessionId + ':timecode:' + newOffset, (err, chunk) => {
-            if (err || chunk == null) {
-                debug('Offset not found, restarting...');
-                transcoder.killInstance(false, () => {
-                    Stream.createTranscoder(req, res, newOffset);
-                });
-            } else {
-                let chunkId = parseInt(chunk);
-                debug('Chunk ' + chunkId + ' found for offset ' + newOffset);
-                Stream.rangeParser(req);
-                Stream.serveHeader(req, res, transcoder, chunkId, false);
-            }
-        })
+        if (transcoder.chunkStore.getChunk('timecode', newOffset) === null) {
+            debug('Offset not found, restarting...');
+            Stream.createTranscoder(req, res, newOffset);
+        } else {
+            let chunkId = transcoder.chunkStore.getChunk('timecode', newOffset);
+            debug('Chunk ' + chunkId + ' found for offset ' + newOffset);
+            Stream.rangeParser(req);
+            Stream.serveHeader(req, res, transcoder, chunkId, false);
+        }
     }
 
     static serveSubtitles(req, res) {
-        let transcoder;
-        let sessionId = req.query.session.toString();
+        let sessionId = req.query.session;
+        if (typeof sessionId === 'undefined')
+            return res.status(400).send('Invalid session id');
 
-        if (typeof universal.cache[req.query.session] === 'undefined') {
+        let transcoder = SessionManager.getSession(sessionId);
+        if (transcoder === null) {
             debug(" subtitle session " + sessionId + " not found");
             res.status(404).send("Session not found");
             return;
         }
 
         debug("serve subtitles " + sessionId);
-        transcoder = universal.cache[req.query.session];
-
         Stream.serveHeader(req, res, transcoder, 0, true);
     }
 
@@ -134,7 +120,7 @@ class Stream {
             return;
         }
 
-        universal.updateTimeout(req.query.session);
+        SessionManager.updateTimeout(req.query.session);
 
         transcoder.getChunk(chunkId, (chunkId) => {
             switch (chunkId) {
@@ -156,7 +142,7 @@ class Stream {
 
     static streamBuilder(req, res, isSubtitle, chunkId, callback) {
         //Build the chunk Path
-        let chunkPath = config.xdg_cache_home + req.query.session + "/" + (isSubtitle ? 'sub-' : '') + (chunkId === -1 ? 'header' : 'chunk-' + utils.pad(chunkId, 5));
+        let chunkPath = PlexDirectories.getTemp() + req.query.session + "/" + (isSubtitle ? 'sub-' : '') + (chunkId === -1 ? 'header' : 'chunk-' + utils.pad(chunkId, 5));
 
         //Access the file to get the size
         fs.stat(chunkPath, (err, stats) => {
