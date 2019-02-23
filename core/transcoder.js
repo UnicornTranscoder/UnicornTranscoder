@@ -39,6 +39,9 @@ class Transcoder {
                 })
                 .then((parsed) => {
                     this.transcoderArgs = parsed.args.map((arg) => {
+                        // Hack to replace aac_lc by aac because FFMPEG don't recognise the codec aac_lc
+                        if (arg === 'aac_lc')
+                            return 'aac';
                         return arg
                             .replace('{INTERNAL_TRANSCODER}', "http://127.0.0.1:" + config.port + '/')
                             .replace('{INTERNAL_RESOURCES}', PlexDirectories.getPlexResources())
