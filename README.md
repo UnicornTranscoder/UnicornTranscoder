@@ -28,7 +28,6 @@ This software is a remote transcoder for `Plex Media Server`. It is able to hand
 * Plex Media Server
 * NodeJS
 * npm
-* A FUSE with your library or all your library replicated to the transcoder server
 
 ### 2. Pre-required 
 
