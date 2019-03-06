@@ -21,6 +21,7 @@ module.exports = {
         codecs_folder:     env.string('CODECS_FOLDER',         'codecs/'),
         plex_transcoder:   env.string('PLEX_TRANSCODER',       'Plex Transcoder'),
         eae_version:       env.string('EAE_VERSION',           '141'),
+        debug:             env.boolish('TRANSCODER_DEBUG',     false),
     },
 
     performance: {
