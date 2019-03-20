@@ -49,8 +49,10 @@ class Transcoder {
                             .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/manifest/, this.uuid + '/manifest')
                     });
 
-                    if (config.transcoder.debug)
+                    if (config.transcoder.debug) {
                         this.transcoderArgs.splice(this.transcoderArgs.indexOf('-loglevel'), 2); // Enable logs
+                        debug(this.transcoderArgs)
+                    }
 
                     if (typeof this.chunkOffset !== 'undefined' || typeof this.streamOffset !== 'undefined')
                         this.patchArgs(this.chunkOffset);
