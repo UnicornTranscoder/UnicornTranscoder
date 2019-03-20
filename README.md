@@ -110,6 +110,12 @@ All these configuration are for advanced users.
   * Pull Codecs from plex.tv
   * Build the GeoIP database
 
+## Logging & Debug
+
+To enable logging you have to set an environement variable called DEBUG. There is few scopes to allow a more or less verbose output. This environement variable allows wildcards. If you want a very verbose output you can set `DEBUG=*` and you will also have verbose logging for dependencies. If you want only UnicornTranscoder output, set `DEBUG=UnicornTranscoder*`
+
+If you need to debug FFMPEG, set `TRANSCODER_DEBUG=true`, it will enable FFMPEG output and log transcoding arguments.
+
 ## Notes
 
 #### SSL
