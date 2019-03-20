@@ -120,7 +120,7 @@ If you need to debug FFMPEG, set `TRANSCODER_DEBUG=true`, it will enable FFMPEG 
 
 #### SSL
 
-The trancoder shouldn't serve the request directly, a reverse proxy such as nginx should be setup in front to install a SSL certificate.
+The transcoder shouldn't serve the request directly, a reverse proxy such as nginx should be setup in front to install a SSL certificate.
 
 #### FFMPEG from Source
 
