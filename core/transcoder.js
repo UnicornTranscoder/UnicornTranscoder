@@ -108,8 +108,8 @@ class Transcoder {
         });
 
         if (config.transcoder.debug) {
-            this.ffmpeg.stdout.on('data', (data) => { console.log('stdout: ' + data.toString()); }); // Send logs to stdout
-            this.ffmpeg.stderr.on('data', (data) => { console.log('stderr: ' + data.toString()); }); // Send logs to stdout
+            this.ffmpeg.stdout.on('data', (data) => { debug('FFMPEG(stdout): ' + data.toString()); }); // Send logs to stdout
+            this.ffmpeg.stderr.on('data', (data) => { debug('FFMPEG(stderr): ' + data.toString()); }); // Send logs to stderr
         }
 
         this.updateLastChunk();
