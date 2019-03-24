@@ -26,11 +26,11 @@ class Transcoder {
         Promise.all([
             //Proxy the request if not restarting
             (typeof req !== 'undefined' && typeof streamOffset === 'undefined' ?
-                    rp(`${config.loadbalancer_address}/api/plex${req.url}`)
-                        .then((body) => {
-                            if (body !== null && typeof res !== 'undefined')
-                                res.send(body)
-                        }) : Promise.resolve(null)
+                rp(`${config.loadbalancer_address}/api/plex${req.url}`)
+                    .then((body) => {
+                        if (body !== null && typeof res !== 'undefined')
+                            res.send(body)
+                    }) : Promise.resolve(null)
             ),
             //Get args
             rp(`${config.loadbalancer_address}/api/session/${sessionId}`)
@@ -49,11 +49,16 @@ class Transcoder {
                             .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/manifest/, this.uuid + '/manifest')
                     });
 
+                    if (config.transcoder.debug) {
+                        this.transcoderArgs.splice(this.transcoderArgs.indexOf('-loglevel'), 2); // Enable logs
+                        debug(this.transcoderArgs)
+                    }
+
                     if (typeof this.chunkOffset !== 'undefined' || typeof this.streamOffset !== 'undefined')
                         this.patchArgs(this.chunkOffset);
 
                     this.transcoderEnv = Object.create(process.env);
-                    this.transcoderEnv.LD_LIBRARY_PATH = PlexDirectories.getPlexFolder();
+                    this.transcoderEnv.LD_LIBRARY_PATH = PlexDirectories.getPlexLibraryFolder();
                     this.transcoderEnv.FFMPEG_EXTERNAL_LIBS = PlexDirectories.getCodecFolder();
                     this.transcoderEnv.XDG_CACHE_HOME = PlexDirectories.getTemp();
                     this.transcoderEnv.XDG_DATA_HOME = PlexDirectories.getPlexResources();
@@ -101,6 +106,11 @@ class Transcoder {
             debug('FFMPEG stopped ' + this.sessionId + ' ' + code + ' ' + sig);
             this.transcoding = false
         });
+
+        if (config.transcoder.debug) {
+            this.ffmpeg.stdout.on('data', (data) => { debug('FFMPEG(stdout): ' + data.toString()); }); // Send logs to stdout
+            this.ffmpeg.stderr.on('data', (data) => { debug('FFMPEG(stderr): ' + data.toString()); }); // Send logs to stderr
+        }
 
         this.updateLastChunk();
     }
