@@ -13,14 +13,14 @@ module.exports = {
     instance_address:      env.string('INSTANCE_ADDRESS',      'https://unicorntranscoder.myplex.com'),
 
     transcoder: {
-        plex_arch:         env.string('PLEX_ARCH',             'linux-ubuntu-x86_64'),
-        plex_build:        env.string('PLEX_BUILD',            '1.14.1.5488-cc260c476'),
-        codecs_build:      env.string('CODECS_BUILD',          '531e313-1328'),
+        plex_arch:         env.string('PLEX_ARCH',             'amd64'), // Can be: amd64, arm64, armhf, i386
+        plex_build:        env.string('PLEX_BUILD',            '1.15.2.793-782228f99'),
+        codecs_build:      env.string('CODECS_BUILD',          'a22632d-2132'),
         plex_resources:    env.string('PLEX_RESOURCES',        'plexmediaserver/'),
         temp_folder:       env.string('TEMP_FOLDER',           'cache/'),
         codecs_folder:     env.string('CODECS_FOLDER',         'codecs/'),
         plex_transcoder:   env.string('PLEX_TRANSCODER',       'Plex Transcoder'),
-        eae_version:       env.string('EAE_VERSION',           '141'),
+        eae_version:       env.string('EAE_VERSION',           'eae-69c1de6-25'),
         debug:             env.boolish('TRANSCODER_DEBUG',     false),
     },
 
