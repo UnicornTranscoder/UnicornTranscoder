@@ -1,3 +1,4 @@
+const compareVersions = require('compare-versions');
 const path = require('path');
 const config = require('../config');
 
@@ -12,6 +13,13 @@ class PlexDirectories {
 
     static getPlexFolder() {
         return path.resolve(this.getPlexBuildFolder(), 'usr/lib/plexmediaserver') + '/';
+    }
+
+    static getPlexLibraryFolder() {
+        if (compareVersions(config.transcoder.plex_build, '1.15') === 1)
+            return path.resolve(this.getPlexFolder(), 'lib') + '/';
+        else
+            return this.getPlexFolder()
     }
 
     static getPlexTranscoderPath() {
