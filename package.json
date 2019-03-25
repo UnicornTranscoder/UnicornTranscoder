@@ -21,7 +21,7 @@
     "grunt-request-progress": "0.0.3",
     "grunt-run": "^0.8.1",
     "grunt-zip": "^0.18.1",
-    "http-proxy": "^1.16.2",
+    "http-proxy": "^1.17.0",
     "leaky-bucket": "^2.1.1",
     "lzma-native": "^4.0.3",
     "redis": "^2.7.1",
