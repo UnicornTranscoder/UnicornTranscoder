@@ -23,7 +23,7 @@ class Optimizer {
             if (arg === 'aac_lc')
                 return 'aac';
             return arg
-                .replace('{OPTIMIZE_PATH}', this.path)
+                .replace('{OPTIMIZE_PATH}', path.resolve(this.path))
                 .replace('{INTERNAL_TRANSCODER}', "http://127.0.0.1:" + config.port + '/')
                 .replace('{INTERNAL_RESOURCES}', PlexDirectories.getPlexResources())
         });
@@ -78,16 +78,16 @@ class Optimizer {
 
     done() {
         debug('Optimization done ' + this.session);
-        rp({
+        rp(`${config.loadbalancer_address}/api/optimize/${this.session}`, {
             method: 'PATCH',
-            uri: `${config.loadbalancer_address}/api/optimize/${this.session}`,
-            body: { status: 'optimized' }
+            body: { status: 'optimized' },
+            json: true
         })
             .then(() => {
                 debug('LoadBalancer notified')
             })
             .catch(() => {
-                debug('LoadBanlancer notification failed')
+                debug('LoadBalancer notification failed')
             })
     }
 
