@@ -13,6 +13,7 @@ const download = require('../core/download');
 const ffmpeg = require('../core/ffmpeg');
 const proxy = require('../core/proxy');
 const progress = require('../core/progress');
+const optimizer = require('../core/optimizer');
 const SessionManager = require('../core/session-manager');
 
 //Dash routes
@@ -48,5 +49,10 @@ router.get('/api/ping', SessionManager.ping.bind(SessionManager));
 router.all('/:formatType/:/transcode/session/:sessionId/:uuid/progress', bodyParser.text({ type: () => {return true}, limit: '50mb' }), progress.progress);
 router.all('/:formatType/:/transcode/session/:sessionId/:uuid/progress/*', bodyParser.text({ type: () => {return true}, limit: '50mb' }), progress.progress);
 router.all('/log', bodyParser.text({ type: () => {return true}, limit: '50mb' }), progress.log);
+
+// Optimization
+router.post('/api/optimize',optimizer.start);
+router.get('/api/optimize/:session/:filename', optimizer.download);
+router.delete('/api/optimize/:session', optimizer.stop);
 
 module.exports = router;

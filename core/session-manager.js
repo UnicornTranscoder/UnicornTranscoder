@@ -12,6 +12,7 @@ class SessionManager {
     constructor() {
         this.downloads = [];
         this.transcoderStore = {};
+        this.optimizerStore = {};
         this.sendStats();
     }
 
@@ -98,6 +99,24 @@ class SessionManager {
             this.downloads.splice(index, 1);
             this.sendStats();
         }
+    }
+
+    saveOptimizer(sessionId, optimizer) {
+        this.optimizerStore[sessionId] = optimizer;
+        this.sendStats();
+    }
+
+    getOptimizer(sessionId) {
+        return this.optimizerStore[sessionId]
+    }
+
+    stopOptimizer(sessionId) {
+        if (typeof this.optimizerStore[sessionId] !== 'undefined') {
+            this.optimizerStore[sessionId].clean();
+            delete this.optimizerStore[sessionId];
+            return true;
+        }
+        return false;
     }
 
     generateStats() {
