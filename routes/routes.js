@@ -51,7 +51,7 @@ router.all('/:formatType/:/transcode/session/:sessionId/:uuid/progress/*', bodyP
 router.all('/log', bodyParser.text({ type: () => {return true}, limit: '50mb' }), progress.log);
 
 // Optimization
-router.post('/api/optimize',optimizer.start);
+router.post('/api/optimize', bodyParser.json(), optimizer.start);
 router.get('/api/optimize/:session/:filename', optimizer.download);
 router.delete('/api/optimize/:session', optimizer.stop);
 
