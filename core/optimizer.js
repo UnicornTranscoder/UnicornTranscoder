@@ -57,6 +57,7 @@ class Optimizer {
 
     startFFMPEG() {
         debug('Spawn ' + this.session);
+        SessionManager.saveOptimizer(this.session, this);
         this.ffmpeg = child_process.spawn(
             PlexDirectories.getPlexTranscoderPath(),
             this.transcoderArgs,
@@ -106,7 +107,6 @@ class Optimizer {
     static start(req, res) {
         debug(`Starting optimizer session ${req.body.session}`);
         const session = new Optimizer(req.body.session, req.body.args, req.body.env);
-        SessionManager.saveOptimizer(session);
         res.json({ status: 'ok' })
     }
 
@@ -115,14 +115,14 @@ class Optimizer {
         if (typeof session !== 'undefined')
             session.sendFile(res, req.params.file);
         else
-            res.statusCode(404).json({ error: 'Session not found' })
+            res.status(404).json({ error: 'Session not found' })
     }
 
     static stop(req, res) {
         if (SessionManager.stopOptimizer(req.params.session))
             res.json({ status: 'ok' });
         else
-            res.statusCode(404).json({ error: 'Session not found' });
+            res.status(404).json({ error: 'Session not found' });
     }
 }
 
