@@ -113,7 +113,7 @@ class Optimizer {
     static download(req, res) {
         const session = SessionManager.getOptimizer(req.params.session);
         if (typeof session !== 'undefined')
-            session.sendFile(res, req.params.file);
+            session.sendFile(res, req.params.filename);
         else
             res.status(404).json({ error: 'Session not found' })
     }
