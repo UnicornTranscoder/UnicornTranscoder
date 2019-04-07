@@ -16,14 +16,14 @@ class Optimizer {
     constructor(sessionId, args, env) {
         this.ffmpeg = null;
         this.session = sessionId.replace('/', '-');
-        this.path = config.transcoder.temp_folder + this.session + '/';
+        this.path = path.resolve(config.transcoder.temp_folder + this.session) + '/';
 
         this.transcoderArgs = args.map((arg) => {
             // Hack to replace aac_lc by aac because FFMPEG don't recognise the codec aac_lc
             if (arg === 'aac_lc')
                 return 'aac';
             return arg
-                .replace('{OPTIMIZE_PATH}', path.resolve(this.path))
+                .replace('{OPTIMIZE_PATH}', this.path)
                 .replace('{INTERNAL_TRANSCODER}', "http://127.0.0.1:" + config.port + '/')
                 .replace('{INTERNAL_RESOURCES}', PlexDirectories.getPlexResources())
         });
