@@ -1,6 +1,6 @@
 {
   "name": "UnicornTranscoder",
-  "version": "2.0.0",
+  "version": "2.2.2",
   "private": true,
   "scripts": {
     "install": "node_modules/.bin/grunt",
