@@ -11,6 +11,7 @@ const config = require('../config');
 const ChunkStore = require('../utils/chunkStore');
 const rmfr = require('rmfr');
 const PlexDirectories = require('../utils/plex-directories');
+const utils = require('../utils/utils');
 
 class Transcoder {
     constructor(sessionId, req, res, streamOffset) {
@@ -42,9 +43,9 @@ class Transcoder {
                         // Hack to replace aac_lc by aac because FFMPEG don't recognise the codec aac_lc
                         if (arg === 'aac_lc')
                             return 'aac';
+                        arg = utils.replaceAll(arg, '{INTERNAL_PLEX_SETUP}', PlexDirectories.getPlexFolder());
                         return arg
                             .replace('{INTERNAL_TRANSCODER}', "http://127.0.0.1:" + config.port + '/')
-                            .replace('{INTERNAL_RESOURCES}', PlexDirectories.getPlexResources())
                             .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/seglist/, this.uuid + '/seglist')
                             .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/manifest/, this.uuid + '/manifest')
                     });
