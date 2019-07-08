@@ -24,4 +24,11 @@ utils.toJSON = function (obj) {
     })
 };
 
+utils.replaceAll = (input, search, replace) => {
+    let str = input;
+    while (str.indexOf(search) !== -1)
+        str = str.replace(search, replace);
+    return str
+};
+
 module.exports = utils;
