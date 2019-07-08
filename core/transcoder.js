@@ -44,7 +44,7 @@ class Transcoder {
                             return 'aac';
                         return arg
                             .replace('{INTERNAL_TRANSCODER}', "http://127.0.0.1:" + config.port + '/')
-                            .replace('{INTERNAL_RESOURCES}', PlexDirectories.getPlexResources())
+                            .replace('{INTERNAL_PLEX_SETUP}', PlexDirectories.getPlexFolder())
                             .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/seglist/, this.uuid + '/seglist')
                             .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/manifest/, this.uuid + '/manifest')
                     });
