@@ -65,8 +65,10 @@ Theses configurations are used to download automatically `Plex Transcoder` and c
 | ------------ | ------------------------------------------------------------ |
 | plex_arch    | Should not be modified since only ubuntu is supported now.   |
 | plex_build   | Full version number of Plex, can be found on download page.  |
-| codecs_build | The version of the codecs, you can see it when you started PMS at least once in the Codecs folder of Plex.<br />In `/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Codecs` the folder `e7828f1-1324-linux-ubuntu-x86_64` means that the version is `e7828f1-1324` |
-| eae_version  | Version of EasyAudioEncoder, can be found in the same folder as the Codecs<br />`EasyAudioEncoder-141-linux-ubuntu-x86_64` => The version is `141` |
+| codecs_build | The codec build can be found with the following command:<br/>`strings "Plex Media Server" | grep -P '^[0-9a-f]{7}-[0-9]{4}$'` |
+| eae_version  | The EAE build can be found with the following command:<br/>`strings "Plex Media Server" | grep -P '^eae-[0-9a-f]{7}-[0-9]{2}$'` |
+
+Keep in mind plex_arch, plex_build, codecs_build and eae_version can change between versions. You must have value for the same Plex build. Don't upgrade the plex_build without checking the other values.
 
 ##### Performance configuration
 
