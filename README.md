@@ -65,8 +65,8 @@ Theses configurations are used to download automatically `Plex Transcoder` and c
 | ------------ | ------------------------------------------------------------ |
 | plex_arch    | Should not be modified since only ubuntu is supported now.   |
 | plex_build   | Full version number of Plex, can be found on download page.  |
-| codecs_build | The codec build can be found with the following command:<br/>`strings "Plex Media Server" | grep -P '^[0-9a-f]{7}-[0-9]{4}$'` |
-| eae_version  | The EAE build can be found with the following command:<br/>`strings "Plex Media Server" | grep -P '^eae-[0-9a-f]{7}-[0-9]{2}$'` |
+| codecs_build | The codec build can be found with the following command:  ```strings "Plex Media Server" | grep -P '^[0-9a-f]{7}-[0-9]{4}$'``` |
+| eae_version  | The EAE build can be found with the following command:  ```strings "Plex Media Server" | grep -P '^eae-[0-9a-f]{7}-[0-9]{2}$'``` |
 
 Keep in mind plex_arch, plex_build, codecs_build and eae_version can change between versions. You must have value for the same Plex build. Don't upgrade the plex_build without checking the other values.
 
