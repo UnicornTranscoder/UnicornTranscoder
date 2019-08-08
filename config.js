@@ -14,13 +14,13 @@ module.exports = {
 
     transcoder: {
         plex_arch:         env.string('PLEX_ARCH',             'amd64'), // Can be: amd64, arm64, armhf, i386
-        plex_build:        env.string('PLEX_BUILD',            '1.16.1.1291-158e5b199'),
-        codecs_build:      env.string('CODECS_BUILD',          '21b5515-2321'),
+        plex_build:        env.string('PLEX_BUILD',            '1.16.3.1402-22929c8a2'),
+        codecs_build:      env.string('CODECS_BUILD',          '2144ff1-2376'),
         plex_resources:    env.string('PLEX_RESOURCES',        'plexmediaserver/'),
         temp_folder:       env.string('TEMP_FOLDER',           'cache/'),
         codecs_folder:     env.string('CODECS_FOLDER',         'codecs/'),
         plex_transcoder:   env.string('PLEX_TRANSCODER',       'Plex Transcoder'),
-        eae_version:       env.string('EAE_VERSION',           'eae-69c1de6-38'),
+        eae_version:       env.string('EAE_VERSION',           'eae-69c1de6-39'),
         debug:             env.boolish('TRANSCODER_DEBUG',     false),
     },
 
