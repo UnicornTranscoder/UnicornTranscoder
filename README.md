@@ -73,7 +73,8 @@ Theses configurations are used to download automatically `Plex Transcoder` and c
 strings "Plex Media Server" | grep -P '^[0-9a-f]{7}-[0-9]{4}$'
 
 # Extract the eae_version
-strings "Plex Media Server" | grep -P '^eae-[0-9a-f]{7}-[0-9]{2}$'```
+strings "Plex Media Server" | grep -P '^eae-[0-9a-f]{7}-[0-9]{2}$'
+```
 
 Keep in mind plex_arch, plex_build, codecs_build and eae_version depend of the Plex Media Server build. Don't upgrade the `plex_build` without checking `codecs_build` and `eae_version`.
 
