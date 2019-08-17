@@ -64,16 +64,24 @@ Theses configurations are used to download automatically `Plex Transcoder` and c
 | Variable     | Description                                                  |
 | ------------ | ------------------------------------------------------------ |
 | plex_arch    | Should not be modified since only ubuntu is supported now.   |
-| plex_build   | Full version number of Plex, can be found on download page.  |
+| plex_build   | Full version number of Plex, can be found on download page or with the following commands  |
 | codecs_build | The codec build can be found with the following commands   |
 | eae_version  | The EAE build can be found with the following commands   |
 
 ```
+# Extract all build values from "Plex Media Server" binary
+printf "plex_build: `strings "Plex Media Server" | grep -P '^([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)-[0-9a-f]{9}'`\ncodecs_build: `strings "Plex Media Server" | grep -P '^[0-9a-f]{7}-[0-9]{4}$'`\neae_version: `strings "Plex Media Server" | grep -P '^eae-[0-9a-f]{7}-[0-9]{2}$'`\n"
+
+# Extract the plex_build value
+strings "Plex Media Server" | grep -P '^([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)-[0-9a-f]{9}'
+
 # Extract the codecs_build value
 strings "Plex Media Server" | grep -P '^[0-9a-f]{7}-[0-9]{4}$'
 
 # Extract the eae_version
 strings "Plex Media Server" | grep -P '^eae-[0-9a-f]{7}-[0-9]{2}$'
+
+
 ```
 
 Keep in mind plex_arch, plex_build, codecs_build and eae_version depend of the Plex Media Server build. Don't upgrade the `plex_build` without checking `codecs_build` and `eae_version`.
