@@ -183,6 +183,10 @@ class Transcoder {
                 segmentDuration = this.transcoderArgs[i] / 1000000;
                 break;
             }
+            if (prev === "-seg_duration") {
+                segmentDuration = this.transcoderArgs[i];
+                break;
+            }
             prev = this.transcoderArgs[i];
         }
 

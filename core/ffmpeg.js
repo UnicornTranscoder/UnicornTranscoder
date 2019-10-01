@@ -114,6 +114,10 @@ class FFMPEG {
                     segmentTime = transcoder.transcoderArgs[i] / 1000000;
                     break;
                 }
+                if (prev === "-seg_duration") {
+                    segmentTime = transcoder.transcoderArgs[i];
+                    break;
+                }
                 prev = transcoder.transcoderArgs[i];
             }
 
