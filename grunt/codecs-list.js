@@ -121,7 +121,6 @@ module.exports = [
     'libescape130_decoder',
     'libevrc_decoder',
     'libexr_decoder',
-    'libfake_avi_decoder',
     'libffwavesynth_decoder',
     'libfic_decoder',
     'libflashsv2_decoder',
