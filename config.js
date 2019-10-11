@@ -14,8 +14,8 @@ module.exports = {
 
     transcoder: {
         plex_arch:         env.string('PLEX_ARCH',             'amd64'), // Can be: amd64, arm64, armhf, i386
-        plex_build:        env.string('PLEX_BUILD',            '1.17.0.1841-d42cfa161'),
-        codecs_build:      env.string('CODECS_BUILD',          'ba1b905-2538'),
+        plex_build:        env.string('PLEX_BUILD',            '1.18.0.1913-e5cc93306'),
+        codecs_build:      env.string('CODECS_BUILD',          '20fed83-2561'),
         eae_version:       env.string('EAE_VERSION',           'eae-69c1de6-41'),
         plex_resources:    env.string('PLEX_RESOURCES',        'plexmediaserver/'),
         temp_folder:       env.string('TEMP_FOLDER',           'cache/'),
