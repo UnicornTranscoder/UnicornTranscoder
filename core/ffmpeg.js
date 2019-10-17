@@ -55,6 +55,9 @@ class FFMPEG {
                 chunkList.splice(0, toRemove);
 
             chunkList.forEach((itm) => {
+                if (itm.startsWith('#'))
+                    return;
+
                 itm = itm.split(',');
                 if (itm.length <= 1)
                     return;
