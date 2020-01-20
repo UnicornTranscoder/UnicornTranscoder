@@ -24,6 +24,7 @@
     "http-proxy": "^1.16.2",
     "leaky-bucket": "^2.1.1",
     "lzma-native": "^4.0.3",
+    "mkdirp": "^0.5.1",
     "redis": "^2.7.1",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.5",

@@ -10,6 +10,15 @@ const PlexDirectories = require('./utils/plex-directories');
 const debug = require('debug')('UnicornTranscoder');
 const config = require('./config');
 const path = require('path');
+const mkdirp = require('mkdirp');
+
+mkdirp(config.transcoder.temp_folder,  (err) =>  {
+    if (err) {
+        debug("Can't create temp folder");
+        console.error(err);
+        process.exit(1);
+    }
+});
 
 let app = express();
 
