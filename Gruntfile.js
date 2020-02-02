@@ -73,7 +73,7 @@ module.exports = (grunt) => {
             'geoip': {
             cmd: 'node',
             args: [
-                './node_modules/geoip-lite/scripts/updatedb.js'
+                './node_modules/geoip-lite/scripts/updatedb.js', `license_key=${config.maxmind_key}`
             ]
         }}
     };
@@ -92,6 +92,8 @@ module.exports = (grunt) => {
     grunt.registerTask('codecs', codecRunners);
     grunt.registerTask('eae', ['mkdir:eae', 'request-progress:eae', 'unzip:eae']);
     grunt.registerTask('cache', ['mkdir:cache']);
-    grunt.registerTask('geoip', ['run:geoip']);
-    grunt.registerTask('default', ['plex', 'codecs', 'eae', 'cache', 'geoip']);
+    if (config.maxmind_key) {
+        grunt.registerTask('geoip', ['run:geoip']);
+    }
+    grunt.registerTask('default', ['plex', 'codecs', 'eae', 'cache', ...((config.maxmind_key) ? ['geoip'] : [])]);
 };
