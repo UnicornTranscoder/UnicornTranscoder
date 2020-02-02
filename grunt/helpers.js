@@ -39,10 +39,12 @@ class GruntHelpers {
 
     static getEaeDownloadUrl() {
         const { eae_version } = config.transcoder;
+        // Eg: https://downloads.plex.tv/codecs/eae-69c1de6-42/linux-x86_64-standard/EasyAudioEncoder-linux-x86_64-standard.zip
         return `https://downloads.plex.tv/codecs/${eae_version}/${GruntHelpers.getPlexArch()}/EasyAudioEncoder-${GruntHelpers.getPlexArch()}.zip`;
     }
 
     static getCodecDownloadUrl(codecName) {
+        // Based on Plex codec API: https://plex.tv/api/codecs/xxx_decoder
         const { codecs_build } = config.transcoder;
         return `https://downloads.plex.tv/codecs/${codecs_build}/${GruntHelpers.getPlexArch()}/${codecName}.so`;
     }
