@@ -12,6 +12,8 @@ module.exports = {
     ping_frequency:        env.int   ('PING_FREQUENCY',        10),
     instance_address:      env.string('INSTANCE_ADDRESS',      'https://unicorntranscoder.myplex.com'),
 
+    maxmind_key:           env.string('MAXMIND_KEY',           ''),
+
     transcoder: {
         plex_arch:         env.string('PLEX_ARCH',             'amd64'), // Can be: amd64, arm64, armhf, i386
         plex_build:        env.string('PLEX_BUILD',            '1.18.0.1944-f2cae8d6b'),
