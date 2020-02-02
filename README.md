@@ -70,7 +70,7 @@ Theses configurations are used to download automatically `Plex Transcoder` and c
 
 ```
 # Extract all build values from "Plex Media Server" binary
-printf "plex_build: `strings "Plex Media Server" | grep -P '^([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)-[0-9a-f]{9}'`\ncodecs_build: `strings "Plex Media Server" | grep -P '^[0-9a-f]{7}-[0-9]{4}$'`\neae_version: `strings "Plex Media Server" | grep -P '^eae-[0-9a-f]{7}-[0-9]{2}$'`\n"
+printf "plex_build: `strings "Plex Media Server" | grep -P '^([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)-[0-9a-f]{9}'`\ncodecs_build: `strings "Plex Media Server" | grep -P '^[0-9a-f]{7}-[0-9]{4}$'`\neae_version: eae-`strings "Plex Media Server" | grep -P '^EasyAudioEncoder-eae-[0-9a-f]{7}-$' | cut -d- -f3`-42\n"
 
 # Extract the plex_build value
 strings "Plex Media Server" | grep -P '^([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)-[0-9a-f]{9}'
@@ -78,10 +78,11 @@ strings "Plex Media Server" | grep -P '^([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)-[
 # Extract the codecs_build value
 strings "Plex Media Server" | grep -P '^[0-9a-f]{7}-[0-9]{4}$'
 
-# Extract the eae_version
+# Extract the eae_version (PMS >= 1.18.5)
+printf "eae-`strings "Plex Media Server" | grep -P '^EasyAudioEncoder-eae-[0-9a-f]{7}-$' | cut -d- -f3`-42"
+
+# Extract the eae_version (PMS < 1.18.5)
 strings "Plex Media Server" | grep -P '^eae-[0-9a-f]{7}-[0-9]{2}$'
-
-
 ```
 
 Keep in mind plex_arch, plex_build, codecs_build and eae_version depend of the Plex Media Server build. Don't upgrade the `plex_build` without checking `codecs_build` and `eae_version`.
@@ -97,6 +98,9 @@ In the performance section you cat set some limits that will be sent to the Unic
 | maxTranscodes | Maximum number of active transcoding session, it includes all pending transcoding jobs. |
 
 #### Routing configuration _(Expert only)_
+
+Advanced routing requires a MaxMind API key, you can create a key here: https://dev.maxmind.com/geoip/geoip2/geolite2/  
+When you have a key, set the `MAXMIND_KEY` environnement value and launch a `npm run install`.
 
 When a player will start a session, UnicornLoadBalancer will ask UnicornTranscoder where to redirect (302) the query based on the IP address of the client. The routing section allows you for a specific country code to route to a specific domain. For example you have a bad peering with a country, you can route the traffic to this country via CloudFlare and let others go through a direct routing domain.
 
