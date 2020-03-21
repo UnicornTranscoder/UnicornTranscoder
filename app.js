@@ -12,7 +12,7 @@ const config = require('./config');
 const path = require('path');
 const mkdirp = require('mkdirp');
 
-mkdirp(config.transcoder.temp_folder,  (err) =>  {
+mkdirp(config.transcoder.temp_folder).catch((err) =>  {
     if (err) {
         debug("Can't create temp folder");
         console.error(err);
