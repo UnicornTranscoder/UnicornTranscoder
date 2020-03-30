@@ -1,3 +1,5 @@
+![](https://raw.githubusercontent.com/UnicornTranscoder/Logo/master/transparent.png)
+
 ## UnicornTranscoder
 
 This software is a remote transcoder for `Plex Media Server`. It is able to handle all the requests from a `Plex Client` to transcode and serve a stream.
