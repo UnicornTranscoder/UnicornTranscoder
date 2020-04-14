@@ -123,8 +123,12 @@ class SessionManager {
         let stats = {
             sessions: [],
             name: config.instance_address,
-            settings: config.performance,
+            settings: {
+                ...config.performance,
+                ...config.transcoder,
+            },
             url: config.instance_address,
+            lb_url: config.loadbalancer_address,
         };
 
         //Transcoding session
