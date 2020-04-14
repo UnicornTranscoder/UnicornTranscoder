@@ -24,6 +24,7 @@ module.exports = {
         codecs_folder:     env.string('CODECS_FOLDER',         'codecs/'),
         plex_transcoder:   env.string('PLEX_TRANSCODER',       'Plex Transcoder'),
         debug:             env.boolish('TRANSCODER_DEBUG',     false),
+        debugScope:        env.boolish('DEBUG',                false),
     },
 
     performance: {

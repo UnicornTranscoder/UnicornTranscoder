@@ -24,6 +24,7 @@ let app = express();
 
 app.use(cors());
 app.use('/', routes);
+app.use('/', express.static('public'));
 
 //Start EAE
 function startEAE() {
