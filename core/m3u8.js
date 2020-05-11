@@ -62,6 +62,29 @@ class M3U8 {
             SessionManager.restartSession(sessionId, 'HLS', res);
         }
     }
+	
+    static serveHeader(req, res) {
+        let sessionId = req.params.sessionId;
+
+        let transcoder = SessionManager.getSession(sessionId);
+        if (transcoder !== null) {
+            SessionManager.updateTimeout(sessionId);
+            transcoder.getChunk(0, (chunkId) => {
+                // -2 -> getChunk timeout
+                // -1 -> Session not alive
+                if (chunkId === -2 || chunkId === -1) {
+                    if (!res.headersSent)
+                        return res.status(404).send('Callback ' + chunkId);
+                } else {
+                    debug('Serving header for session ' + sessionId);
+                    let file = PlexDirectories.getTemp() + sessionId + "/header";
+                    res.sendFile(file);
+                }
+            }, req.params.streamId, true);
+        } else {
+            SessionManager.restartSession(sessionId, 'HLS', res);
+        }
+    }
 }
 
 module.exports = M3U8;

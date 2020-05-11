@@ -24,6 +24,7 @@ router.get('/:formatType/:/transcode/universal/dash/:sessionId/:streamId/:partId
 //m3u8 mode
 router.get('/:formatType/:/transcode/universal/session/:sessionId/base/index.m3u8', m3u8.serve);
 router.get('/:formatType/:/transcode/universal/session/:sessionId/base-x-mc/index.m3u8', m3u8.serve);
+router.get('/:formatType/:/transcode/universal/session/:sessionId/base/header', m3u8.serveHeader);
 router.get('/:formatType/:/transcode/universal/session/:sessionId/vtt-base/index.m3u8', proxy);
 router.get('/:formatType/:/transcode/universal/session/:sessionId/:fileType/:partId.ts', m3u8.serveChunk);
 router.get('/:formatType/:/transcode/universal/session/:sessionId/:fileType/:partId.vtt', m3u8.serveSubtitles);
