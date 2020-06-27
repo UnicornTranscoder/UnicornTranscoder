@@ -180,7 +180,7 @@
 
     <script>
         const updateData = () => {
-            fetch('/api/sessions').then(res => res.json()).then((data) => {
+            fetch('/unicorn/stats').then(res => res.json()).then((data) => {
                 document.querySelector('#stats_url').innerHTML = data.url || '?';
                 document.querySelector('#stats_lb_url').innerHTML = data.lb_url || '?';
                 document.querySelector('#stats_debug_transcoder').innerHTML = data.settings.debugScope ? 'YES' : 'NO';

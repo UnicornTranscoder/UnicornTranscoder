@@ -13,27 +13,18 @@ class Dash {
     static start(req, res) {
         let sessionId = req.params.sessionId;
 
+        if (typeof sessionId === 'undefined') {
+            debug('Invalid session ID ' + sessionId);
+            return res.status(400).send('Invalid session id');
+        }
         debug(sessionId);
 
         SessionManager.killSession(sessionId, () => {
-            SessionManager.saveSession(new Transcoder(sessionId, req, res));
+            SessionManager.saveSession(new Transcoder(sessionId));
         })
 	
-	res.send('DASH started')
+	    res.send('DASH started');
     }
-
-    static serve(req, res) {
-        let sessionId = req.query.session;
-
-        if (typeof sessionId === 'undefined')
-            return res.status(400).send('Invalid session id');
-        debug(sessionId);
-
-        SessionManager.killSession(sessionId, () => {
-            SessionManager.saveSession(new Transcoder(sessionId, req, res));
-        })
-    }
-
 
     static serveInit(req, res) {
         let sessionId = req.params.sessionId;

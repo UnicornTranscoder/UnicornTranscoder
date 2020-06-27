@@ -17,9 +17,9 @@ class SessionManager {
     }
 
     stopTranscoder(req, res) {
-        if (typeof req.query.session !== 'undefined' && req.query.session in this.transcoderStore) {
-            debug('Stop ' + req.query.session);
-            return this.killSession(req.query.session, () => {
+        if (typeof req.params.sessionId !== 'undefined' && req.params.sessionId in this.transcoderStore) {
+            debug('Stop ' + req.params.sessionId);
+            return this.killSession(req.params.sessionId, () => {
                 res.send('');
             });
         }
@@ -27,8 +27,8 @@ class SessionManager {
     }
 
     ping(req, res) {
-        if (typeof req.query.session !== 'undefined' && req.query.session in this.transcoderStore) {
-            this.updateTimeout(req.query.session);
+        if (typeof req.params.sessionId !== 'undefined' && req.params.sessionId in this.transcoderStore) {
+            this.updateTimeout(req.params.sessionId);
             return res.send('');
         }
         res.status(400).send('Invalid session id');
@@ -174,7 +174,7 @@ class SessionManager {
             clearTimeout(this.statsTimeout);
 
         request({
-            uri: config.loadbalancer_address + '/api/update',
+            uri: config.loadbalancer_address + '/unicorn/api/transcoder',
             method: 'POST',
             json: this.generateStats()
         }, () => {

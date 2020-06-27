@@ -12,27 +12,17 @@ class M3U8 {
     static start(req, res) {
         let sessionId = req.params.sessionId;
 
-        if (typeof sessionId === 'undefined')
+        if (typeof sessionId === 'undefined') {
+            debug('Invalid session ID ' + sessionId);
             return res.status(400).send('Invalid session id');
+        }
         debug(sessionId);
 
         SessionManager.killSession(sessionId, () => {
-            SessionManager.saveSession(new Transcoder(sessionId, req, res));
-        })
+            SessionManager.saveSession(new Transcoder(sessionId));
+        });
 
         res.send('HLS Started');
-    }
-
-    static serve(req, res) {
-        let sessionId = req.params.sessionId;
-
-        if (typeof sessionId === 'undefined')
-            return res.status(400).send('Invalid session id');
-        debug(sessionId);
-
-        SessionManager.killSession(sessionId, () => {
-            SessionManager.saveSession(new Transcoder(sessionId, req, res));
-        })
     }
 
     static serveChunk(req, res) {
@@ -50,7 +40,7 @@ class M3U8 {
                     debug('Serving ' + req.params.partId + ' for session ' + sessionId);
                     res.sendFile(file);
                 }
-                });
+            });
         } else {
             SessionManager.restartSession(sessionId, 'HLS', res);
         }
@@ -76,7 +66,7 @@ class M3U8 {
             SessionManager.restartSession(sessionId, 'HLS', res);
         }
     }
-	
+
     static serveHeader(req, res) {
         let sessionId = req.params.sessionId;
 

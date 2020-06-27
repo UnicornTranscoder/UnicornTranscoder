@@ -79,7 +79,7 @@ class Optimizer {
 
     done() {
         debug('Optimization done ' + this.session);
-        rp(`${config.loadbalancer_address}/api/optimize/${this.session}`, {
+        rp(`${config.loadbalancer_address}/unicorn/optimize/${this.session}/finished`, {
             method: 'PATCH',
             body: { status: 'optimized' },
             json: true
@@ -105,13 +105,13 @@ class Optimizer {
     }
 
     static start(req, res) {
-        debug(`Starting optimizer session ${req.body.session}`);
-        const session = new Optimizer(req.body.session, req.body.args, req.body.env);
+        debug(`Starting optimizer session ${req.params.sessionId}`);
+        const session = new Optimizer(req.params.sessionId, req.body.args, req.body.env);
         res.json({ status: 'ok' })
     }
 
     static download(req, res) {
-        const session = SessionManager.getOptimizer(req.params.session);
+        const session = SessionManager.getOptimizer(req.params.sessionId);
         if (typeof session !== 'undefined')
             session.sendFile(res, req.params.filename);
         else
@@ -119,7 +119,7 @@ class Optimizer {
     }
 
     static stop(req, res) {
-        if (SessionManager.stopOptimizer(req.params.session))
+        if (SessionManager.stopOptimizer(req.params.sessionId))
             res.json({ status: 'ok' });
         else
             res.status(404).json({ error: 'Session not found' });

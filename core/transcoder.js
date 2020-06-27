@@ -25,22 +25,14 @@ class Transcoder {
         debug('Create transcoder ' + this.sessionId);
 
         Promise.all([
-            //Proxy the request if not restarting
-            (typeof req !== 'undefined' && typeof streamOffset === 'undefined' ?
-                rp(`${config.loadbalancer_address}/api/plex${req.url}`)
-                    .then((body) => {
-                        if (body !== null && typeof res !== 'undefined')
-                            res.send(body)
-                    }) : Promise.resolve(null)
-            ),
             //Get args
-            rp(`${config.loadbalancer_address}/api/session/${sessionId}`)
+            rp(`${config.loadbalancer_address}/unicorn/api/${sessionId}/info`)
                 .then((body) => {
                     return JSON.parse(body)
                 })
                 .then((parsed) => {
                     this.transcoderArgs = parsed.args.map((arg) => {
-                        // Hack to replace aac_lc by aac because FFMPEG don't recognise the codec aac_lc
+                        // Hack to replace aac_lc by aac because FFMPEG don't recognize the codec aac_lc
                         if (arg === 'aac_lc')
                             return 'aac';
                         arg = utils.replaceAll(arg, '{INTERNAL_PLEX_SETUP}', PlexDirectories.getPlexFolder());

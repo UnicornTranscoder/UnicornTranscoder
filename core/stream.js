@@ -15,7 +15,7 @@ class Stream {
         let offset = -1;
         if (!Number.isNaN(parseInt(req.query.offset)))
             offset = parseInt(req.query.offset);
-        let sessionId = req.query.session;
+        let sessionId = req.params.sessionId;
 
         if (typeof sessionId === 'undefined')
             return res.status(400).send('Invalid session id');
@@ -42,9 +42,9 @@ class Stream {
     }
 
     static createTranscoder(req, res, streamOffset) {
-        let sessionId = req.query.session;
-        SessionManager.killSession(req.query.session, () => {
-            let transcoder = SessionManager.saveSession(new Transcoder(sessionId, req, undefined, streamOffset));
+        let sessionId = req.params.sessionId;
+        SessionManager.killSession(sessionId, () => {
+            let transcoder = SessionManager.saveSession(new Transcoder(sessionId, streamOffset));
             Stream.rangeParser(req);
             Stream.serveHeader(req, res, transcoder, 0, false);
         });
@@ -65,7 +65,7 @@ class Stream {
     }
 
     static serveSubtitles(req, res) {
-        let sessionId = req.query.session;
+        let sessionId = req.params.sessionId;
         if (typeof sessionId === 'undefined')
             return res.status(400).send('Invalid session id');
 
@@ -120,7 +120,7 @@ class Stream {
             return;
         }
 
-        SessionManager.updateTimeout(req.query.session);
+        SessionManager.updateTimeout(req.params.sessionId);
 
         transcoder.getChunk(chunkId, (chunkId) => {
             switch (chunkId) {
@@ -142,7 +142,7 @@ class Stream {
 
     static streamBuilder(req, res, isSubtitle, chunkId, callback) {
         //Build the chunk Path
-        let chunkPath = PlexDirectories.getTemp() + req.query.session + "/" + (isSubtitle ? 'sub-' : '') + (chunkId === -1 ? 'header' : 'chunk-' + utils.pad(chunkId, 5));
+        let chunkPath = PlexDirectories.getTemp() + req.params.sessionId + "/" + (isSubtitle ? 'sub-' : '') + (chunkId === -1 ? 'header' : 'chunk-' + utils.pad(chunkId, 5));
 
         //Access the file to get the size
         fs.stat(chunkPath, (err, stats) => {
@@ -217,7 +217,7 @@ class Stream {
     static endConnection(req, res, isSubtitle) {
         if (!req.connection.destroyed) {
             res.end();
-            debug(req.query.session + (isSubtitle ? ' subtitles' : '') + ' end');
+            debug(req.params.sessionId + (isSubtitle ? ' subtitles' : '') + ' end');
         }
     }
 }

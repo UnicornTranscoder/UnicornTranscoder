@@ -10,7 +10,7 @@ const SessionManager = require('./session-manager');
 
 class Download {
     static serve(req, res) {
-        request(config.loadbalancer_address + '/api/path/' + req.params.id1, (error, response, body) => {
+        request(config.loadbalancer_address + '/unicorn/api/' + req.params.fileId + '/fileinfo', (error, response, body) => {
             if (!error && response.statusCode === 200) {
                 let result = JSON.parse(body);
                 if (typeof result.file === "undefined")
