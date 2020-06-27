@@ -9,6 +9,20 @@ const SessionManager = require('./session-manager');
 const PlexDirectories = require('../utils/plex-directories');
 
 class M3U8 {
+    static start(req, res) {
+        let sessionId = req.params.sessionId;
+
+        if (typeof sessionId === 'undefined')
+            return res.status(400).send('Invalid session id');
+        debug(sessionId);
+
+        SessionManager.killSession(sessionId, () => {
+            SessionManager.saveSession(new Transcoder(sessionId, req, res));
+        })
+
+        res.send('HLS Started');
+    }
+
     static serve(req, res) {
         let sessionId = req.params.sessionId;
 

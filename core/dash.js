@@ -10,6 +10,18 @@ const utils = require('../utils/utils');
 const PlexDirectories = require('../utils/plex-directories');
 
 class Dash {
+    static start(req, res) {
+        let sessionId = req.params.sessionId;
+
+        debug(sessionId);
+
+        SessionManager.killSession(sessionId, () => {
+            SessionManager.saveSession(new Transcoder(sessionId, req, res));
+        })
+	
+	res.send('DASH started')
+    }
+
     static serve(req, res) {
         let sessionId = req.query.session;
 
@@ -21,6 +33,7 @@ class Dash {
             SessionManager.saveSession(new Transcoder(sessionId, req, res));
         })
     }
+
 
     static serveInit(req, res) {
         let sessionId = req.params.sessionId;

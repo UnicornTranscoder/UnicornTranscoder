@@ -16,18 +16,35 @@ const progress = require('../core/progress');
 const optimizer = require('../core/optimizer');
 const SessionManager = require('../core/session-manager');
 
-//Dash routes
-router.get('/:formatType/:/transcode/universal/start.mpd', dash.serve);
-router.get('/:formatType/:/transcode/universal/dash/:sessionId/:streamId/initial.mp4', dash.serveInit);
-router.get('/:formatType/:/transcode/universal/dash/:sessionId/:streamId/:partId.m4s', dash.serveChunk);
+// Legacy DASH routes
+ router.get('/:formatType/:/transcode/universal/start.mpd', dash.serve);
+ router.get('/:formatType/:/transcode/universal/dash/:sessionId/:streamId/initial.mp4', dash.serveInit);
+ router.get('/:formatType/:/transcode/universal/dash/:sessionId/:streamId/:partId.m4s', dash.serveChunk);
 
-//m3u8 mode
+// New DASH mode
+router.get('/unicorn/dash/:sessionId/start', dash.start);
+router.get('/unicorn/dash/:sessionId/:streamId/initial.mp4', dash.serveInit);
+router.get('/unicorn/dash/:sessionId/:streamId/:partId.m4s', dash.serveChunk);
+
+
+// LEGACY m3u8 mode
 router.get('/:formatType/:/transcode/universal/session/:sessionId/base/index.m3u8', m3u8.serve);
 router.get('/:formatType/:/transcode/universal/session/:sessionId/base-x-mc/index.m3u8', m3u8.serve);
 router.get('/:formatType/:/transcode/universal/session/:sessionId/base/header', m3u8.serveHeader);
 router.get('/:formatType/:/transcode/universal/session/:sessionId/vtt-base/index.m3u8', proxy);
 router.get('/:formatType/:/transcode/universal/session/:sessionId/:fileType/:partId.ts', m3u8.serveChunk);
 router.get('/:formatType/:/transcode/universal/session/:sessionId/:fileType/:partId.vtt', m3u8.serveSubtitles);
+
+// New m3u8 mode
+router.get('/unicorn/hls/:sessionId/start', m3u8.start);
+//router.get('/unicorn/hls/:sessionId/base/index.m3u8', m3u8.serve);
+//router.get('/unicorn/hls/:sessionId/base-x-mc/index.m3u8', m3u8.serve);
+router.get('/unicorn/hls/:sessionId/header', m3u8.serveHeader);
+//router.get('/unicorn/hls/:sessionId/vtt-base/index.m3u8', proxy);
+router.get('/unicorn/hls/:sessionId/:partId.ts', m3u8.serveChunk);
+router.get('/unicorn/hls/:sessionId/:partId.vtt', m3u8.serveSubtitles);
+
+
 
 //Stream mode
 router.get('/:formatType/:/transcode/universal/start', stream.serve);
