@@ -21,7 +21,7 @@
     "grunt-request-progress": "0.0.3",
     "grunt-run": "0.8.1",
     "grunt-zip": "0.18.2",
-    "http-proxy": "1.18.0",
+    "http-proxy": "1.18.1",
     "lzma-native": "6.0.0",
     "mkdirp": "^1.0.3",
     "redis": "2.8.0",
