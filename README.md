@@ -21,7 +21,9 @@ This software is a remote transcoder for `Plex Media Server`. It is able to hand
 * `UnicornTranscoder` pull FFMPEG argument from `UnicornLoadBalancer`
 * `UnicornTranscoder` launch FFMPEG and starts to serve the request for the stream
 
+## Support us!
 
+The UnicornTranscoder project is an open source software, maintained by @drouarb and @Maxou44. If you want to support us, you can tip us on Ko-fi: https://ko-fi.com/unicorntranscoder ☕
 
 ## Setup
 
