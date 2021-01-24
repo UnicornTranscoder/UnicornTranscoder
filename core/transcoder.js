@@ -2,6 +2,18 @@
  * Created by drouar_b on 27/04/2017.
  */
 
+
+/*
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+//license was missing, added it above to ensure compliance.
+
+
 const child_process = require('child_process');
 const debug = require('debug')('UnicornTranscoder:Transcoder');
 const fs = require('fs');
@@ -25,16 +37,44 @@ class Transcoder {
         debug('Create transcoder ' + this.sessionId);
 
         Promise.all([
+            //Proxy the request if not restarting
+            (typeof req !== 'undefined' && typeof streamOffset === 'undefined' ?
+                rp(`${config.loadbalancer_address}/api/plex${req.url}`)
+                    .then((body) => {
+                        if (body !== null && typeof res !== 'undefined')
+                            res.send(body)
+                    }) : Promise.resolve(null)
+            ),
             //Get args
-            rp(`${config.loadbalancer_address}/unicorn/api/${sessionId}/info`)
+            rp(`${config.loadbalancer_address}/api/session/${sessionId}`)
                 .then((body) => {
                     return JSON.parse(body)
                 })
                 .then((parsed) => {
                     this.transcoderArgs = parsed.args.map((arg) => {
-                        // Hack to replace aac_lc by aac because FFMPEG don't recognize the codec aac_lc
+                        // Hack to replace aac_lc by aac because FFMPEG don't recognise the codec aac_lc
                         if (arg === 'aac_lc')
                             return 'aac';
+
+		/*
+			This area can be used to change the arguments to match the capabilities of a given server to enable HW acceleration.
+			This is a beta branch and should not be merged without adequate testing. It assumes all transcoder nodes can use the relevant accels (so if all have vaapi accels [amd or intel] then you're fine, but amd and nvidia accels will not)
+
+			This area is under active developement.
+		*/
+
+		//uncomment the following lines to enable the relevant HW accels. 
+
+			/* vaapi  is a linux hw api that is supported by amd and intel*/
+
+		//      if (arg === 'libx265')  return 'hevc_vaapi';
+                //      if (arg === 'libx264')  return 'h264_vaapi';
+
+                       /* nvenc  is a linux and windows  hw api that is supported by nvidia*/
+                //      if (arg === 'libx265')  return 'hevc_nvenc';
+                //      if (arg === 'libx264')  return 'h264_nvenc';
+
+
                         arg = utils.replaceAll(arg, '{INTERNAL_PLEX_SETUP}', PlexDirectories.getPlexFolder());
                         return arg
                             .replace('{INTERNAL_TRANSCODER}', "http://127.0.0.1:" + config.port + '/')
