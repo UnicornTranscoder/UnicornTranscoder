@@ -74,13 +74,16 @@ Theses configurations are used to download automatically `Plex Transcoder` and c
 
 ```
 # Extract all build values from "Plex Media Server" binary
-printf "plex_build: `strings "Plex Media Server" | grep -P '^([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)-[0-9a-f]{9}'`\ncodecs_build: `strings "Plex Media Server" | grep -P '^[0-9a-f]{7}-[0-9]{4}$'`\neae_version: eae-`strings "Plex Media Server" | grep -P '^EasyAudioEncoder-eae-[0-9a-f]{7}-$' | cut -d- -f3`-42\n"
+printf "plex_build: `strings "Plex Media Server" | grep -P '^([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)-[0-9a-f]{9}'`\ncodecs_build: `strings "Plex Transcoder" | grep -Po '[0-9a-f]{7}-[0-9]{4}$'`\neae_version: eae-`strings "Plex Media Server" | grep -P '^EasyAudioEncoder-eae-[0-9a-f]{7}-$' | cut -d- -f3`-42\n"
 
 # Extract the plex_build value
 strings "Plex Media Server" | grep -P '^([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)-[0-9a-f]{9}'
 
 # Extract the codecs_build value
 strings "Plex Media Server" | grep -P '^[0-9a-f]{7}-[0-9]{4}$'
+
+# Extract the codecs_build value (PMS >= 1.23.0)
+strings "Plex Transcoder" | grep -Po '[0-9a-f]{7}-[0-9]{4}$'
 
 # Extract the eae_version (PMS >= 1.18.5)
 printf "eae-`strings "Plex Media Server" | grep -P '^EasyAudioEncoder-eae-[0-9a-f]{7}-$' | cut -d- -f3`-42"
