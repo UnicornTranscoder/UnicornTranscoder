@@ -36,9 +36,10 @@ The UnicornTranscoder project is an open source software, maintained by @drouarb
 ### 2. Pre-required 
 
 * Setup `Plex Media Server`
-
 * Setup [UnicornFFMPEG](https://github.com/UnicornTranscoder/UnicornFFMPEG)
 * Setup [UnicornLoadBalancer](https://github.com/UnicornTranscoder/UnicornLoadBalancer)
+
+See the [Wiki](Wiki.md) for a complete walkthrough of setting up the Unicorn Suite.
 
 ### 3. Setup UnicornTranscoder
 
