@@ -73,7 +73,7 @@ Theses configurations are used to download automatically `Plex Transcoder` and c
 | eae_version  | The EAE build can be found with the following commands   |
 
 ```
-# Extract all build values from "Plex Media Server" binary
+# Extract all build values from "Plex Media Server" and "Plex Transcoder" binaries
 printf "plex_build: `strings "Plex Media Server" | grep -P '^([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)-[0-9a-f]{9}'`\ncodecs_build: `strings "Plex Transcoder" | grep -Po '[0-9a-f]{7}-[0-9]{4}$'`\neae_version: eae-`strings "Plex Media Server" | grep -P '^EasyAudioEncoder-eae-[0-9a-f]{7}-$' | cut -d- -f3`-42\n"
 
 # Extract the plex_build value

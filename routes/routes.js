@@ -16,12 +16,12 @@ const progress = require('../core/progress');
 const optimizer = require('../core/optimizer');
 const SessionManager = require('../core/session-manager');
 
-//Dash routes
+// Legacy DASH routes
 router.get('/:formatType/:/transcode/universal/start.mpd', dash.serve);
 router.get('/:formatType/:/transcode/universal/dash/:sessionId/:streamId/initial.mp4', dash.serveInit);
 router.get('/:formatType/:/transcode/universal/dash/:sessionId/:streamId/:partId.m4s', dash.serveChunk);
 
-//m3u8 mode
+// M3U8 mode
 router.get('/:formatType/:/transcode/universal/session/:sessionId/base/index.m3u8', m3u8.serve);
 router.get('/:formatType/:/transcode/universal/session/:sessionId/base-x-mc/index.m3u8', m3u8.serve);
 router.get('/:formatType/:/transcode/universal/session/:sessionId/base/header', m3u8.serveHeader);
@@ -29,24 +29,29 @@ router.get('/:formatType/:/transcode/universal/session/:sessionId/vtt-base/index
 router.get('/:formatType/:/transcode/universal/session/:sessionId/:fileType/:partId.ts', m3u8.serveChunk);
 router.get('/:formatType/:/transcode/universal/session/:sessionId/:fileType/:partId.vtt', m3u8.serveSubtitles);
 
-//Stream mode
+// New DASH routes
+router.get('/:formatType/:/transcode/universal/start.mpd', dash.serve);
+router.get('/:formatType/:/transcode/universal/session/:sessionId/:streamId/header', dash.serveInit);
+router.get('/:formatType/:/transcode/universal/session/:sessionId/:streamId/:partId.m4s', dash.serveChunk);
+
+// Long-Polling routes
 router.get('/:formatType/:/transcode/universal/start', stream.serve);
 router.get('/:formatType/:/transcode/universal/subtitles', stream.serveSubtitles);
 
 // Download files
 router.get('/library/parts/:id1/:id2/file.*', download.serve);
 
-//Transcoder progression
+// Transcoder progression
 router.post('/:formatType/:/transcode/session/:sessionId/:uuid/seglist', bodyParser.text({ type: () => {return true}, limit: '50mb' }), ffmpeg.seglistParser);
 router.post('/:formatType/:/transcode/session/:sessionId/:uuid/manifest', bodyParser.text({ type: () => {return true}, limit: '50mb' }), ffmpeg.manifestParser);
 
-//UnicornTranscoder API
+// UnicornTranscoder API
 router.get('/api/sessions', SessionManager.stats.bind(SessionManager));
 router.get('/api/resolve', SessionManager.resolve.bind(SessionManager));
 router.get('/api/stop', SessionManager.stopTranscoder.bind(SessionManager));
 router.get('/api/ping', SessionManager.ping.bind(SessionManager));
 
-//Plex Progress URL
+// Plex Progress URL
 router.all('/:formatType/:/transcode/session/:sessionId/:uuid/progress', bodyParser.text({ type: () => {return true}, limit: '50mb' }), progress.progress);
 router.all('/:formatType/:/transcode/session/:sessionId/:uuid/progress/*', bodyParser.text({ type: () => {return true}, limit: '50mb' }), progress.progress);
 router.all('/log', bodyParser.text({ type: () => {return true}, limit: '50mb' }), progress.log);
