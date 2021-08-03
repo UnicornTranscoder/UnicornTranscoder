@@ -28,7 +28,7 @@
     "request": "2.88.0",
     "request-promise-native": "1.0.8",
     "rmfr": "2.0.0",
-    "tar": "6.0.1",
+    "tar": "6.1.2",
     "uuid": "3.4.0",
     "xml2js": "0.4.23"
   }
