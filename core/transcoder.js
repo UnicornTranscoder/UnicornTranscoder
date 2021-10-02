@@ -34,7 +34,7 @@ class Transcoder {
                     }) : Promise.resolve(null)
             ),
             //Get args
-            rp(`${config.loadbalancer_address}/api/session/${sessionId}`)
+            rp({ uri: ${config.loadbalancer_address}/api/plex${req.url}, timeout: 20000 })
                 .then((body) => {
                     return JSON.parse(body)
                 })
