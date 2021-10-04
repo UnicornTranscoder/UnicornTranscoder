@@ -27,7 +27,7 @@ class Transcoder {
         Promise.all([
             //Proxy the request if not restarting
             (typeof req !== 'undefined' && typeof streamOffset === 'undefined' ?
-                rp(`${config.loadbalancer_address}/api/plex${req.url}`)
+                rp({ uri: `${config.loadbalancer_address}/api/plex${req.url}`, timeout: 20000 })
                     .then((body) => {
                         if (body !== null && typeof res !== 'undefined')
                             res.send(body)
