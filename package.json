@@ -16,7 +16,7 @@
     "express": "4.17.1",
     "geoip-lite": "1.4.0",
     "getenv": "1.0.0",
-    "grunt": "1.3.0",
+    "grunt": "1.5.2",
     "grunt-mkdir": "1.1.0",
     "grunt-request-progress": "0.0.3",
     "grunt-run": "0.8.1",
