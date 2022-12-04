@@ -126,7 +126,7 @@ class Transcoder {
     }
 
     startEAE() {
-        if (this.eae !== null) {
+        if (this.eae === null) {
             debug('Starting EAE', this.sessionId)
             this.eae = child_process.spawn(
                 PlexDirectories.getEAE(),
