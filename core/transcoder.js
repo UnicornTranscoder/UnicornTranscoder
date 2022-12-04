@@ -113,6 +113,7 @@ class Transcoder {
             if (this.eae !== null) {
                 debug('Stopping EAE', this.sessionId)
                 this.eae.kill('SIGKILL');
+                this.eae = null;
             }
         });
 
@@ -125,21 +126,23 @@ class Transcoder {
     }
 
     startEAE() {
-        debug('Starting EAE', this.sessionId)
-        this.eae = child_process.spawn(
-            PlexDirectories.getEAE(),
-            [],
-            {
-                env: Object.create(process.env),
-                cwd: `${config.transcoder.temp_folder}/${this.sessionId}`
-            }
-        )
+        if (this.eae !== null) {
+            debug('Starting EAE', this.sessionId)
+            this.eae = child_process.spawn(
+                PlexDirectories.getEAE(),
+                [],
+                {
+                    env: Object.create(process.env),
+                    cwd: `${config.transcoder.temp_folder}/${this.sessionId}`
+                }
+            )
 
-        this.eae.on('error', (e) => {
-            debug("Can't start EAE for session", this.sessionId);
-            console.error(e);
-            process.exit(1);
-        })
+            this.eae.on('error', (e) => {
+                debug("Can't start EAE for session", this.sessionId);
+                console.error(e);
+                process.exit(1);
+            })
+        }
     }
 
     killInstance(callback = () => {
