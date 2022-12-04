@@ -12,12 +12,14 @@ const ChunkStore = require('../utils/chunkStore');
 const rmfr = require('rmfr');
 const PlexDirectories = require('../utils/plex-directories');
 const utils = require('../utils/utils');
+const path = require("path");
 
 class Transcoder {
     constructor(sessionId, req, res, streamOffset) {
         this.uuid = uuid();
         this.alive = true;
         this.ffmpeg = null;
+        this.eae = null;
         this.transcoding = true;
         this.streamOffset = streamOffset;
         this.chunkStore = new ChunkStore();
@@ -63,7 +65,7 @@ class Transcoder {
                     this.transcoderEnv.FFMPEG_EXTERNAL_LIBS = PlexDirectories.getCodecFolder();
                     this.transcoderEnv.XDG_CACHE_HOME = PlexDirectories.getTemp();
                     this.transcoderEnv.XDG_DATA_HOME = PlexDirectories.getPlexResources();
-                    this.transcoderEnv.EAE_ROOT = PlexDirectories.getTemp();
+                    this.transcoderEnv.EAE_ROOT = `${config.transcoder.temp_folder}/${sessionId}/`;
                     this.transcoderEnv.X_PLEX_TOKEN = parsed.env.X_PLEX_TOKEN;
                 })
                 .then(() => {
@@ -96,6 +98,8 @@ class Transcoder {
     startFFMPEG() {
         debug('Spawn ' + this.sessionId);
         this.transcoding = true;
+        this.startEAE();
+
         this.ffmpeg = child_process.spawn(
             PlexDirectories.getPlexTranscoderPath(),
             this.transcoderArgs,
@@ -105,7 +109,11 @@ class Transcoder {
             });
         this.ffmpeg.on("exit", (code, sig) => {
             debug('FFMPEG stopped ' + this.sessionId + ' ' + code + ' ' + sig);
-            this.transcoding = false
+            this.transcoding = false;
+            if (this.eae !== null) {
+                debug('Stopping EAE', this.sessionId)
+                this.eae.kill('SIGKILL');
+            }
         });
 
         if (config.transcoder.debug) {
@@ -114,6 +122,24 @@ class Transcoder {
         }
 
         this.updateLastChunk();
+    }
+
+    startEAE() {
+        debug('Starting EAE', this.sessionId)
+        this.eae = child_process.spawn(
+            PlexDirectories.getEAE(),
+            [],
+            {
+                env: Object.create(process.env),
+                cwd: `${config.transcoder.temp_folder}/${this.sessionId}`
+            }
+        )
+
+        this.eae.on('error', (e) => {
+            debug("Can't start EAE for session", this.sessionId);
+            console.error(e);
+            process.exit(1);
+        })
     }
 
     killInstance(callback = () => {
